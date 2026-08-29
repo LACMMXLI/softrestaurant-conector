@@ -1,5 +1,5 @@
 #ifndef BuildVersion
-  #define BuildVersion "1.1.0"
+  #define BuildVersion "1.1.1"
 #endif
 #ifndef BuildApiUrl
   #define BuildApiUrl "https://softrestaurant-api.fatboymexicali.com"
@@ -318,7 +318,7 @@ begin
   ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
   { sc.exe necesita que el valor completo de binPath sea un argumento entre comillas
     y que las comillas internas de la ruta del ejecutable lleguen escapadas. Sin este
-    formato devuelve ERROR_INVALID_COMMAND_LINE (1639) cuando {app} contiene espacios. }
+    formato devuelve ERROR_INVALID_COMMAND_LINE (1639) cuando la ruta contiene espacios. }
   ExpectedImagePath := '"' + ExePath + '" --watch';
   if not RunSc('crear el servicio',
     'create "' + AgentServiceName + '" binPath= "\"' + ExePath +
