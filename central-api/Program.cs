@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Npgsql;
 using SoftRestaurant.CentralApi;
 using SoftRestaurant.Sync.Contracts;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 512L * 1024 * 1024);
@@ -12,12 +14,46 @@ builder.Services.AddSingleton(apiOptions);
 builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(apiOptions.ConnectionString));
 builder.Services.AddSingleton<BatchIngestor>();
 builder.Services.AddSingleton<ConnectorRegistry>();
+builder.Services.AddSingleton<WebAuthService>();
+builder.Services.AddSingleton<DashboardReportService>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("dashboard-login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 var app = builder.Build();
+var forwardedHeaders = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    ForwardLimit = 1
+};
+// En Coolify la API solo se expone a través del contenedor web. La subred Docker es dinámica,
+// por eso se acepta exactamente un salto de proxy para recuperar HTTPS e IP del cliente.
+forwardedHeaders.KnownNetworks.Clear();
+forwardedHeaders.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeaders);
+app.UseRateLimiter();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/web"))
+        context.Response.Headers.CacheControl = "no-store";
+    await next();
+});
 if (apiOptions.ConnectorAdminKey.Length == 0)
     app.Logger.LogWarning("CONNECTOR_ADMIN_KEY no está configurado; los endpoints administrativos quedan deshabilitados.");
 var dataSource = app.Services.GetRequiredService<NpgsqlDataSource>();
 await DbInitializer.InitializeAsync(dataSource, apiOptions, CancellationToken.None);
+await app.Services.GetRequiredService<WebAuthService>()
+    .EnsureBootstrapOwnerAsync(CancellationToken.None);
 
 app.MapGet("/api/health/live", () => Results.Ok(new { status = "ok" }));
 
@@ -257,5 +293,7 @@ app.MapGet("/api/branches/{branchCode}/sync-status", async (
         counts = reader.IsDBNull(5) ? null : reader.GetFieldValue<System.Text.Json.JsonDocument>(5)
     });
 });
+
+app.MapDashboardWebApi();
 
 app.Run();

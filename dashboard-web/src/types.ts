@@ -1,0 +1,126 @@
+export type DashboardUser = {
+  id: string
+  email: string
+  displayName: string
+  role: 'OWNER' | 'MANAGER' | 'VIEWER'
+}
+
+export type DashboardBranch = {
+  code: string
+  name: string
+  timezone: string
+  lastSyncAt: string | null
+  freshness: 'fresh' | 'stale' | 'missing'
+  reconciliationOk: boolean | null
+  rangeStart: string | null
+  rangeEnd: string | null
+}
+
+export type DashboardMeta = {
+  branchId: string
+  branchCode: string
+  branchName: string
+  timezone: string
+  date: string
+  lastSyncAt: string | null
+  lastBatchId: string | null
+  rangeStart: string | null
+  rangeEnd: string | null
+  reconciliationOk: boolean | null
+  freshness: 'fresh' | 'stale' | 'missing'
+  coverage: 'complete' | 'partial' | 'missing' | 'invalid'
+  canShowData: boolean
+}
+
+export type DashboardSummary = {
+  tickets: number | null
+  sales: number | null
+  averageTicket: number | null
+  tips: number | null
+  cancelledTickets: number | null
+  cancelledLines: number | null
+  cashIn: number | null
+  cashOut: number | null
+  previousSales: number | null
+  salesChangePercent: number | null
+}
+
+export type HourlySalesPoint = {
+  hour: number
+  sales: number
+  tickets: number
+}
+
+export type SalesTicket = {
+  folio: number
+  checkNumber: string | null
+  openedAt: string | null
+  closedAt: string | null
+  total: number | null
+  tip: number | null
+  paid: boolean
+  cancelled: boolean
+  table: string | null
+  paymentUser: string | null
+}
+
+export type CancellationItem = {
+  date: string
+  folio: number | null
+  productId: string | null
+  description: string | null
+  quantity: number | null
+  price: number | null
+  occurrences: number
+  user: string | null
+  reason: string | null
+}
+
+export type CashMovementItem = {
+  folio: number
+  date: string | null
+  type: number
+  amount: number | null
+  concept: string | null
+  reference: string | null
+}
+
+export type DashboardHome = {
+  meta: DashboardMeta
+  summary: DashboardSummary
+  hourlySales: HourlySalesPoint[]
+  recentTickets: SalesTicket[]
+  recentCancellations: CancellationItem[]
+  recentCashMovements: CashMovementItem[]
+}
+
+export type SalesPage = {
+  meta: DashboardMeta
+  items: SalesTicket[]
+  page: number
+  pageSize: number
+  hasMore: boolean
+}
+
+export type TicketDetail = {
+  ticket: SalesTicket
+  station: string | null
+  restaurantArea: string | null
+  waiterId: string | null
+  cancellationReason: string | null
+  cancelledBy: string | null
+  lines: Array<{
+    productId: string | null
+    quantity: number | null
+    price: number | null
+    discount: number | null
+    comment: string | null
+  }>
+  payments: Array<{
+    paymentMethodId: string | null
+    amount: number | null
+    tip: number | null
+    exchangeRate: number | null
+    cardBrand: string | null
+  }>
+}

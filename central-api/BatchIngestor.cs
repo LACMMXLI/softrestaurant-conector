@@ -145,13 +145,14 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
 
     private const string PaymentsSql = """
         INSERT INTO sale_payments
-            (branch_id, idempotency_key, source_folio, payment_method, amount, tip, payload)
+            (branch_id, idempotency_key, source_folio, payment_method, amount, tip, exchange_rate, payload)
         SELECT $1,
                item->>'idempotencyKey',
                (item->>'folio')::bigint,
                item->>'idFormaDePago',
                NULLIF(item->>'importe', '')::numeric,
                NULLIF(item->>'propina', '')::numeric,
+               NULLIF(item->>'tipoDeCambio', '')::numeric,
                item
         FROM jsonb_array_elements($2::jsonb) AS item
         ON CONFLICT (branch_id, idempotency_key) DO UPDATE
@@ -159,6 +160,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
             payment_method = excluded.payment_method,
             amount = excluded.amount,
             tip = excluded.tip,
+            exchange_rate = excluded.exchange_rate,
             payload = excluded.payload,
             updated_at = now();
         """;

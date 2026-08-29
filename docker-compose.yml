@@ -26,6 +26,10 @@ services:
       BOOTSTRAP_BRANCH_CODE: ${BOOTSTRAP_BRANCH_CODE:-sucursal-piloto}
       BOOTSTRAP_BRANCH_NAME: ${BOOTSTRAP_BRANCH_NAME:-Sucursal piloto}
       LEGACY_BOOTSTRAP_AGENT_TOKEN: ${SERVICE_PASSWORD_64_AGENT:-}
+      DASHBOARD_OWNER_EMAIL: ${DASHBOARD_OWNER_EMAIL:?Define DASHBOARD_OWNER_EMAIL}
+      DASHBOARD_OWNER_PASSWORD: ${DASHBOARD_OWNER_PASSWORD:?Define DASHBOARD_OWNER_PASSWORD}
+      DASHBOARD_SESSION_HOURS: ${DASHBOARD_SESSION_HOURS:-24}
+      DASHBOARD_STALE_MINUTES: ${DASHBOARD_STALE_MINUTES:-10}
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,6 +37,22 @@ services:
       - "${API_PORT:-5080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/api/health/ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: dashboard-web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

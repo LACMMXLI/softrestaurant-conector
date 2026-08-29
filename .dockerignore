@@ -2,6 +2,8 @@
 **/obj
 **/out
 **/data
+**/node_modules
+dashboard-web/dist
 .runtime
 *.bak
 *.db

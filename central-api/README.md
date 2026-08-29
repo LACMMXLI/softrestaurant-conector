@@ -1,6 +1,6 @@
 # SoftRestaurant Central API
 
-API mínima para recibir lotes del agente local y consolidarlos en PostgreSQL.
+API para recibir lotes del agente local, consolidarlos en PostgreSQL y servir el dashboard.
 No se conecta a SQL Server ni acepta consultas SQL remotas.
 
 ## Endpoints
@@ -9,6 +9,13 @@ No se conecta a SQL Server ni acepta consultas SQL remotas.
 - `GET /api/health/ready`
 - `POST /api/ingestion/batches`
 - `GET /api/dashboard/today?branchCode=sucursal-piloto&date=2026-08-27`
+- `POST /api/web/auth/login`
+- `POST /api/web/auth/logout`
+- `GET /api/web/auth/me`
+- `GET /api/web/branches`
+- `GET /api/web/dashboard/home?branchCode=sucursal-piloto&date=2026-08-27`
+- `GET /api/web/sales?branchCode=sucursal-piloto&date=2026-08-27&page=1&pageSize=25`
+- `GET /api/web/sales/{branchCode}/{folio}`
 - `GET /api/branches/sucursal-piloto/sync-status`
 - `POST /api/connectors/activate`
 - `PUT /api/admin/branches/{branchCode}`
@@ -25,20 +32,28 @@ PostgreSQL conserva solamente los hashes de claves de activación y tokens. Los 
 `X-Agent-Token` permanece temporalmente como mecanismo **legacy** si la sucursal tiene
 `legacy_auth_enabled=true`. No se admiten listas de contraseñas compartidas.
 
+Los endpoints `/api/web/*` usan una cookie de sesión `HttpOnly`, `SameSite=Lax` y segura
+bajo HTTPS. No exponen la llave administrativa ni reutilizan la credencial del conector.
+
 ## Coolify
 
-Desplegar el `docker-compose.yml` de la raíz y definir al menos:
+Desplegar `docker-compose.coolify.yml` desde el repositorio y definir al menos:
 
-- `POSTGRES_PASSWORD`
-- `SERVICE_PASSWORD_64_CONNECTOR_ADMIN`
-- `BOOTSTRAP_BRANCH_CODE`
-- `BOOTSTRAP_BRANCH_NAME`
+- `SERVICE_PASSWORD_64_POSTGRES`
+- `SERVICE_PASSWORD_64_CONNECTOR_ADMIN` (32 caracteres o más)
+- `DASHBOARD_OWNER_EMAIL`
+- `SERVICE_PASSWORD_64_DASHBOARD_OWNER` (12 caracteres o más)
+
+Opcionalmente ajustar `BOOTSTRAP_BRANCH_CODE`, `BOOTSTRAP_BRANCH_NAME`,
+`DASHBOARD_SESSION_HOURS` y `DASHBOARD_STALE_MINUTES`.
 
 Durante la migración puede conservarse `SERVICE_PASSWORD_64_AGENT`; la API lo recibe como
 `LEGACY_BOOTSTRAP_AGENT_TOKEN`. Después de migrar y desactivar legacy, debe eliminarse.
 
-Asignar el dominio HTTPS de Coolify al puerto `8080` del servicio `api`. El esquema
-se crea de forma idempotente durante el arranque.
+Asignar el dominio HTTPS de Coolify al puerto `8080` del servicio `web`. Nginx sirve la PWA
+y reenvía `/api/*` al servicio interno `api`. El esquema y el usuario propietario se crean
+de forma idempotente durante el arranque; cambiar la variable de contraseña después no
+reemplaza automáticamente la contraseña del usuario ya existente.
 
 ## Alta y administración
 

@@ -108,10 +108,12 @@ CREATE TABLE IF NOT EXISTS sale_payments (
     payment_method text NULL,
     amount numeric(18,4) NULL,
     tip numeric(18,4) NULL,
+    exchange_rate numeric(18,6) NULL,
     payload jsonb NOT NULL,
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (branch_id, idempotency_key)
 );
+ALTER TABLE sale_payments ADD COLUMN IF NOT EXISTS exchange_rate numeric(18,6) NULL;
 CREATE INDEX IF NOT EXISTS ix_sale_payments_branch_folio ON sale_payments(branch_id, source_folio);
 
 CREATE TABLE IF NOT EXISTS shifts (
@@ -164,3 +166,46 @@ CREATE TABLE IF NOT EXISTS cancellation_summaries (
     PRIMARY KEY (branch_id, snapshot_key)
 );
 CREATE INDEX IF NOT EXISTS ix_cancellations_branch_date ON cancellation_summaries(branch_id, cancellation_date);
+
+CREATE TABLE IF NOT EXISTS app_users (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    email text NOT NULL,
+    display_name text NOT NULL,
+    password_hash text NOT NULL,
+    role text NOT NULL CHECK (role IN ('OWNER', 'MANAGER', 'VIEWER')),
+    active boolean NOT NULL DEFAULT true,
+    last_login_at timestamptz NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_app_users_email_lower ON app_users(lower(email));
+
+CREATE TABLE IF NOT EXISTS app_user_branches (
+    user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    branch_id uuid NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, branch_id)
+);
+
+CREATE TABLE IF NOT EXISTS app_sessions (
+    token_hash text PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    expires_at timestamptz NOT NULL,
+    last_seen_at timestamptz NOT NULL DEFAULT now(),
+    ip text NULL,
+    user_agent text NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_app_sessions_user_expiry ON app_sessions(user_id, expires_at DESC);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id bigserial PRIMARY KEY,
+    user_id uuid NULL REFERENCES app_users(id) ON DELETE SET NULL,
+    event_type text NOT NULL,
+    branch_id uuid NULL REFERENCES branches(id) ON DELETE SET NULL,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    ip text NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_audit_log_user_date ON audit_log(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ix_audit_log_branch_date ON audit_log(branch_id, created_at DESC);

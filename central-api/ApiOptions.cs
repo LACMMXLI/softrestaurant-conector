@@ -5,7 +5,11 @@ internal sealed record ApiOptions(
     string ConnectorAdminKey,
     string? BootstrapBranchCode,
     string? BootstrapBranchName,
-    string? LegacyBootstrapAgentToken)
+    string? LegacyBootstrapAgentToken,
+    string? DashboardOwnerEmail,
+    string? DashboardOwnerPassword,
+    int DashboardSessionHours,
+    int DashboardStaleMinutes)
 {
     public static ApiOptions FromConfiguration(IConfiguration configuration)
     {
@@ -18,11 +22,31 @@ internal sealed record ApiOptions(
         if (adminKey.Length is > 0 and < 32)
             throw new InvalidOperationException("CONNECTOR_ADMIN_KEY debe tener al menos 32 caracteres.");
 
+        var ownerEmail = configuration["DASHBOARD_OWNER_EMAIL"]?.Trim();
+        var ownerPassword = configuration["DASHBOARD_OWNER_PASSWORD"];
+        if (string.IsNullOrWhiteSpace(ownerEmail) != string.IsNullOrWhiteSpace(ownerPassword))
+            throw new InvalidOperationException(
+                "DASHBOARD_OWNER_EMAIL y DASHBOARD_OWNER_PASSWORD deben configurarse juntos.");
+        if (!string.IsNullOrWhiteSpace(ownerPassword) && ownerPassword.Length < 12)
+            throw new InvalidOperationException("DASHBOARD_OWNER_PASSWORD debe tener al menos 12 caracteres.");
+
+        var sessionHours = ReadPositiveInt(configuration["DASHBOARD_SESSION_HOURS"], 24, 1, 720);
+        var staleMinutes = ReadPositiveInt(configuration["DASHBOARD_STALE_MINUTES"], 10, 1, 1440);
+
         return new ApiOptions(
             connectionString,
             adminKey,
             configuration["BOOTSTRAP_BRANCH_CODE"],
             configuration["BOOTSTRAP_BRANCH_NAME"],
-            configuration["LEGACY_BOOTSTRAP_AGENT_TOKEN"] ?? configuration["BOOTSTRAP_AGENT_TOKEN"]);
+            configuration["LEGACY_BOOTSTRAP_AGENT_TOKEN"] ?? configuration["BOOTSTRAP_AGENT_TOKEN"],
+            ownerEmail,
+            ownerPassword,
+            sessionHours,
+            staleMinutes);
     }
+
+    private static int ReadPositiveInt(string? value, int fallback, int minimum, int maximum) =>
+        int.TryParse(value, out var parsed) && parsed >= minimum && parsed <= maximum
+            ? parsed
+            : fallback;
 }

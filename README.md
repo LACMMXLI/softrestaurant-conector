@@ -9,25 +9,48 @@ SoftRestaurant / SQL Server (solo SELECT)
         -> activación de un solo uso + token por conector
         -> API central .NET 8
         -> PostgreSQL
+        -> dashboard web móvil/PWA
 ```
 
 ## Carpetas
 
 - `extractor/`: extractor validado, emisor, reintentos y modo Servicio de Windows.
 - `sync-contracts/`: contrato JSON compartido entre el agente y la API.
-- `central-api/`: API de ingesta, salud, estado de sincronización y resumen diario.
-- `docker-compose.yml`: PostgreSQL + API listos para desplegar en Coolify.
+- `central-api/`: API de ingesta, autenticación y reportes operativos.
+- `dashboard-web/`: dashboard React móvil, servido por Nginx como PWA.
+- `docker-compose.yml`: PostgreSQL + API + dashboard para ejecución local.
+- `docker-compose.coolify.yml`: despliegue desde este repositorio en Coolify.
 
 ## Arranque local de la API
 
-Copiar `.env.example` como `.env`, cambiar las dos contraseñas y ejecutar:
+Copiar `.env.example` como `.env`, cambiar todas las contraseñas y ejecutar:
 
 ```powershell
 docker compose up --build
 ```
 
-Comprobar `http://localhost:5080/api/health/ready` y después configurar el agente
-con la URL HTTPS que Coolify asigne a la API.
+Abrir `http://localhost:8080`. El dashboard y la API comparten origen; Nginx reenvía
+`/api/*` al contenedor interno. La salud de la API queda en
+`http://localhost:5080/api/health/ready`.
+
+El usuario inicial se crea de forma idempotente con `DASHBOARD_OWNER_EMAIL` y
+`DASHBOARD_OWNER_PASSWORD`. La contraseña se almacena con hash y nunca se devuelve por API.
+
+## Despliegue en Coolify
+
+1. Crear un recurso Docker Compose conectado a este repositorio y seleccionar
+   `docker-compose.coolify.yml`.
+2. Definir `DASHBOARD_OWNER_EMAIL` y dejar que Coolify genere
+   `SERVICE_PASSWORD_64_POSTGRES`, `SERVICE_PASSWORD_64_CONNECTOR_ADMIN` y
+   `SERVICE_PASSWORD_64_DASHBOARD_OWNER`.
+3. Conservar el volumen nombrado `softrestaurant_postgres_data` en actualizaciones.
+4. Asignar el dominio HTTPS al servicio `web`, puerto `8080`. La API no necesita dominio
+   público independiente porque el dashboard la publica bajo `/api`.
+5. Verificar `/healthz`, iniciar sesión y revisar el indicador de cobertura/frescura antes
+   de interpretar cifras.
+
+`generate-coolify-compose.ps1` valida que el compose y los archivos requeridos estén
+presentes. Ya no incrusta código en Base64: Coolify construye exactamente el commit del repo.
 
 ## Publicar el agente Windows
 
@@ -41,8 +64,14 @@ El instalador gráfico solicita una clave de activación de un solo uso. En la p
 conexión el backend entrega una identidad y token exclusivos del equipo; Windows los
 guarda cifrados con DPAPI. El agente nunca necesita permisos de escritura en SoftRestaurant.
 
-## Alcance del piloto
+## Alcance actual
 
 Incluye ventas, líneas, pagos, turnos, declaraciones, movimientos de caja,
-cancelaciones agregadas y reconciliación. No incluye todavía dashboard visual,
-usuarios/roles, catálogo ni actualización automática.
+cancelaciones agregadas, reconciliación, usuarios de dashboard con sesión segura y vistas
+móviles de resumen, ventas y operación.
+
+Los totales de ventas solo consideran tickets pagados, no cancelados y con cierre. Cuando
+no existe cobertura válida, la interfaz muestra el estado sin sustituirlo por cero. Los IDs
+de producto y forma de pago se etiquetan como IDs: el conector todavía no sincroniza los
+catálogos para convertirlos en nombres. Inventario y actualización automática del agente
+quedan fuera de este alcance.
