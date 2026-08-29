@@ -81,6 +81,13 @@ El servicio `admin` (`admin-web/`) sirve el panel de administración del SaaS en
 HTTPS separado (o el mismo con otra ruta, según cómo se configure el proxy en Coolify).
 Usa las mismas cookies de sesión que `web`, pero solo deja entrar cuentas `SUPERADMIN`.
 
+Para desplegar la API del panel como un recurso aislado, sin reiniciar el Compose central,
+usar `docker-compose.admin-api.yml`. Este Compose contiene solamente `admin-api` y se une
+como consumidor a la red externa del stack central para reutilizar PostgreSQL; no crea ni
+reinicia la base de datos, el dashboard operativo ni el agente. Deben definirse
+`POSTGRES_PASSWORD`, `CONNECTOR_ADMIN_KEY`, `DASHBOARD_ADMIN_EMAIL` y
+`DASHBOARD_ADMIN_PASSWORD` en el recurso independiente.
+
 ## Alta y administración
 
 1. Crear una sucursal con `POST /api/admin/branches` (falla con 409 si el código ya existe).

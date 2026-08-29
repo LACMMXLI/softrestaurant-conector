@@ -1,0 +1,33 @@
+services:
+  admin-api:
+    build:
+      context: .
+      dockerfile: central-api/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-softrestaurant_reports};Username=${POSTGRES_USER:-softrestaurant};Password=${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      CONNECTOR_ADMIN_KEY: ${CONNECTOR_ADMIN_KEY:?Define CONNECTOR_ADMIN_KEY}
+      BOOTSTRAP_BRANCH_CODE: ""
+      BOOTSTRAP_BRANCH_NAME: ""
+      LEGACY_BOOTSTRAP_AGENT_TOKEN: ""
+      DASHBOARD_OWNER_EMAIL: ""
+      DASHBOARD_OWNER_PASSWORD: ""
+      DASHBOARD_ADMIN_EMAIL: ${DASHBOARD_ADMIN_EMAIL:?Define DASHBOARD_ADMIN_EMAIL}
+      DASHBOARD_ADMIN_PASSWORD: ${DASHBOARD_ADMIN_PASSWORD:?Define DASHBOARD_ADMIN_PASSWORD}
+      DASHBOARD_SESSION_HOURS: ${DASHBOARD_SESSION_HOURS:-24}
+      DASHBOARD_STALE_MINUTES: ${DASHBOARD_STALE_MINUTES:-10}
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/api/health/ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - softrestaurant-central
+
+networks:
+  softrestaurant-central:
+    external: true
+    name: ptwwtbojndstouzkkvo3xtz0
