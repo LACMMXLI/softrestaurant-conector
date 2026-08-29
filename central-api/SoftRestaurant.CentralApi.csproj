@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.0" />
+    <ProjectReference Include="..\sync-contracts\SoftRestaurant.Sync.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="schema.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SoftRestaurant.Auth.Tests" />
+  </ItemGroup>
+
+</Project>

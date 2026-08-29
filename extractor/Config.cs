@@ -1,0 +1,354 @@
+using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace SoftRestaurant.Extractor;
+
+/// <summary>
+/// Configuración de conexión y extracción, resuelta con esta prioridad:
+/// argumentos de línea de comandos > variables de entorno > archivo protegido DPAPI > appsettings.json > valores por defecto.
+/// </summary>
+internal sealed class ExtractorConfig
+{
+    public required string Server { get; init; }
+    public required string Database { get; init; }
+    public bool TrustedConnection { get; init; }
+    public string? User { get; init; }
+    public string? Password { get; init; }
+    public bool TrustServerCertificate { get; init; } = true;
+    public bool Encrypt { get; init; }
+    public int ConnectTimeoutSeconds { get; init; } = 15;
+
+    public string OutputDirectory { get; init; } = "./out";
+    public string QueuePath { get; init; } = "./data/sync-queue.db";
+    public string BranchCode { get; private set; } = "sucursal-piloto";
+    public string? ApiUrl { get; init; }
+    public string? AgentToken { get; private set; }
+    public string? ConnectorId { get; private set; }
+    public string? ActivationKey { get; init; }
+    public string MachineName { get; init; } = Environment.MachineName;
+    public bool SendEnabled { get; init; }
+    public bool Watch { get; init; }
+    public int SyncIntervalSeconds { get; init; } = 60;
+    public int RollingDays { get; init; } = 3;
+    public bool HasExplicitRange { get; init; }
+    public DateTime Desde { get; init; }
+    public DateTime Hasta { get; init; } // exclusivo (rango semiabierto), ya con +1 día aplicado si se pasó una fecha simple
+
+    public string BuildConnectionString()
+    {
+        var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+        {
+            DataSource = Server,
+            InitialCatalog = Database,
+            TrustServerCertificate = TrustServerCertificate,
+            Encrypt = Encrypt,
+            ConnectTimeout = ConnectTimeoutSeconds,
+            ApplicationName = "SoftRestaurant.Extractor"
+        };
+
+        if (TrustedConnection || string.IsNullOrWhiteSpace(User))
+        {
+            builder.IntegratedSecurity = true;
+        }
+        else
+        {
+            builder.UserID = User;
+            builder.Password = Password ?? string.Empty;
+        }
+
+        return builder.ConnectionString;
+    }
+
+    public void CompleteActivation(string connectorId, string branchCode, string token)
+    {
+        ConnectorId = connectorId;
+        BranchCode = branchCode;
+        AgentToken = token;
+    }
+
+    public static ExtractorConfig Resolve(string[] args)
+    {
+        // 1) base: appsettings.json (si existe junto al ejecutable o al proyecto)
+        string server = "CARDONA\\SQLEXPRESS";
+        string database = "softrestaurant11";
+        bool trusted = true;
+        string? user = null;
+        string? password = null;
+        bool trustCert = true;
+        bool encrypt = false;
+        int connectTimeout = 15;
+        string outDir = "./out";
+        string queuePath = "./data/sync-queue.db";
+        string branchCode = "sucursal-piloto";
+        string? apiUrl = null;
+        string? agentToken = null;
+        string? connectorId = null;
+        string? activationKey = null;
+        string machineName = Environment.MachineName;
+        int syncIntervalSeconds = 60;
+        int rollingDays = 3;
+
+        var settingsPath = FindAppSettings();
+        if (settingsPath is not null)
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(settingsPath));
+            if (doc.RootElement.TryGetProperty("connection", out var conn))
+            {
+                server = conn.TryGetProperty("server", out var s) ? s.GetString() ?? server : server;
+                database = conn.TryGetProperty("database", out var d) ? d.GetString() ?? database : database;
+                trusted = conn.TryGetProperty("trustedConnection", out var tc) ? tc.GetBoolean() : trusted;
+                user = conn.TryGetProperty("user", out var u) && u.ValueKind == JsonValueKind.String ? u.GetString() : user;
+                password = conn.TryGetProperty("password", out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() : password;
+                trustCert = conn.TryGetProperty("trustServerCertificate", out var tsc) ? tsc.GetBoolean() : trustCert;
+                encrypt = conn.TryGetProperty("encrypt", out var enc) ? enc.GetBoolean() : encrypt;
+                connectTimeout = conn.TryGetProperty("connectTimeoutSeconds", out var ct) ? ct.GetInt32() : connectTimeout;
+            }
+            if (doc.RootElement.TryGetProperty("extraction", out var ext))
+            {
+                outDir = ext.TryGetProperty("outputDirectory", out var od) ? od.GetString() ?? outDir : outDir;
+            }
+            if (doc.RootElement.TryGetProperty("sync", out var sync))
+            {
+                queuePath = sync.TryGetProperty("queuePath", out var qp) ? qp.GetString() ?? queuePath : queuePath;
+                branchCode = sync.TryGetProperty("branchCode", out var bc) ? bc.GetString() ?? branchCode : branchCode;
+                apiUrl = sync.TryGetProperty("apiUrl", out var au) && au.ValueKind == JsonValueKind.String ? au.GetString() : apiUrl;
+                syncIntervalSeconds = sync.TryGetProperty("intervalSeconds", out var si) ? si.GetInt32() : syncIntervalSeconds;
+                rollingDays = sync.TryGetProperty("rollingDays", out var rd) ? rd.GetInt32() : rollingDays;
+            }
+        }
+
+        // 2) configuración cifrada por máquina (instalador de Windows)
+        var protectedSettings = ProtectedSettings.Load();
+        server = GetProtectedRequired("SRX_SQL_SERVER", server);
+        database = GetProtectedRequired("SRX_SQL_DATABASE", database);
+        user = GetProtectedOptional("SRX_SQL_USER", user);
+        password = GetProtectedOptional("SRX_SQL_PASSWORD", password);
+        apiUrl = GetProtectedOptional("SRX_API_URL", apiUrl);
+        agentToken = GetProtectedOptional("SRX_AGENT_TOKEN", agentToken);
+        connectorId = GetProtectedOptional("SRX_CONNECTOR_ID", connectorId);
+        activationKey = GetProtectedOptional("SRX_ACTIVATION_KEY", activationKey);
+        machineName = GetProtectedRequired("SRX_MACHINE_NAME", machineName);
+        branchCode = GetProtectedRequired("SRX_BRANCH_CODE", branchCode);
+        queuePath = GetProtectedRequired("SRX_QUEUE_PATH", queuePath);
+        outDir = GetProtectedRequired("SRX_OUTPUT_PATH", outDir);
+        if (!string.IsNullOrWhiteSpace(user)) trusted = false;
+
+        // 3) variables de entorno
+        server = Environment.GetEnvironmentVariable("SRX_SQL_SERVER") ?? server;
+        database = Environment.GetEnvironmentVariable("SRX_SQL_DATABASE") ?? database;
+        user = Environment.GetEnvironmentVariable("SRX_SQL_USER") ?? user;
+        password = Environment.GetEnvironmentVariable("SRX_SQL_PASSWORD") ?? password;
+        apiUrl = Environment.GetEnvironmentVariable("SRX_API_URL") ?? apiUrl;
+        agentToken = Environment.GetEnvironmentVariable("SRX_AGENT_TOKEN") ?? agentToken;
+        connectorId = Environment.GetEnvironmentVariable("SRX_CONNECTOR_ID") ?? connectorId;
+        activationKey = Environment.GetEnvironmentVariable("SRX_ACTIVATION_KEY") ?? activationKey;
+        machineName = Environment.GetEnvironmentVariable("SRX_MACHINE_NAME") ?? machineName;
+        branchCode = Environment.GetEnvironmentVariable("SRX_BRANCH_CODE") ?? branchCode;
+        queuePath = Environment.GetEnvironmentVariable("SRX_QUEUE_PATH") ?? queuePath;
+        outDir = Environment.GetEnvironmentVariable("SRX_OUTPUT_PATH") ?? outDir;
+        if (!string.IsNullOrWhiteSpace(user)) trusted = false;
+
+        // 4) argumentos de línea de comandos
+        DateTime? desdeArg = null, hastaArg = null;
+        bool sendEnabled = false;
+        bool watch = false;
+        for (int i = 0; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "--server" when i + 1 < args.Length: server = args[++i]; break;
+                case "--database" when i + 1 < args.Length: database = args[++i]; break;
+                case "--user" when i + 1 < args.Length: user = args[++i]; trusted = false; break;
+                case "--password" when i + 1 < args.Length: password = args[++i]; trusted = false; break;
+                case "--trusted": trusted = true; break;
+                case "--out" when i + 1 < args.Length: outDir = args[++i]; break;
+                case "--desde" when i + 1 < args.Length: desdeArg = DateTime.Parse(args[++i]); break;
+                case "--hasta" when i + 1 < args.Length: hastaArg = DateTime.Parse(args[++i]); break;
+                case "--send": sendEnabled = true; break;
+                case "--watch": watch = true; sendEnabled = true; break;
+                case "--api-url" when i + 1 < args.Length: apiUrl = args[++i]; break;
+                case "--token" when i + 1 < args.Length: agentToken = args[++i]; break;
+                case "--connector-id" when i + 1 < args.Length: connectorId = args[++i]; break;
+                case "--activation-key" when i + 1 < args.Length: activationKey = args[++i]; break;
+                case "--machine-name" when i + 1 < args.Length: machineName = args[++i]; break;
+                case "--branch" when i + 1 < args.Length: branchCode = args[++i]; break;
+                case "--queue" when i + 1 < args.Length: queuePath = args[++i]; break;
+                case "--interval" when i + 1 < args.Length: syncIntervalSeconds = int.Parse(args[++i]); break;
+                case "--rolling-days" when i + 1 < args.Length: rollingDays = int.Parse(args[++i]); break;
+            }
+        }
+
+        if (watch)
+        {
+            desdeArg = null;
+            hastaArg = null;
+        }
+
+        if (sendEnabled && (string.IsNullOrWhiteSpace(apiUrl) ||
+            (string.IsNullOrWhiteSpace(agentToken) && string.IsNullOrWhiteSpace(activationKey))))
+        {
+            throw new ArgumentException(
+                "Para enviar se requieren SRX_API_URL y una credencial o clave de activación.");
+        }
+        if (!string.IsNullOrWhiteSpace(connectorId) && !Guid.TryParse(connectorId, out _))
+            throw new ArgumentException("SRX_CONNECTOR_ID no es un UUID válido.");
+        if (string.IsNullOrWhiteSpace(machineName) || machineName.Length > 200)
+            throw new ArgumentException("SRX_MACHINE_NAME debe tener entre 1 y 200 caracteres.");
+
+        syncIntervalSeconds = Math.Max(15, syncIntervalSeconds);
+        rollingDays = Math.Clamp(rollingDays, 1, 30);
+
+        // Rango por defecto: ayer a hoy (semiabierto), igual al ciclo real de sincronización.
+        var hoy = DateTime.Today;
+        var desde = (desdeArg ?? hoy.AddDays(-1)).Date;
+        var hasta = (hastaArg ?? hoy).Date.AddDays(1); // +1 para hacerlo exclusivo si el usuario dio una fecha "hasta" inclusiva
+
+        return new ExtractorConfig
+        {
+            Server = server,
+            Database = database,
+            TrustedConnection = trusted,
+            User = user,
+            Password = password,
+            TrustServerCertificate = trustCert,
+            Encrypt = encrypt,
+            ConnectTimeoutSeconds = connectTimeout,
+            OutputDirectory = outDir,
+            QueuePath = queuePath,
+            BranchCode = branchCode,
+            ApiUrl = apiUrl?.TrimEnd('/'),
+            AgentToken = agentToken,
+            ConnectorId = connectorId,
+            ActivationKey = activationKey,
+            MachineName = machineName,
+            SendEnabled = sendEnabled,
+            Watch = watch,
+            SyncIntervalSeconds = syncIntervalSeconds,
+            RollingDays = rollingDays,
+            HasExplicitRange = desdeArg.HasValue || hastaArg.HasValue,
+            Desde = desde,
+            Hasta = hasta
+        };
+
+        string GetProtectedRequired(string key, string current) =>
+            protectedSettings.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+                ? value
+                : current;
+
+        string? GetProtectedOptional(string key, string? current) =>
+            protectedSettings.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+                ? value
+                : current;
+    }
+
+    public (DateTime Desde, DateTime Hasta) GetRunRange()
+    {
+        if (!Watch || HasExplicitRange)
+        {
+            return (Desde, Hasta);
+        }
+
+        var today = DateTime.Today;
+        return (today.AddDays(-(RollingDays - 1)), today.AddDays(1));
+    }
+
+    private static string? FindAppSettings()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+            Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json")
+        };
+        return candidates.FirstOrDefault(File.Exists);
+    }
+}
+
+internal static class ProtectedSettings
+{
+    private static readonly string DefaultPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+        "SoftRestaurantSyncAgent",
+        "agent-settings.dpapi");
+
+    public static void ProtectFile(string inputPath, string outputPath)
+    {
+        if (!OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException("DPAPI requiere Windows.");
+
+        var settings = JsonSerializer.Deserialize<Dictionary<string, string>>(
+            File.ReadAllText(inputPath, Encoding.UTF8))
+            ?? throw new ArgumentException("El archivo de configuración está vacío.");
+
+        string[] required =
+        [
+            "SRX_API_URL",
+            "SRX_SQL_SERVER", "SRX_SQL_DATABASE", "SRX_SQL_USER", "SRX_SQL_PASSWORD"
+        ];
+        if (required.Any(key => !settings.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value)))
+            throw new ArgumentException("Faltan valores requeridos en la configuración.");
+        if ((!settings.TryGetValue("SRX_AGENT_TOKEN", out var token) || string.IsNullOrWhiteSpace(token)) &&
+            (!settings.TryGetValue("SRX_ACTIVATION_KEY", out var activationKey) || string.IsNullOrWhiteSpace(activationKey)))
+            throw new ArgumentException("Falta la credencial o clave de activación del conector.");
+
+        WriteProtected(outputPath, settings);
+    }
+
+    public static void CompleteActivation(string connectorId, string branchCode, string token)
+    {
+        var path = GetPath();
+        if (!File.Exists(path))
+            throw new InvalidOperationException("No existe el archivo protegido donde guardar la credencial.");
+
+        var settings = Load().ToDictionary(x => x.Key, x => x.Value);
+        settings.Remove("SRX_ACTIVATION_KEY");
+        settings["SRX_CONNECTOR_ID"] = connectorId;
+        settings["SRX_BRANCH_CODE"] = branchCode;
+        settings["SRX_AGENT_TOKEN"] = token;
+        WriteProtected(path, settings);
+    }
+
+    private static void WriteProtected(string outputPath, Dictionary<string, string> settings)
+    {
+        if (!OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException("DPAPI requiere Windows.");
+
+        var plaintext = JsonSerializer.SerializeToUtf8Bytes(settings);
+        var tempPath = outputPath + ".new";
+        try
+        {
+            var protectedBytes = ProtectedData.Protect(plaintext, null, DataProtectionScope.LocalMachine);
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPath))!);
+            File.WriteAllBytes(tempPath, protectedBytes);
+            File.Move(tempPath, outputPath, true);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(plaintext);
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+        }
+    }
+
+    public static IReadOnlyDictionary<string, string> Load()
+    {
+        var path = GetPath();
+        if (!File.Exists(path)) return new Dictionary<string, string>();
+        if (!OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException("DPAPI requiere Windows.");
+
+        var plaintext = ProtectedData.Unprotect(
+            File.ReadAllBytes(path), null, DataProtectionScope.LocalMachine);
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(plaintext)
+                ?? throw new JsonException("La configuración protegida está vacía.");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(plaintext);
+        }
+    }
+
+    private static string GetPath() =>
+        Environment.GetEnvironmentVariable("SRX_PROTECTED_CONFIG") ?? DefaultPath;
+}

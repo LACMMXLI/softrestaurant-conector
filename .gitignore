@@ -1,0 +1,41 @@
+# Configuracion local y secretos
+.env
+.env.*
+!.env.example
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings.Production.json
+
+# Compilacion y publicacion .NET
+**/bin/
+**/obj/
+**/out/
+**/publish/
+installer/.build/
+installer/dist/
+
+# Datos locales y respaldos de SoftRestaurant
+*.bak
+*.mdf
+*.ldf
+*.db
+*.db-shm
+*.db-wal
+**/data/
+/control.ini
+
+# Estado local de ejecucion
+.runtime/
+*.log
+
+# IDE y sistema operativo
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Indice local del grafo de codigo
+.codebase-memory/

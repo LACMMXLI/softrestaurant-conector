@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-softrestaurant_reports}
+      POSTGRES_USER: ${POSTGRES_USER:-softrestaurant}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD in Coolify}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: central-api/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-softrestaurant_reports};Username=${POSTGRES_USER:-softrestaurant};Password=${POSTGRES_PASSWORD}
+      CONNECTOR_ADMIN_KEY: ${SERVICE_PASSWORD_64_CONNECTOR_ADMIN:?Coolify debe generar SERVICE_PASSWORD_64_CONNECTOR_ADMIN}
+      BOOTSTRAP_BRANCH_CODE: ${BOOTSTRAP_BRANCH_CODE:-sucursal-piloto}
+      BOOTSTRAP_BRANCH_NAME: ${BOOTSTRAP_BRANCH_NAME:-Sucursal piloto}
+      LEGACY_BOOTSTRAP_AGENT_TOKEN: ${SERVICE_PASSWORD_64_AGENT:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-5080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/api/health/ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
