@@ -36,6 +36,12 @@ Desplegar como el servicio `admin` de `docker-compose.yml` / `docker-compose.coo
 idealmente detrás de un dominio o subdominio distinto al del dashboard operativo, ya que
 da acceso a operaciones sensibles (llaves de activación, revocación de conectores).
 
+Para desplegar solamente este panel como un recurso independiente en Coolify, usar
+`admin-web/Dockerfile.standalone`. Esa imagen conserva `/api/*` en el mismo origen del
+navegador y lo reenvía a `ADMIN_API_ORIGIN`, cuyo valor predeterminado es
+`https://softrestaurant-api.fatboymexicali.com`. El recurso independiente no crea ni
+reinicia PostgreSQL, la API, el dashboard operativo ni el agente local.
+
 ## Alcance de esta versión
 
 Cubre el CRUD completo de sucursales (alta, edición, activar/desactivar — nunca borrado
