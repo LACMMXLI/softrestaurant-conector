@@ -4,7 +4,18 @@ using NpgsqlTypes;
 
 namespace SoftRestaurant.CentralApi;
 
-internal sealed record BranchRequest(string Name, string? Timezone);
+internal sealed record BranchCreateRequest(string Code, string Name, string? Timezone);
+internal sealed record BranchUpdateRequest(string Name, string? Timezone);
+internal sealed record BranchStatusRequest(bool Active);
+internal sealed record BranchView(
+    Guid Id,
+    string Code,
+    string Name,
+    string Timezone,
+    bool Active,
+    bool LegacyAuthEnabled,
+    DateTime? LastSyncAt,
+    DateTime CreatedAt);
 internal sealed record ActivationKeyRequest(int? ExpiresInMinutes, string? Note);
 internal sealed record ActivateConnectorRequest(
     string ActivationKey,
@@ -29,33 +40,88 @@ internal sealed record ConnectorView(
 
 internal sealed class ConnectorRegistry(NpgsqlDataSource dataSource)
 {
-    public async Task<object> UpsertBranchAsync(
+    private const string BranchColumns =
+        "id, code, name, timezone, active, legacy_auth_enabled, last_sync_at, created_at";
+
+    private static BranchView ReadBranch(NpgsqlDataReader reader) => new(
+        reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+        reader.GetBoolean(4), reader.GetBoolean(5),
+        reader.IsDBNull(6) ? null : reader.GetDateTime(6),
+        reader.GetDateTime(7));
+
+    /// <summary>Alta de una sucursal nueva. Devuelve null si el código ya existe (conflicto).</summary>
+    public async Task<BranchView?> CreateBranchAsync(
         string code, string name, string timezone, CancellationToken ct)
     {
-        await using var command = dataSource.CreateCommand("""
+        await using var command = dataSource.CreateCommand($"""
             INSERT INTO branches (code, name, timezone, legacy_auth_enabled)
             VALUES ($1, $2, $3, false)
-            ON CONFLICT (code) DO UPDATE
-            SET name = excluded.name,
-                timezone = excluded.timezone,
-                updated_at = now()
-            RETURNING id, code, name, timezone, active, legacy_auth_enabled, created_at;
+            ON CONFLICT (code) DO NOTHING
+            RETURNING {BranchColumns};
             """);
         command.Parameters.AddWithValue(code);
         command.Parameters.AddWithValue(name);
         command.Parameters.AddWithValue(timezone);
         await using var reader = await command.ExecuteReaderAsync(ct);
-        await reader.ReadAsync(ct);
-        return new
-        {
-            id = reader.GetGuid(0),
-            code = reader.GetString(1),
-            name = reader.GetString(2),
-            timezone = reader.GetString(3),
-            active = reader.GetBoolean(4),
-            legacyAuthEnabled = reader.GetBoolean(5),
-            createdAt = reader.GetDateTime(6)
-        };
+        return await reader.ReadAsync(ct) ? ReadBranch(reader) : null;
+    }
+
+    /// <summary>Edita nombre/zona horaria de una sucursal existente. No crea ni reactiva. Devuelve null si no existe.</summary>
+    public async Task<BranchView?> UpdateBranchAsync(
+        string code, string name, string timezone, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand($"""
+            UPDATE branches
+            SET name = $2, timezone = $3, updated_at = now()
+            WHERE code = $1
+            RETURNING {BranchColumns};
+            """);
+        command.Parameters.AddWithValue(code);
+        command.Parameters.AddWithValue(name);
+        command.Parameters.AddWithValue(timezone);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? ReadBranch(reader) : null;
+    }
+
+    /// <summary>Activa o desactiva una sucursal. Nunca borra filas ni su historial. Devuelve null si no existe.</summary>
+    public async Task<BranchView?> SetBranchActiveAsync(
+        string code, bool active, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand($"""
+            UPDATE branches
+            SET active = $2, updated_at = now()
+            WHERE code = $1
+            RETURNING {BranchColumns};
+            """);
+        command.Parameters.AddWithValue(code);
+        command.Parameters.AddWithValue(active);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? ReadBranch(reader) : null;
+    }
+
+    public async Task<BranchView?> GetBranchAsync(string code, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand($"""
+            SELECT {BranchColumns}
+            FROM branches
+            WHERE code = $1;
+            """);
+        command.Parameters.AddWithValue(code);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? ReadBranch(reader) : null;
+    }
+
+    public async Task<IReadOnlyList<BranchView>> GetAllBranchesAsync(CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand($"""
+            SELECT {BranchColumns}
+            FROM branches
+            ORDER BY name;
+            """);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var result = new List<BranchView>();
+        while (await reader.ReadAsync(ct)) result.Add(ReadBranch(reader));
+        return result;
     }
 
     public async Task<ActivationKeyResult?> CreateActivationKeyAsync(

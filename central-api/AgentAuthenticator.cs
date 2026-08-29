@@ -73,10 +73,42 @@ internal static class AgentAuthenticator
     }
 }
 
+/// <summary>
+/// Quién autorizó una llamada a /api/admin/*. <see cref="User"/> es null cuando la
+/// autorización vino de la llave estática (un script, sin cuenta asociada) — en ese caso no
+/// hay "propia sesión" que proteger ni un id de actor para comparar contra el recurso que se
+/// está modificando.
+/// </summary>
+internal sealed record AdminPrincipal(DashboardUser? User)
+{
+    public static readonly AdminPrincipal StaticKey = new((DashboardUser?)null);
+    public static AdminPrincipal ForUser(DashboardUser user) => new(user);
+}
+
 internal static class AdminAuthenticator
 {
-    public static bool IsAuthorized(HttpContext context, ApiOptions options) =>
-        options.ConnectorAdminKey.Length >= 32 &&
-        context.Request.Headers.TryGetValue("X-Admin-Key", out var supplied) &&
-        TokenHasher.FixedTimeEquals(options.ConnectorAdminKey, supplied.ToString());
+    /// <summary>
+    /// Autoriza los endpoints /api/admin/*: acepta la llave estática (scripts/automatización)
+    /// o una sesión de panel con rol SUPERADMIN (dashboard-admin-web). Devuelve null si no
+    /// autoriza; en caso contrario, indica quién hizo la llamada para que el endpoint pueda
+    /// detectar auto-modificación (por ejemplo, un SUPERADMIN desactivando su propia cuenta).
+    /// </summary>
+    public static async Task<AdminPrincipal?> AuthorizeAsync(
+        HttpContext context, ApiOptions options, WebAuthService auth, CancellationToken ct)
+    {
+        if (options.ConnectorAdminKey.Length >= 32 &&
+            context.Request.Headers.TryGetValue("X-Admin-Key", out var supplied) &&
+            TokenHasher.FixedTimeEquals(options.ConnectorAdminKey, supplied.ToString()))
+        {
+            return AdminPrincipal.StaticKey;
+        }
+
+        var user = await auth.AuthenticateAsync(context, ct);
+        return user?.IsSuperAdmin == true ? AdminPrincipal.ForUser(user) : null;
+    }
+
+    /// <summary>Atajo para endpoints que solo necesitan saber sí/no (por ejemplo, sucursales).</summary>
+    public static async Task<bool> IsAuthorizedAsync(
+        HttpContext context, ApiOptions options, WebAuthService auth, CancellationToken ct) =>
+        await AuthorizeAsync(context, options, auth, ct) is not null;
 }

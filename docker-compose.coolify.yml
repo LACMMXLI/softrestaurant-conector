@@ -28,6 +28,8 @@ services:
       LEGACY_BOOTSTRAP_AGENT_TOKEN: ${SERVICE_PASSWORD_64_AGENT:-}
       DASHBOARD_OWNER_EMAIL: ${DASHBOARD_OWNER_EMAIL:?Define DASHBOARD_OWNER_EMAIL}
       DASHBOARD_OWNER_PASSWORD: ${SERVICE_PASSWORD_64_DASHBOARD_OWNER:?Coolify debe generar SERVICE_PASSWORD_64_DASHBOARD_OWNER}
+      DASHBOARD_ADMIN_EMAIL: ${DASHBOARD_ADMIN_EMAIL:?Define DASHBOARD_ADMIN_EMAIL}
+      DASHBOARD_ADMIN_PASSWORD: ${SERVICE_PASSWORD_64_DASHBOARD_ADMIN:?Coolify debe generar SERVICE_PASSWORD_64_DASHBOARD_ADMIN}
       DASHBOARD_SESSION_HOURS: ${DASHBOARD_SESSION_HOURS:-24}
       DASHBOARD_STALE_MINUTES: ${DASHBOARD_STALE_MINUTES:-10}
     depends_on:
@@ -45,6 +47,22 @@ services:
     build:
       context: .
       dockerfile: dashboard-web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  admin:
+    build:
+      context: .
+      dockerfile: admin-web/Dockerfile
     restart: unless-stopped
     depends_on:
       api:

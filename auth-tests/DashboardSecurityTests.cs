@@ -44,6 +44,29 @@ public sealed class DashboardSecurityTests
     }
 
     [Fact]
+    public void Dashboard_admin_email_and_password_must_be_configured_together()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["DASHBOARD_ADMIN_EMAIL"] = "admin@example.test"
+        });
+
+        Assert.Throws<InvalidOperationException>(() => ApiOptions.FromConfiguration(configuration));
+    }
+
+    [Fact]
+    public void Dashboard_admin_password_requires_twelve_characters()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["DASHBOARD_ADMIN_EMAIL"] = "admin@example.test",
+            ["DASHBOARD_ADMIN_PASSWORD"] = "short"
+        });
+
+        Assert.Throws<InvalidOperationException>(() => ApiOptions.FromConfiguration(configuration));
+    }
+
+    [Fact]
     public void Dashboard_session_cookie_is_http_only_secure_and_same_site()
     {
         var options = WebAuthService.CreateSessionCookieOptions(

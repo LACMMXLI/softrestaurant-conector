@@ -129,13 +129,16 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 LIMIT 1
             ) sb ON true
             WHERE b.active = true
+              -- Regla de acceso (ver BranchAccess.CanAccessBranch / BranchAccessTests):
+              -- SUPERADMIN ve todo sin necesitar filas en app_user_branches; cualquier otro
+              -- rol (incluido OWNER) solo ve las sucursales que tenga asignadas ahí.
               AND ($1 OR EXISTS (
                   SELECT 1 FROM app_user_branches ub
                   WHERE ub.user_id = $2 AND ub.branch_id = b.id
               ))
             ORDER BY b.name, b.code;
             """);
-        command.Parameters.AddWithValue(user.IsOwner);
+        command.Parameters.AddWithValue(user.IsSuperAdmin);
         command.Parameters.AddWithValue(user.Id);
         await using var reader = await command.ExecuteReaderAsync(ct);
         var branches = new List<DashboardBranch>();
@@ -325,13 +328,14 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             ) sb ON true
             WHERE b.active = true
               AND b.code = $1
+              -- Misma regla que GetBranchesAsync: ver BranchAccess.CanAccessBranch.
               AND ($2 OR EXISTS (
                   SELECT 1 FROM app_user_branches ub
                   WHERE ub.user_id = $3 AND ub.branch_id = b.id
               ));
             """);
         command.Parameters.AddWithValue(branchCode);
-        command.Parameters.AddWithValue(user.IsOwner);
+        command.Parameters.AddWithValue(user.IsSuperAdmin);
         command.Parameters.AddWithValue(user.Id);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(end);
@@ -369,13 +373,14 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             SELECT b.id, b.timezone
             FROM branches b
             WHERE b.active = true AND b.code = $1
+              -- Misma regla que GetBranchesAsync: ver BranchAccess.CanAccessBranch.
               AND ($2 OR EXISTS (
                   SELECT 1 FROM app_user_branches ub
                   WHERE ub.user_id = $3 AND ub.branch_id = b.id
               ));
             """);
         command.Parameters.AddWithValue(branchCode);
-        command.Parameters.AddWithValue(user.IsOwner);
+        command.Parameters.AddWithValue(user.IsSuperAdmin);
         command.Parameters.AddWithValue(user.Id);
         await using var reader = await command.ExecuteReaderAsync(ct);
         return await reader.ReadAsync(ct)

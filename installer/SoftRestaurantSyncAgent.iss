@@ -29,7 +29,7 @@ OutputBaseFilename={#BuildOutputName}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
-SetupLogging=no
+SetupLogging=yes
 UninstallDisplayIcon={app}\{#AgentExe}
 CloseApplications=no
 RestartApplications=no
@@ -230,15 +230,16 @@ begin
   end;
 end;
 
-function RunSc(const Parameters: string; IgnoreFailure: Boolean): Boolean;
+function RunSc(const Operation, Parameters: string; IgnoreFailure: Boolean): Boolean;
 var
   ResultCode: Integer;
 begin
+  Log('Ejecutando sc.exe para ' + Operation + ': ' + Parameters);
   Result := Exec(ExpandConstant('{sys}\sc.exe'), Parameters, '', SW_HIDE,
     ewWaitUntilTerminated, ResultCode);
   if Result and (ResultCode <> 0) and not IgnoreFailure then
   begin
-    MsgBox('Windows no pudo configurar el servicio. Código: ' + IntToStr(ResultCode),
+    MsgBox('Windows no pudo ' + Operation + '. Código: ' + IntToStr(ResultCode),
       mbError, MB_OK);
     Result := False;
   end;
@@ -246,9 +247,9 @@ end;
 
 procedure StopAndDeleteService;
 begin
-  RunSc('stop "' + AgentServiceName + '"', True);
+  RunSc('detener el servicio', 'stop "' + AgentServiceName + '"', True);
   Sleep(1200);
-  RunSc('delete "' + AgentServiceName + '"', True);
+  RunSc('eliminar el servicio anterior', 'delete "' + AgentServiceName + '"', True);
   Sleep(500);
 end;
 
@@ -298,7 +299,8 @@ end;
 
 procedure ConfigureAndStartService;
 var
-  ExePath, DataRoot, ProtectedPath, EnvironmentBlock, RegistryPath: string;
+  ExePath, DataRoot, ProtectedPath, EnvironmentBlock, RegistryPath,
+    ExpectedImagePath, RegisteredImagePath: string;
   ResultCode: Integer;
 begin
   ExePath := ExpandConstant('{app}\{#AgentExe}');
@@ -314,14 +316,27 @@ begin
   end;
 
   ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
-  if not RunSc('create "' + AgentServiceName + '" binPath= "' +
-    '"' + ExePath + '" --watch" start= auto DisplayName= "SoftRestaurant Sync Agent"', False) then
+  { sc.exe necesita que el valor completo de binPath sea un argumento entre comillas
+    y que las comillas internas de la ruta del ejecutable lleguen escapadas. Sin este
+    formato devuelve ERROR_INVALID_COMMAND_LINE (1639) cuando {app} contiene espacios. }
+  ExpectedImagePath := '"' + ExePath + '" --watch';
+  if not RunSc('crear el servicio',
+    'create "' + AgentServiceName + '" binPath= "\"' + ExePath +
+    '\" --watch" start= auto DisplayName= "SoftRestaurant Sync Agent"', False) then
     Abort;
 
-  RunSc('description "' + AgentServiceName +
+  RunSc('configurar la descripción', 'description "' + AgentServiceName +
     '" "Extrae reportes de SoftRestaurant en modo SELECT y los sincroniza con Fatboy."', True);
-  RunSc('failure "' + AgentServiceName +
+  RunSc('configurar la recuperación', 'failure "' + AgentServiceName +
     '" reset= 86400 actions= restart/60000/restart/60000/restart/60000', True);
+
+  if (not RegQueryStringValue(HKLM, RegistryPath, 'ImagePath', RegisteredImagePath)) or
+     (CompareText(RegisteredImagePath, ExpectedImagePath) <> 0) then
+  begin
+    MsgBox('El servicio se creó con una ruta ejecutable inválida. La instalación se cancelará.',
+      mbError, MB_OK);
+    Abort;
+  end;
 
   EnvironmentBlock := 'SRX_PROTECTED_CONFIG=' + ProtectedPath + #0;
 
@@ -331,7 +346,7 @@ begin
     Abort;
   end;
 
-  if not RunSc('start "' + AgentServiceName + '"', False) then
+  if not RunSc('iniciar el servicio', 'start "' + AgentServiceName + '"', False) then
     Abort;
 end;
 

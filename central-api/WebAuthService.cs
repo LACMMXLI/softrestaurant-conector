@@ -6,6 +6,7 @@ namespace SoftRestaurant.CentralApi;
 internal sealed record DashboardUser(Guid Id, string Email, string DisplayName, string Role)
 {
     public bool IsOwner => string.Equals(Role, "OWNER", StringComparison.Ordinal);
+    public bool IsSuperAdmin => string.Equals(Role, "SUPERADMIN", StringComparison.Ordinal);
 }
 
 internal sealed record DashboardLoginResult(
@@ -19,25 +20,50 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
 
     private readonly PasswordHasher<DashboardUser> passwordHasher = new();
 
+    /// <summary>
+    /// Hashea una contraseña con exactamente el mismo mecanismo (ASP.NET Core Identity
+    /// <see cref="PasswordHasher{TUser}"/>) que usan el login y el bootstrap de owner/admin.
+    /// La usa UserRegistry al crear cuentas o restablecer contraseñas desde el panel admin.
+    /// </summary>
+    public string HashPassword(DashboardUser candidate, string password) =>
+        passwordHasher.HashPassword(candidate, password);
+
+    /// <summary>
+    /// Revoca todas las sesiones activas de un usuario. Se llama al desactivar una cuenta o
+    /// restablecer su contraseña, para que un cambio administrativo tenga efecto inmediato
+    /// en vez de esperar a que expire la cookie.
+    /// </summary>
+    public async Task InvalidateSessionsAsync(Guid userId, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand(
+            "DELETE FROM app_sessions WHERE user_id = $1;");
+        command.Parameters.AddWithValue(userId);
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
     public async Task EnsureBootstrapOwnerAsync(CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(options.DashboardOwnerEmail) ||
-            string.IsNullOrWhiteSpace(options.DashboardOwnerPassword))
-        {
-            return;
-        }
+        await EnsureBootstrapUserAsync(options.DashboardOwnerEmail, options.DashboardOwnerPassword, "OWNER", ct);
+        await EnsureBootstrapUserAsync(options.DashboardAdminEmail, options.DashboardAdminPassword, "SUPERADMIN", ct);
+    }
 
-        var email = NormalizeEmail(options.DashboardOwnerEmail);
-        var candidate = new DashboardUser(Guid.Empty, email, email, "OWNER");
-        var passwordHash = passwordHasher.HashPassword(candidate, options.DashboardOwnerPassword);
+    private async Task EnsureBootstrapUserAsync(
+        string? email, string? password, string role, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return;
+
+        var normalizedEmail = NormalizeEmail(email);
+        var candidate = new DashboardUser(Guid.Empty, normalizedEmail, normalizedEmail, role);
+        var passwordHash = passwordHasher.HashPassword(candidate, password);
 
         await using var command = dataSource.CreateCommand("""
             INSERT INTO app_users (email, display_name, password_hash, role)
-            VALUES ($1, $1, $2, 'OWNER')
+            VALUES ($1, $1, $2, $3)
             ON CONFLICT DO NOTHING;
             """);
-        command.Parameters.AddWithValue(email);
+        command.Parameters.AddWithValue(normalizedEmail);
         command.Parameters.AddWithValue(passwordHash);
+        command.Parameters.AddWithValue(role);
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -194,7 +220,7 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
             Path = "/"
         });
 
-    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+    internal static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
     private static string? Limit(string? value, int maximum) =>
         string.IsNullOrWhiteSpace(value)

@@ -1,0 +1,332 @@
+using Npgsql;
+
+namespace SoftRestaurant.CentralApi;
+
+internal sealed record UserView(
+    Guid Id,
+    string Email,
+    string DisplayName,
+    string Role,
+    bool Active,
+    DateTime? LastLoginAt,
+    DateTime CreatedAt,
+    int BranchCount);
+
+internal sealed record UserBranchView(string Code, string Name, bool Active);
+
+internal sealed record UserDetailView(
+    Guid Id,
+    string Email,
+    string DisplayName,
+    string Role,
+    bool Active,
+    DateTime? LastLoginAt,
+    DateTime CreatedAt,
+    IReadOnlyList<UserBranchView> Branches);
+
+internal enum UserMutationStatus { Ok, NotFound, BlockedLastSuperAdmin }
+
+internal sealed record UserMutationResult(UserMutationStatus Status, UserDetailView? User)
+{
+    public static UserMutationResult NotFound { get; } = new(UserMutationStatus.NotFound, null);
+    public static UserMutationResult BlockedLastSuperAdmin { get; } = new(UserMutationStatus.BlockedLastSuperAdmin, null);
+    public static UserMutationResult Ok(UserDetailView user) => new(UserMutationStatus.Ok, user);
+}
+
+internal sealed record UserCreateRequest(
+    string Email, string DisplayName, string Password, string Role, IReadOnlyList<string>? BranchCodes);
+internal sealed record UserUpdateRequest(string DisplayName, string Role);
+internal sealed record UserStatusRequest(bool Active);
+internal sealed record UserPasswordResetRequest(string Password);
+internal sealed record UserBranchAssignRequest(IReadOnlyList<string> BranchCodes);
+
+/// <summary>
+/// CRUD de cuentas (app_users) y de su relación con sucursales (app_user_branches), para
+/// los endpoints /api/admin/users/*. Ninguna operación borra una fila de app_users: el
+/// historial y la auditoría (audit_log, last_login_at) se conservan siempre; "eliminar" una
+/// cuenta es desactivarla (<see cref="SetUserActiveAsync"/>).
+/// </summary>
+internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService authService)
+{
+    public async Task<IReadOnlyList<UserView>> GetAllUsersAsync(CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            SELECT u.id, u.email, u.display_name, u.role, u.active, u.last_login_at, u.created_at,
+                   COUNT(ub.branch_id)
+            FROM app_users u
+            LEFT JOIN app_user_branches ub ON ub.user_id = u.id
+            GROUP BY u.id
+            ORDER BY u.display_name, u.email;
+            """);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var result = new List<UserView>();
+        while (await reader.ReadAsync(ct))
+        {
+            result.Add(new UserView(
+                reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+                reader.GetBoolean(4), reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                reader.GetDateTime(6), checked((int)reader.GetInt64(7))));
+        }
+        return result;
+    }
+
+    public async Task<UserDetailView?> GetUserAsync(Guid id, CancellationToken ct)
+    {
+        UserDetailView? user = null;
+        await using (var command = dataSource.CreateCommand("""
+            SELECT id, email, display_name, role, active, last_login_at, created_at
+            FROM app_users
+            WHERE id = $1;
+            """))
+        {
+            command.Parameters.AddWithValue(id);
+            await using var reader = await command.ExecuteReaderAsync(ct);
+            if (!await reader.ReadAsync(ct)) return null;
+            user = new UserDetailView(
+                reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+                reader.GetBoolean(4), reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                reader.GetDateTime(6), []);
+        }
+
+        var branches = new List<UserBranchView>();
+        await using (var command = dataSource.CreateCommand("""
+            SELECT b.code, b.name, b.active
+            FROM app_user_branches ub
+            JOIN branches b ON b.id = ub.branch_id
+            WHERE ub.user_id = $1
+            ORDER BY b.name;
+            """))
+        {
+            command.Parameters.AddWithValue(id);
+            await using var reader = await command.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+                branches.Add(new UserBranchView(reader.GetString(0), reader.GetString(1), reader.GetBoolean(2)));
+        }
+
+        return user with { Branches = branches };
+    }
+
+    /// <summary>
+    /// Crea la cuenta y, si se dan códigos de sucursal, las asigna en la misma transacción.
+    /// Devuelve null si el correo ya existe (índice único ux_app_users_email_lower).
+    /// </summary>
+    public async Task<UserDetailView?> CreateUserAsync(
+        string email, string displayName, string password, string role,
+        IReadOnlyList<string>? branchCodes, CancellationToken ct)
+    {
+        var normalizedEmail = WebAuthService.NormalizeEmail(email);
+        var passwordHash = authService.HashPassword(
+            new DashboardUser(Guid.Empty, normalizedEmail, displayName, role), password);
+
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+
+        Guid userId;
+        await using (var insert = new NpgsqlCommand("""
+            INSERT INTO app_users (email, display_name, password_hash, role)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT DO NOTHING
+            RETURNING id;
+            """, connection, transaction))
+        {
+            insert.Parameters.AddWithValue(normalizedEmail);
+            insert.Parameters.AddWithValue(displayName);
+            insert.Parameters.AddWithValue(passwordHash);
+            insert.Parameters.AddWithValue(role);
+            if (await insert.ExecuteScalarAsync(ct) is not Guid id)
+            {
+                await transaction.RollbackAsync(ct);
+                return null;
+            }
+            userId = id;
+        }
+
+        await AssignBranchesWithinTransactionAsync(userId, branchCodes, connection, transaction, ct);
+
+        await transaction.CommitAsync(ct);
+        return await GetUserAsync(userId, ct);
+    }
+
+    /// <summary>Edita nombre y rol. Bloqueado si dejaría al sistema sin SUPERADMIN activo.</summary>
+    public async Task<UserMutationResult> UpdateUserAsync(
+        Guid id, string displayName, string role, CancellationToken ct)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+
+        var current = await LockUserAsync(id, connection, transaction, ct);
+        if (current is null)
+        {
+            await transaction.RollbackAsync(ct);
+            return UserMutationResult.NotFound;
+        }
+
+        var otherActiveSuperAdmins = await CountOtherActiveSuperAdminsAsync(id, connection, transaction, ct);
+        if (SuperAdminGuard.WouldRemoveLastActiveSuperAdmin(
+                current.Value.Role, current.Value.Active, role, newActive: null, otherActiveSuperAdmins))
+        {
+            await transaction.RollbackAsync(ct);
+            return UserMutationResult.BlockedLastSuperAdmin;
+        }
+
+        await using (var update = new NpgsqlCommand("""
+            UPDATE app_users SET display_name = $2, role = $3, updated_at = now() WHERE id = $1;
+            """, connection, transaction))
+        {
+            update.Parameters.AddWithValue(id);
+            update.Parameters.AddWithValue(displayName);
+            update.Parameters.AddWithValue(role);
+            await update.ExecuteNonQueryAsync(ct);
+        }
+
+        await transaction.CommitAsync(ct);
+        return UserMutationResult.Ok((await GetUserAsync(id, ct))!);
+    }
+
+    /// <summary>Activa/desactiva. Bloqueado si desactivaría al último SUPERADMIN activo.</summary>
+    public async Task<UserMutationResult> SetUserActiveAsync(Guid id, bool active, CancellationToken ct)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+
+        var current = await LockUserAsync(id, connection, transaction, ct);
+        if (current is null)
+        {
+            await transaction.RollbackAsync(ct);
+            return UserMutationResult.NotFound;
+        }
+
+        var otherActiveSuperAdmins = await CountOtherActiveSuperAdminsAsync(id, connection, transaction, ct);
+        if (SuperAdminGuard.WouldRemoveLastActiveSuperAdmin(
+                current.Value.Role, current.Value.Active, newRole: null, active, otherActiveSuperAdmins))
+        {
+            await transaction.RollbackAsync(ct);
+            return UserMutationResult.BlockedLastSuperAdmin;
+        }
+
+        await using (var update = new NpgsqlCommand(
+            "UPDATE app_users SET active = $2, updated_at = now() WHERE id = $1;", connection, transaction))
+        {
+            update.Parameters.AddWithValue(id);
+            update.Parameters.AddWithValue(active);
+            await update.ExecuteNonQueryAsync(ct);
+        }
+
+        await transaction.CommitAsync(ct);
+
+        // Corta cualquier sesión ya abierta de inmediato: no solo hacia adelante (el login y
+        // AuthenticateAsync ya filtran por active=true), sino también las pestañas abiertas.
+        if (!active) await authService.InvalidateSessionsAsync(id, ct);
+
+        return UserMutationResult.Ok((await GetUserAsync(id, ct))!);
+    }
+
+    /// <summary>Restablece la contraseña con el mismo hasher que login/bootstrap y revoca sesiones.</summary>
+    public async Task<UserDetailView?> ResetPasswordAsync(Guid id, string newPassword, CancellationToken ct)
+    {
+        var existing = await GetUserAsync(id, ct);
+        if (existing is null) return null;
+
+        var passwordHash = authService.HashPassword(
+            new DashboardUser(id, existing.Email, existing.DisplayName, existing.Role), newPassword);
+
+        await using (var command = dataSource.CreateCommand(
+            "UPDATE app_users SET password_hash = $2, updated_at = now() WHERE id = $1;"))
+        {
+            command.Parameters.AddWithValue(id);
+            command.Parameters.AddWithValue(passwordHash);
+            await command.ExecuteNonQueryAsync(ct);
+        }
+
+        await authService.InvalidateSessionsAsync(id, ct);
+        return existing;
+    }
+
+    /// <summary>Agrega sucursales (sin duplicar filas gracias a ON CONFLICT DO NOTHING). Null si el usuario no existe.</summary>
+    public async Task<UserDetailView?> AssignBranchesAsync(
+        Guid id, IReadOnlyList<string> branchCodes, CancellationToken ct)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+
+        await using (var exists = new NpgsqlCommand(
+            "SELECT 1 FROM app_users WHERE id = $1;", connection, transaction))
+        {
+            exists.Parameters.AddWithValue(id);
+            if (await exists.ExecuteScalarAsync(ct) is null)
+            {
+                await transaction.RollbackAsync(ct);
+                return null;
+            }
+        }
+
+        await AssignBranchesWithinTransactionAsync(id, branchCodes, connection, transaction, ct);
+        await transaction.CommitAsync(ct);
+        return await GetUserAsync(id, ct);
+    }
+
+    public async Task<bool> RemoveBranchAsync(Guid id, string branchCode, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            DELETE FROM app_user_branches
+            USING branches b
+            WHERE app_user_branches.branch_id = b.id
+              AND app_user_branches.user_id = $1
+              AND b.code = $2;
+            """);
+        command.Parameters.AddWithValue(id);
+        command.Parameters.AddWithValue(branchCode);
+        return await command.ExecuteNonQueryAsync(ct) == 1;
+    }
+
+    private static async Task AssignBranchesWithinTransactionAsync(
+        Guid userId,
+        IReadOnlyList<string>? branchCodes,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        CancellationToken ct)
+    {
+        if (branchCodes is not { Count: > 0 }) return;
+
+        // Set-based e idempotente: códigos que no correspondan a ninguna sucursal no
+        // producen fila (no hace falta validarlos antes) y ON CONFLICT evita duplicados
+        // en app_user_branches sin importar cuántas veces se repita un código.
+        await using var assign = new NpgsqlCommand("""
+            INSERT INTO app_user_branches (user_id, branch_id)
+            SELECT $1, b.id FROM branches b WHERE b.code = ANY($2::text[])
+            ON CONFLICT (user_id, branch_id) DO NOTHING;
+            """, connection, transaction);
+        assign.Parameters.AddWithValue(userId);
+        assign.Parameters.AddWithValue(branchCodes.ToArray());
+        await assign.ExecuteNonQueryAsync(ct);
+    }
+
+    private static async Task<(string Role, bool Active)?> LockUserAsync(
+        Guid id, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken ct)
+    {
+        await using var command = new NpgsqlCommand(
+            "SELECT role, active FROM app_users WHERE id = $1 FOR UPDATE;", connection, transaction);
+        command.Parameters.AddWithValue(id);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? (reader.GetString(0), reader.GetBoolean(1)) : null;
+    }
+
+    /// <summary>
+    /// Cuenta y bloquea (FOR UPDATE) las cuentas SUPERADMIN activas distintas de <paramref name="excludingId"/>,
+    /// dentro de la misma transacción que la fila objetivo ya bloqueada por <see cref="LockUserAsync"/>, para
+    /// que la comprobación del último SUPERADMIN sea atómica frente a cambios concurrentes.
+    /// </summary>
+    private static async Task<int> CountOtherActiveSuperAdminsAsync(
+        Guid excludingId, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken ct)
+    {
+        await using var command = new NpgsqlCommand("""
+            SELECT COUNT(*) FROM (
+                SELECT id FROM app_users
+                WHERE role = 'SUPERADMIN' AND active = true AND id <> $1
+                FOR UPDATE
+            ) locked;
+            """, connection, transaction);
+        command.Parameters.AddWithValue(excludingId);
+        return checked((int)(long)(await command.ExecuteScalarAsync(ct) ?? 0L));
+    }
+}

@@ -1,10 +1,8 @@
-using System.Text.RegularExpressions;
-
 namespace SoftRestaurant.CentralApi;
 
 internal sealed record DashboardLoginRequest(string Email, string Password);
 
-internal static partial class WebApiEndpoints
+internal static class WebApiEndpoints
 {
     public static void MapDashboardWebApi(this WebApplication app)
     {
@@ -124,10 +122,7 @@ internal static partial class WebApiEndpoints
     }
 
     private static IResult? ValidateBranchCode(string branchCode) =>
-        BranchCodePattern().IsMatch(branchCode)
+        BranchValidation.IsValidCode(branchCode)
             ? null
             : Results.BadRequest(new { error = "Código de sucursal inválido." });
-
-    [GeneratedRegex("^[a-z0-9][a-z0-9-]{1,62}$", RegexOptions.CultureInvariant)]
-    private static partial Regex BranchCodePattern();
 }

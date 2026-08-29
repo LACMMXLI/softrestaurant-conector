@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS app_users (
     email text NOT NULL,
     display_name text NOT NULL,
     password_hash text NOT NULL,
-    role text NOT NULL CHECK (role IN ('OWNER', 'MANAGER', 'VIEWER')),
+    role text NOT NULL CHECK (role IN ('SUPERADMIN', 'OWNER', 'MANAGER', 'VIEWER')),
     active boolean NOT NULL DEFAULT true,
     last_login_at timestamptz NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -180,12 +180,32 @@ CREATE TABLE IF NOT EXISTS app_users (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_app_users_email_lower ON app_users(lower(email));
 
+-- Migración compatible: bases existentes tienen el CHECK sin SUPERADMIN (panel admin del SaaS).
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'app_users_role_check'
+    ) THEN
+        ALTER TABLE app_users DROP CONSTRAINT app_users_role_check;
+    END IF;
+    ALTER TABLE app_users ADD CONSTRAINT app_users_role_check
+        CHECK (role IN ('SUPERADMIN', 'OWNER', 'MANAGER', 'VIEWER'));
+END $$;
+
+-- Relación muchos-a-muchos entre cuentas OWNER/MANAGER/VIEWER y las sucursales a las que
+-- tienen acceso. Ya la usa DashboardReportService para acotar /api/web/* a las sucursales
+-- asignadas; la fase de "gestión de usuarios" del panel admin reutilizará esta misma tabla
+-- para asignar/quitar sucursales a una cuenta en vez de crear un esquema nuevo.
 CREATE TABLE IF NOT EXISTS app_user_branches (
     user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     branch_id uuid NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, branch_id)
 );
+-- La PK (user_id, branch_id) ya cubre "sucursales de un usuario"; este índice cubre la
+-- consulta inversa ("qué usuarios tienen acceso a esta sucursal") que necesitará el
+-- detalle de sucursal del panel admin y, después, la pantalla de usuarios.
+CREATE INDEX IF NOT EXISTS ix_app_user_branches_branch ON app_user_branches(branch_id);
 
 CREATE TABLE IF NOT EXISTS app_sessions (
     token_hash text PRIMARY KEY,

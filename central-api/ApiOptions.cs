@@ -8,6 +8,8 @@ internal sealed record ApiOptions(
     string? LegacyBootstrapAgentToken,
     string? DashboardOwnerEmail,
     string? DashboardOwnerPassword,
+    string? DashboardAdminEmail,
+    string? DashboardAdminPassword,
     int DashboardSessionHours,
     int DashboardStaleMinutes)
 {
@@ -30,6 +32,14 @@ internal sealed record ApiOptions(
         if (!string.IsNullOrWhiteSpace(ownerPassword) && ownerPassword.Length < 12)
             throw new InvalidOperationException("DASHBOARD_OWNER_PASSWORD debe tener al menos 12 caracteres.");
 
+        var adminEmail = configuration["DASHBOARD_ADMIN_EMAIL"]?.Trim();
+        var adminPassword = configuration["DASHBOARD_ADMIN_PASSWORD"];
+        if (string.IsNullOrWhiteSpace(adminEmail) != string.IsNullOrWhiteSpace(adminPassword))
+            throw new InvalidOperationException(
+                "DASHBOARD_ADMIN_EMAIL y DASHBOARD_ADMIN_PASSWORD deben configurarse juntos.");
+        if (!string.IsNullOrWhiteSpace(adminPassword) && adminPassword.Length < 12)
+            throw new InvalidOperationException("DASHBOARD_ADMIN_PASSWORD debe tener al menos 12 caracteres.");
+
         var sessionHours = ReadPositiveInt(configuration["DASHBOARD_SESSION_HOURS"], 24, 1, 720);
         var staleMinutes = ReadPositiveInt(configuration["DASHBOARD_STALE_MINUTES"], 10, 1, 1440);
 
@@ -41,6 +51,8 @@ internal sealed record ApiOptions(
             configuration["LEGACY_BOOTSTRAP_AGENT_TOKEN"] ?? configuration["BOOTSTRAP_AGENT_TOKEN"],
             ownerEmail,
             ownerPassword,
+            adminEmail,
+            adminPassword,
             sessionHours,
             staleMinutes);
     }
