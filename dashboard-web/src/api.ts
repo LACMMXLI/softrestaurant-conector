@@ -2,6 +2,7 @@ import type {
   DashboardBranch,
   DashboardHome,
   DashboardUser,
+  CashMovementsPage,
   SalesPage,
   TicketDetail,
 } from './types'
@@ -59,6 +60,19 @@ export const api = {
     const params = new URLSearchParams({ branchCode, date, page: String(page), pageSize: '20' })
     if (search.trim()) params.set('search', search.trim())
     return request<SalesPage>(`/api/web/sales?${params}`, { signal })
+  },
+  cashMovements: (
+    branchCode: string,
+    date: string,
+    page: number,
+    type: number | null,
+    search: string,
+    signal?: AbortSignal,
+  ) => {
+    const params = new URLSearchParams({ branchCode, date, page: String(page), pageSize: '20' })
+    if (type !== null) params.set('type', String(type))
+    if (search.trim()) params.set('search', search.trim())
+    return request<CashMovementsPage>(`/api/web/cash-movements?${params}`, { signal })
   },
   ticket: (branchCode: string, folio: number, signal?: AbortSignal) =>
     request<TicketDetail>(`/api/web/sales/${encodeURIComponent(branchCode)}/${folio}`, { signal }),

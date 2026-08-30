@@ -72,7 +72,7 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
                   {detail.lines.map((line, index) => (
                     <div className="detail-row" key={`${line.productId ?? 'sin-id'}-${index}`}>
                       <div>
-                        <strong>{line.productId ? `ID ${line.productId}` : 'Producto sin identificador'}</strong>
+                        <strong>{line.productName || 'Nombre pendiente de sincronizar'}</strong>
                         <span>{line.quantity ?? '—'} × {formatAmount(line.price)}</span>
                         {line.comment ? <small>{line.comment}</small> : null}
                       </div>
@@ -81,7 +81,9 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
                   ))}
                 </div>
               )}
-              <p className="data-note">Los nombres se habilitarán cuando el catálogo real de productos esté sincronizado.</p>
+              {detail.lines.some((line) => !line.productName) ? (
+                <p className="data-note">Algunas líneas son anteriores a la sincronización del catálogo. Su nombre aparecerá al recibir nuevamente ese periodo desde la sucursal.</p>
+              ) : null}
             </section>
 
             <section className="sheet-section">
@@ -91,7 +93,7 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
                   {detail.payments.map((payment, index) => (
                     <div className="detail-row" key={`${payment.paymentMethodId ?? 'sin-id'}-${index}`}>
                       <div>
-                        <strong>{payment.paymentMethodId ? `Forma ${payment.paymentMethodId}` : 'Forma no registrada'}</strong>
+                        <strong>{payment.paymentMethodName || paymentTypeLabel(payment.paymentMethodType)}</strong>
                         {payment.cardBrand ? <span>{payment.cardBrand}</span> : null}
                         {payment.exchangeRate && payment.exchangeRate !== 1 ? <small>Tipo de cambio {payment.exchangeRate}</small> : null}
                       </div>
@@ -100,7 +102,9 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
                   ))}
                 </div>
               )}
-              <p className="data-note">Se muestra el identificador de origen hasta recibir el catálogo de formas de pago.</p>
+              {detail.payments.some((payment) => !payment.paymentMethodName && payment.paymentMethodType === null) ? (
+                <p className="data-note">La forma descriptiva de algunos pagos todavía no ha sido recibida desde la sucursal.</p>
+              ) : null}
             </section>
 
             <section className="sheet-section compact">
@@ -122,4 +126,12 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
       </dialog>
     </div>
   )
+}
+
+function paymentTypeLabel(type: number | null) {
+  if (type === 1) return 'Efectivo'
+  if (type === 2) return 'Tarjeta'
+  if (type === 3) return 'Vale'
+  if (type === 4) return 'Crédito u otro'
+  return 'Forma de pago pendiente'
 }

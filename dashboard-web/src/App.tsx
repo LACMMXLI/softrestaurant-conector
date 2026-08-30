@@ -196,7 +196,16 @@ export function App() {
           {tab === 'sales' ? (
             <SalesScreen key={`${branchCode}:${date}`} branchCode={branchCode} date={date} onOpenTicket={setSelectedFolio} onUnauthorized={becomeAnonymous} />
           ) : null}
-          {tab === 'operations' ? <OperationsScreen data={dashboard} loading={dashboardLoading} /> : null}
+          {tab === 'operations' ? (
+            <OperationsScreen
+              key={`${branchCode}:${date}`}
+              branchCode={branchCode}
+              date={date}
+              data={dashboard}
+              loading={dashboardLoading}
+              onUnauthorized={becomeAnonymous}
+            />
+          ) : null}
           {tab === 'more' ? <MoreScreen user={user} branch={currentBranch} dashboard={dashboard} onLogout={handleLogout} /> : null}
         </main>
 

@@ -41,6 +41,14 @@ export type DashboardSummary = {
   cancelledLines: number | null
   cashIn: number | null
   cashOut: number | null
+  cashSales: number | null
+  cardSales: number | null
+  otherSales: number | null
+  openingFund: number | null
+  declaredCash: number | null
+  expectedCash: number | null
+  cashDifference: number | null
+  paymentBreakdownComplete: boolean
   previousSales: number | null
   salesChangePercent: number | null
 }
@@ -102,6 +110,14 @@ export type SalesPage = {
   hasMore: boolean
 }
 
+export type CashMovementsPage = {
+  meta: DashboardMeta
+  items: CashMovementItem[]
+  page: number
+  pageSize: number
+  hasMore: boolean
+}
+
 export type TicketDetail = {
   ticket: SalesTicket
   station: string | null
@@ -111,6 +127,7 @@ export type TicketDetail = {
   cancelledBy: string | null
   lines: Array<{
     productId: string | null
+    productName: string | null
     quantity: number | null
     price: number | null
     discount: number | null
@@ -118,6 +135,8 @@ export type TicketDetail = {
   }>
   payments: Array<{
     paymentMethodId: string | null
+    paymentMethodName: string | null
+    paymentMethodType: number | null
     amount: number | null
     tip: number | null
     exchangeRate: number | null

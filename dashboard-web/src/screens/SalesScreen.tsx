@@ -56,8 +56,8 @@ export function SalesScreen({ branchCode, date, onOpenTicket, onUnauthorized }: 
     <div className="screen-stack">
       <section className="screen-title">
         <p className="utility-label">Detalle verificable</p>
-        <h1>Ventas y tickets</h1>
-        <p>Consulta los registros que forman los totales del día seleccionado.</p>
+        <h1>Todos los tickets</h1>
+        <p>Recorre página por página todos los registros que forman los totales del día seleccionado.</p>
       </section>
 
       <form className="search-form" onSubmit={submitSearch} role="search">
@@ -97,6 +97,10 @@ export function SalesScreen({ branchCode, date, onOpenTicket, onUnauthorized }: 
       ) : null}
       {result?.meta.canShowData && result.items.length > 0 ? (
         <section className="content-card tickets-card">
+          <div className="section-heading horizontal">
+            <div><p className="utility-label">Rastro completo</p><h2>Tickets registrados</h2></div>
+            <span className="page-badge">Página {page}</span>
+          </div>
           <div className="ticket-list">
             {result.items.map((ticket) => (
               <TicketRow key={ticket.folio} ticket={ticket} onOpen={onOpenTicket} />

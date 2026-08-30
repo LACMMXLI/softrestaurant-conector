@@ -60,6 +60,7 @@ internal static class Queries
             d.movimiento,
             d.comanda,
             d.idproducto,
+            p.descripcion AS productDescription,
             d.cantidad,
             d.precio,
             d.preciosinimpuestos,
@@ -71,6 +72,7 @@ internal static class Queries
             d.modificador
         FROM dbo.cheqdet AS d
         INNER JOIN dbo.cheques AS c ON c.folio = d.foliodet
+        LEFT JOIN dbo.productos AS p ON p.idproducto = d.idproducto
         WHERE c.fecha >= @Desde AND c.fecha < @Hasta
         ORDER BY d.foliodet, d.movimiento;
         """;
@@ -80,6 +82,8 @@ internal static class Queries
             cp.WorkspaceId,
             cp.folio,
             cp.idformadepago,
+            fp.descripcion AS paymentMethodDescription,
+            fp.tipo AS paymentMethodType,
             cp.importe,
             cp.propina,
             cp.tipodecambio,
@@ -88,6 +92,7 @@ internal static class Queries
             cp.idturno_cierre
         FROM dbo.chequespagos AS cp
         INNER JOIN dbo.cheques AS c ON c.folio = cp.folio
+        LEFT JOIN dbo.formasdepago AS fp ON fp.idformadepago = cp.idformadepago
         WHERE c.fecha >= @Desde AND c.fecha < @Hasta
         ORDER BY cp.folio;
         """;

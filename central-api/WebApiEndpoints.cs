@@ -103,6 +103,34 @@ internal static class WebApiEndpoints
             return result is null ? Results.NotFound() : Results.Ok(result);
         });
 
+        group.MapGet("/cash-movements", async (
+            HttpContext context,
+            string branchCode,
+            DateOnly date,
+            int? page,
+            int? pageSize,
+            int? type,
+            string? search,
+            WebAuthService auth,
+            DashboardReportService reports,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var safePage = Math.Max(page ?? 1, 1);
+            var safePageSize = Math.Clamp(pageSize ?? 20, 1, 50);
+            if (type is not null and not 1 and not 2)
+                return Results.BadRequest(new { error = "El tipo de movimiento debe ser entrada o salida." });
+            if (search?.Length > 100)
+                return Results.BadRequest(new { error = "La búsqueda admite máximo 100 caracteres." });
+
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var result = await reports.GetCashMovementsPageAsync(
+                user, branchCode, date, safePage, safePageSize, type, search, ct);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        });
+
         group.MapGet("/sales/{branchCode}/{folio:long}", async (
             HttpContext context,
             string branchCode,

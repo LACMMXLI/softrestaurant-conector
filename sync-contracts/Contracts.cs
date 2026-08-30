@@ -50,6 +50,7 @@ public sealed record SaleLine
     public int Movimiento { get; init; }
     public int? Comanda { get; init; }
     public string? IdProducto { get; init; }
+    public string? DescripcionProducto { get; init; }
     public decimal? Cantidad { get; init; }
     public decimal? Precio { get; init; }
     public decimal? PrecioSinImpuestos { get; init; }
@@ -70,6 +71,8 @@ public sealed record SalePayment
     public string? WorkspaceId { get; init; }
     public long Folio { get; init; }
     public string? IdFormaDePago { get; init; }
+    public string? DescripcionFormaDePago { get; init; }
+    public int? TipoFormaDePago { get; init; }
     public decimal? Importe { get; init; }
     public decimal? Propina { get; init; }
     public decimal? TipoDeCambio { get; init; }

@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Ban, Coins, Receipt, WalletCards } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Ban, Banknote, Coins, CreditCard, Equal, Landmark, Minus, Plus, Receipt, WalletCards } from 'lucide-react'
 import { EmptyState } from '../components/EmptyState'
 import { SalesChart } from '../components/SalesChart'
 import { StatusPill } from '../components/StatusPill'
@@ -94,6 +94,50 @@ export function DashboardScreen({
             <Metric icon={<Coins size={19} />} label="Propinas" value={formatAmount(summary.tips)} />
           </section>
 
+          <section className="content-card cash-cut-card" aria-labelledby="cash-cut-title">
+            <div className="section-heading horizontal">
+              <div>
+                <p className="utility-label">Corte estimado</p>
+                <h2 id="cash-cut-title">¿Cuánto efectivo debe haber?</h2>
+              </div>
+              <Banknote size={22} aria-hidden="true" />
+            </div>
+
+            {summary.paymentBreakdownComplete && summary.expectedCash !== null ? (
+              <>
+                <div className="cash-equation" aria-label="Fórmula del efectivo esperado">
+                  <EquationPart icon={<Landmark size={17} />} label="Fondo" value={summary.openingFund} />
+                  <Plus size={17} aria-label="más" />
+                  <EquationPart icon={<Banknote size={17} />} label="Efectivo vendido" value={summary.cashSales} />
+                  <Plus size={17} aria-label="más" />
+                  <EquationPart label="Entradas" value={summary.cashIn} />
+                  <Minus size={17} aria-label="menos" />
+                  <EquationPart label="Salidas" value={summary.cashOut} />
+                  <Equal size={17} aria-label="igual" />
+                  <div className="equation-result"><span>Efectivo esperado</span><strong>{formatAmount(summary.expectedCash)}</strong></div>
+                </div>
+
+                <div className="payment-breakdown" aria-label="Venta por tipo de pago">
+                  <div><Banknote size={17} /><span>Efectivo</span><strong>{formatAmount(summary.cashSales)}</strong></div>
+                  <div><CreditCard size={17} /><span>Tarjeta</span><strong>{formatAmount(summary.cardSales)}</strong></div>
+                  <div><WalletCards size={17} /><span>Otros</span><strong>{formatAmount(summary.otherSales)}</strong></div>
+                </div>
+
+                <div className="cash-reconciliation">
+                  <span>Declarado por cajeros: <strong>{formatAmount(summary.declaredCash)}</strong></span>
+                  <span className={summary.cashDifference === 0 ? 'balanced' : 'attention'}>
+                    Diferencia candidata: <strong>{formatAmount(summary.cashDifference)}</strong>
+                  </span>
+                </div>
+                <p className="data-note">Cálculo: fondo + cobros en efectivo + entradas − salidas. La diferencia es candidata hasta contrastarla con el corte impreso de SoftRestaurant.</p>
+              </>
+            ) : (
+              <div className="coverage-note" role="status">
+                El total de venta es válido, pero el catálogo de formas de pago aún no llegó en este periodo. No se estima la caja con información incompleta.
+              </div>
+            )}
+          </section>
+
           <section className="content-card chart-card">
             <SalesChart points={data.hourlySales} />
           </section>
@@ -141,6 +185,15 @@ export function DashboardScreen({
           </section>
         </>
       )}
+    </div>
+  )
+}
+
+function EquationPart({ icon, label, value }: { icon?: React.ReactNode; label: string; value: number | null }) {
+  return (
+    <div className="equation-part">
+      <span>{icon}{label}</span>
+      <strong>{formatAmount(value)}</strong>
     </div>
   )
 }
