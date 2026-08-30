@@ -290,6 +290,34 @@ begin
   end;
 end;
 
+// Ejecuta Exe+Params via cmd.exe redirigiendo stdout/stderr a un archivo temporal, para
+// poder mostrar el motivo real cuando un comando externo falla (icacls, takeown, etc.)
+// en vez de solo el codigo de salida. Devuelve False si ni siquiera se pudo lanzar cmd.exe.
+function RunCaptured(const Exe, Params: string; out ResultCode: Integer;
+  out OutputText: string): Boolean;
+var
+  LogPath, FullCommand, CmdLine: string;
+  Lines: TArrayOfString;
+  I: Integer;
+begin
+  LogPath := ExpandConstant('{tmp}') + '\srx-cmd-output.log';
+  DeleteFile(LogPath);
+
+  FullCommand := Exe + ' ' + Params + ' > "' + LogPath + '" 2>&1';
+  CmdLine := '/C "' + FullCommand + '"';
+
+  Result := Exec(ExpandConstant('{cmd}'), CmdLine, '', SW_HIDE,
+    ewWaitUntilTerminated, ResultCode);
+
+  OutputText := '';
+  if LoadStringsFromFile(LogPath, Lines) then
+  begin
+    for I := 0 to GetArrayLength(Lines) - 1 do
+      OutputText := OutputText + Lines[I] + #13#10;
+  end;
+  DeleteFile(LogPath);
+end;
+
 function RunSc(const Operation, Parameters: string; IgnoreFailure: Boolean): Boolean;
 var
   ResultCode: Integer;
@@ -360,19 +388,42 @@ end;
 procedure ConfigureAndStartService;
 var
   ExePath, DataRoot, ProtectedPath, EnvironmentBlock, RegistryPath,
-    ExpectedImagePath, RegisteredImagePath: string;
+    ExpectedImagePath, RegisteredImagePath, IcaclsParams, IcaclsOutput,
+    TakeownOutput: string;
   ResultCode: Integer;
 begin
   ExePath := ExpandConstant('{app}\{#AgentExe}');
   DataRoot := DataRootPath;
   RegistryPath := 'SYSTEM\CurrentControlSet\Services\' + AgentServiceName;
 
-  if not Exec(ExpandConstant('{sys}\icacls.exe'),
-    '"' + DataRoot + '" /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F"',
-    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  // Defensivo: [Dirs] ya debería haber creado esta carpeta, pero si por lo que sea
+  // no existe (antivirus, instalación previa corrupta) icacls fallaría igual con un
+  // mensaje confuso de "no se pudieron proteger los permisos".
+  ForceDirectories(DataRoot);
+
+  IcaclsParams := '"' + DataRoot + '" /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F"';
+
+  if not RunCaptured(ExpandConstant('{sys}\icacls.exe'), IcaclsParams, ResultCode, IcaclsOutput)
+    or (ResultCode <> 0) then
   begin
-    MsgBox('No se pudieron proteger los permisos de la configuración.', mbError, MB_OK);
-    Abort;
+    Log('icacls falló en el primer intento (código ' + IntToStr(ResultCode) + '): ' + IcaclsOutput);
+
+    // Causa más común en equipos con una instalación anterior: la carpeta quedó con un
+    // dueño/ACL que ya no permite al administrador actual cambiar los permisos. Forzar
+    // la propiedad con takeown.exe antes de reintentar suele resolverlo.
+    RunCaptured(ExpandConstant('{sys}\takeown.exe'), '/F "' + DataRoot + '" /R /D Y',
+      ResultCode, TakeownOutput);
+    Log('takeown (código ' + IntToStr(ResultCode) + '): ' + TakeownOutput);
+
+    if not RunCaptured(ExpandConstant('{sys}\icacls.exe'), IcaclsParams, ResultCode, IcaclsOutput)
+      or (ResultCode <> 0) then
+    begin
+      MsgBox('No se pudieron proteger los permisos de la configuración en:' + #13#10 +
+        DataRoot + #13#10#13#10 +
+        'Código: ' + IntToStr(ResultCode) + #13#10 +
+        IcaclsOutput, mbError, MB_OK);
+      Abort;
+    end;
   end;
 
   if ExistingConfigValid then
