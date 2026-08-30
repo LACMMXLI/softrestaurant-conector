@@ -59,6 +59,9 @@ var
   CredentialsPage: TInputQueryWizardPage;
   ActivationPage: TInputQueryWizardPage;
   DetectedIniPath: string;
+  DataRootPath: string;
+  ProtectedConfigPath: string;
+  ExistingConfigValid: Boolean;
 
 function StripQuotes(Value: string): string;
 begin
@@ -139,10 +142,41 @@ begin
   end;
 end;
 
+function CheckExistingConfig: Boolean;
+var
+  ExeForCheck: string;
+  ResultCode: Integer;
+begin
+  Result := False;
+  DataRootPath := ExpandConstant('{commonappdata}\SoftRestaurantSyncAgent');
+  ProtectedConfigPath := DataRootPath + '\agent-settings.dpapi';
+  ExeForCheck := ExpandConstant('{app}\{#AgentExe}');
+
+  { Solo hay algo que reutilizar si el equipo ya tiene la config protegida Y el ejecutable
+    de una instalación previa (para poder pedirle que la valide/descifre). En instalación
+    nueva ninguno de los dos existe todavía y esto sigue el flujo normal del asistente. }
+  if not FileExists(ProtectedConfigPath) then
+    Exit;
+  if not FileExists(ExeForCheck) then
+    Exit;
+
+  Log('Verificando configuración existente en: ' + ProtectedConfigPath);
+  if Exec(ExeForCheck, '--config-status "' + ProtectedConfigPath + '"', '', SW_HIDE,
+    ewWaitUntilTerminated, ResultCode) then
+    Result := (ResultCode = 0);
+
+  if Result then
+    Log('Configuración existente válida detectada; se conservará sin pedir datos nuevos.')
+  else
+    Log('No se detectó configuración existente reutilizable; se pedirán los datos normalmente.');
+end;
+
 procedure InitializeWizard;
 var
   SqlServer, SqlDatabase, DetectionText: string;
 begin
+  ExistingConfigValid := CheckExistingConfig;
+
   DetectSoftRestaurant(SqlServer, SqlDatabase);
   if DetectedIniPath <> '' then
     DetectionText := 'Se detectó SoftRestaurant en:' + #13#10 + DetectedIniPath
@@ -175,6 +209,15 @@ begin
   ActivationPage.Add('Clave de activación:', True);
   ActivationPage.Add('Nombre de este equipo:', False);
   ActivationPage.Values[1] := GetComputerNameString;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  { Actualización sobre un equipo ya configurado: no volver a pedir servidor, base,
+    usuario, contraseña ni clave de activación. La configuración protegida existente
+    se conserva intacta (ver ConfigureAndStartService). }
+  Result := ExistingConfigValid and
+    ((PageID = DatabasePage.ID) or (PageID = CredentialsPage.ID) or (PageID = ActivationPage.ID));
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -304,7 +347,7 @@ var
   ResultCode: Integer;
 begin
   ExePath := ExpandConstant('{app}\{#AgentExe}');
-  DataRoot := ExpandConstant('{commonappdata}\SoftRestaurantSyncAgent');
+  DataRoot := DataRootPath;
   RegistryPath := 'SYSTEM\CurrentControlSet\Services\' + AgentServiceName;
 
   if not Exec(ExpandConstant('{sys}\icacls.exe'),
@@ -315,7 +358,21 @@ begin
     Abort;
   end;
 
-  ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
+  if ExistingConfigValid then
+  begin
+    { Actualización: NO se toca el archivo protegido existente (activación, SQL,
+      tokens). Solo se reutiliza su ruta para apuntar el servicio nuevo a él. }
+    ProtectedPath := ProtectedConfigPath;
+    if not FileExists(ProtectedPath) then
+    begin
+      MsgBox('No se encontró la configuración existente esperada en ' + ProtectedPath +
+        '. Cancela la instalación y contacta a soporte antes de continuar.', mbError, MB_OK);
+      Abort;
+    end;
+    Log('Actualización: se conserva la configuración protegida existente sin modificarla: ' + ProtectedPath);
+  end
+  else
+    ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
   { sc.exe necesita que el valor completo de binPath sea un argumento entre comillas
     y que las comillas internas de la ruta del ejecutable lleguen escapadas. Sin este
     formato devuelve ERROR_INVALID_COMMAND_LINE (1639) cuando la ruta contiene espacios. }
@@ -372,6 +429,22 @@ function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo,
 var
   DetectionSummary: string;
 begin
+  if ExistingConfigValid then
+  begin
+    Result :=
+      'Instalación:' + NewLine +
+      '  ' + ExpandConstant('{app}') + NewLine + NewLine +
+      'Conector:' + NewLine +
+      '  Se detectó una configuración existente en este equipo (' + ProtectedConfigPath + ').' + NewLine +
+      '  Se conservará tal cual: activación, servidor, base, usuario, contraseña,' + NewLine +
+      '  token del backend y la cola local de sincronización NO se modifican.' + NewLine + NewLine +
+      'Backend:' + NewLine +
+      '  ' + AgentApiUrl + NewLine + NewLine +
+      'Se actualizará el servicio "SoftRestaurant Sync Agent" a esta versión sin pedir' + NewLine +
+      'ni sobrescribir ningún dato de configuración.';
+    Exit;
+  end;
+
   if DetectedIniPath <> '' then
     DetectionSummary := 'Detectado desde: ' + DetectedIniPath + NewLine
   else

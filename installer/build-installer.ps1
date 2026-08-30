@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string] $Version = '1.1.2',
+    [string] $Version = '1.2.0',
     [string] $ApiUrl = 'https://softrestaurant-api.fatboymexicali.com',
     [switch] $TestBuild
 )

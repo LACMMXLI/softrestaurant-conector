@@ -23,6 +23,30 @@ if (args.Length > 0 && args[0] == "--protect-config")
     }
 }
 
+if (args.Length > 0 && args[0] == "--config-status")
+{
+    // Usado por el instalador para decidir, en una actualización, si ya existe una
+    // configuración protegida completa en este equipo (conexión SQL + credencial o
+    // clave de activación) y por lo tanto no debe volver a pedirla ni sobrescribirla.
+    var configStatusPath = args.Length > 1 ? args[1] : null;
+    try
+    {
+        if (!ProtectedSettings.TryLoadValid(configStatusPath, out var reason))
+        {
+            Console.Error.WriteLine($"Configuración existente no utilizable: {reason}");
+            return 1;
+        }
+
+        Console.WriteLine("Configuración existente válida y completa.");
+        return 0;
+    }
+    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+    {
+        Console.Error.WriteLine($"No se pudo leer la configuración existente: {ex.Message}");
+        return 1;
+    }
+}
+
 if (args.Length > 0 && args[0] == "--import-connector-credential")
 {
     if (args.Length != 2)

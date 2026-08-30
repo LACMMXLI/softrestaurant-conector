@@ -22,6 +22,37 @@ credencial fuera comprometida. La contraseña y el token se guardan cifrados con
 la máquina local en `%ProgramData%\SoftRestaurantSyncAgent\agent-settings.dpapi`. El Registro
 del servicio contiene únicamente la ruta de ese archivo.
 
+## Persistencia de la configuración entre actualizaciones (desde 1.2.0)
+
+Toda la configuración específica de un equipo (activación, ID de conector/instalación,
+sucursal, servidor/base SQL, usuario y contraseña SQL, token del backend, y la cola SQLite
+con el estado de sincronización) vive **fuera** de la carpeta de instalación (`{app}`,
+normalmente `Program Files`), en `%ProgramData%\SoftRestaurantSyncAgent`. El instalador solo
+copia binarios (`.exe`/`.dll`) dentro de `{app}`; nunca ha tocado `%ProgramData%` al actualizar
+archivos, así que esa carpeta ya sobrevivía a un `[Files]` nuevo.
+
+El problema que existía antes de 1.2.0 era otro: el asistente **siempre** pedía servidor, base,
+usuario, contraseña y clave de activación, y al terminar la instalación siempre volvía a
+cifrar y sobrescribir `agent-settings.dpapi` con esos valores — incluida una clave de
+activación de un solo uso ya usada, lo que rompía la reactivación en cada actualización.
+
+Desde 1.2.0, al iniciar el asistente el instalador ejecuta
+`SoftRestaurant.Extractor.exe --config-status "<agent-settings.dpapi>"` usando el ejecutable
+de la instalación previa (si existe). Si ese comando confirma que ya hay una configuración
+completa y descifrable (conexión SQL + token o clave de activación), el instalador:
+
+- Omite por completo las páginas de servidor/base, usuario/contraseña y activación.
+- **No** vuelve a generar ni sobrescribir `agent-settings.dpapi`; reutiliza el archivo tal cual está.
+- Solo reemplaza los binarios en `{app}` y recrea el servicio de Windows apuntando al mismo
+  archivo protegido de siempre.
+
+Si no detecta una configuración previa válida (instalación nueva, o el archivo no se puede
+descifrar en este equipo), el asistente pide los datos normalmente, igual que antes.
+
+No hace falta ninguna migración de ubicación: la carpeta de datos siempre fue
+`%ProgramData%\SoftRestaurantSyncAgent`, y sigue siéndolo. Un `agent-settings.dpapi` generado
+por una instalación 1.1.x ya es compatible con `--config-status` de 1.2.0+.
+
 ## Compilar una prueba
 
 ```powershell

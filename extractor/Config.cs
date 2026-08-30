@@ -349,6 +349,75 @@ internal static class ProtectedSettings
         }
     }
 
+    /// <summary>
+    /// Comprueba, sin lanzar excepciones, si ya existe en este equipo una configuración
+    /// protegida completa (conexión SQL + credencial/activación). La usa el instalador
+    /// para decidir si una actualización puede reutilizar la configuración existente en
+    /// lugar de pedirla de nuevo.
+    /// </summary>
+    public static bool TryLoadValid(string? path, out string reason)
+    {
+        reason = "";
+        var actualPath = string.IsNullOrWhiteSpace(path) ? GetPath() : path;
+
+        if (!File.Exists(actualPath))
+        {
+            reason = "no existe el archivo de configuración protegida";
+            return false;
+        }
+        if (!OperatingSystem.IsWindows())
+        {
+            reason = "DPAPI requiere Windows";
+            return false;
+        }
+
+        Dictionary<string, string>? settings;
+        try
+        {
+            var protectedBytes = File.ReadAllBytes(actualPath);
+            var plaintext = ProtectedData.Unprotect(protectedBytes, null, DataProtectionScope.LocalMachine);
+            try
+            {
+                settings = JsonSerializer.Deserialize<Dictionary<string, string>>(plaintext);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(plaintext);
+            }
+        }
+        catch (CryptographicException)
+        {
+            reason = "no se pudo descifrar (¿archivo de otra máquina o usuario?)";
+            return false;
+        }
+        catch (JsonException)
+        {
+            reason = "el contenido descifrado no es JSON válido";
+            return false;
+        }
+
+        if (settings is null)
+        {
+            reason = "la configuración protegida está vacía";
+            return false;
+        }
+
+        bool Has(string key) => settings.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value);
+
+        if (!Has("SRX_SQL_SERVER") || !Has("SRX_SQL_DATABASE"))
+        {
+            reason = "faltan datos de conexión SQL";
+            return false;
+        }
+        if (!Has("SRX_AGENT_TOKEN") && !Has("SRX_ACTIVATION_KEY"))
+        {
+            reason = "falta la credencial o la clave de activación del conector";
+            return false;
+        }
+
+        return true;
+    }
+
     private static string GetPath() =>
         Environment.GetEnvironmentVariable("SRX_PROTECTED_CONFIG") ?? DefaultPath;
 }
