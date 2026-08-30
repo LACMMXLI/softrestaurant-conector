@@ -175,7 +175,14 @@ procedure InitializeWizard;
 var
   SqlServer, SqlDatabase, DetectionText: string;
 begin
-  ExistingConfigValid := CheckExistingConfig;
+  // OJO: la constante app todavia NO esta inicializada aqui (InitializeWizard
+  // corre antes de mostrar la pagina wpSelectDir). CheckExistingConfig usa
+  // ExpandConstant de esa constante, asi que se pospone hasta
+  // NextButtonClick(wpSelectDir), justo cuando ya tiene el valor confirmado
+  // por el usuario. Hacerlo aqui provoca el error de Inno Setup "An attempt
+  // was made to expand the 'app' constant before it was initialized" en
+  // equipos con instalacion previa (unica ruta que ejercita CheckExistingConfig).
+  ExistingConfigValid := False;
 
   DetectSoftRestaurant(SqlServer, SqlDatabase);
   if DetectedIniPath <> '' then
@@ -223,6 +230,16 @@ end;
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
+
+  if CurPageID = wpSelectDir then
+  begin
+    // Primer punto donde la constante app ya esta inicializada con el valor
+    // confirmado por el usuario; aqui es seguro llamar a CheckExistingConfig
+    // (ver el comentario en InitializeWizard).
+    ExistingConfigValid := CheckExistingConfig;
+    Exit;
+  end;
+
   if CurPageID = DatabasePage.ID then
   begin
     if Trim(DatabasePage.Values[0]) = '' then
