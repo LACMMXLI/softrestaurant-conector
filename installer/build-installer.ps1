@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string] $Version = '1.2.0',
-    [string] $ApiUrl = 'https://restaurant-agent-api.fatboymexicali.com',
+    [string] $ApiUrl = 'https://sqqbfzv19zq0zhoika57ctbl.fatboymexicali.com',
     [switch] $TestBuild
 )
 
@@ -31,6 +31,7 @@ dotnet publish (Join-Path $workspaceRoot 'extractor\RestaurantAgent.Extractor.cs
     -c Release `
     -r win-x64 `
     --self-contained true `
+    -p:Version=$Version `
     -p:PublishSingleFile=true `
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:DebugType=None `
@@ -47,6 +48,7 @@ dotnet publish (Join-Path $workspaceRoot 'extractor-ui\RestaurantAgent.Extractor
     -c Release `
     -r win-x64 `
     --self-contained true `
+    -p:Version=$Version `
     -p:PublishSingleFile=true `
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:DebugType=None `

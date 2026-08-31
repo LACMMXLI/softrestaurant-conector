@@ -1,9 +1,9 @@
-import { ArrowDownRight, ArrowUpRight, Ban, Banknote, Coins, CreditCard, Equal, Landmark, Minus, Plus, Receipt, WalletCards } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Ban, Banknote, Coins, CreditCard, Equal, Hourglass, Landmark, Minus, Plus, Receipt, WalletCards } from 'lucide-react'
 import { EmptyState } from '../components/EmptyState'
 import { SalesChart } from '../components/SalesChart'
 import { StatusPill } from '../components/StatusPill'
 import { TicketRow } from '../components/TicketRow'
-import { formatAmount, formatInteger, timeAgo } from '../format'
+import { formatAmount, formatInteger, formatTime, timeAgo } from '../format'
 import type { DashboardHome } from '../types'
 
 type DashboardScreenProps = {
@@ -35,7 +35,7 @@ export function DashboardScreen({
   if (!data) return null
 
   const { meta, summary } = data
-  const comparison = summary.salesChangePercent
+  const comparison = meta.shiftIsOpen ? null : summary.salesChangePercent
 
   return (
     <div className="screen-stack">
@@ -55,9 +55,13 @@ export function DashboardScreen({
         </div>
 
         <div className="pulse-amount">
-          <span>Venta registrada</span>
-          <strong>{formatAmount(summary.sales)}</strong>
-          <small>Importe de cabeceras válidas · moneda de la sucursal</small>
+          <span>{meta.shiftIsOpen ? 'Actividad actual del turno' : 'Venta cerrada'}</span>
+          <strong>{formatAmount(meta.shiftIsOpen ? summary.currentActivity : summary.sales)}</strong>
+          <small>
+            {meta.shiftIsOpen
+              ? `Venta cerrada ${formatAmount(summary.sales)} + cuentas abiertas ${formatAmount(summary.openAccountsTotal)}`
+              : 'Importe de tickets pagados, no cancelados y cerrados'}
+          </small>
         </div>
 
         <div className="pulse-divider" aria-hidden="true" />
@@ -70,7 +74,7 @@ export function DashboardScreen({
               {Math.abs(comparison).toFixed(1)}% vs. día anterior
             </span>
           ) : (
-            <span>Comparación no disponible</span>
+            <span>{meta.shiftIsOpen ? 'Comparación disponible al cerrar el turno' : 'Comparación no disponible'}</span>
           )}
         </div>
       </section>
@@ -89,10 +93,45 @@ export function DashboardScreen({
       ) : (
         <>
           <section className="metric-strip" aria-label="Indicadores principales">
-            <Metric icon={<Receipt size={19} />} label="Tickets" value={formatInteger(summary.tickets)} />
+            <Metric icon={<Receipt size={19} />} label="Tickets cerrados" value={formatInteger(summary.tickets)} />
+            {meta.shiftIsOpen ? <Metric icon={<Hourglass size={19} />} label="Cuentas transitorias" value={formatInteger(summary.openAccounts)} /> : null}
             <Metric icon={<WalletCards size={19} />} label="Promedio" value={formatAmount(summary.averageTicket)} />
             <Metric icon={<Coins size={19} />} label="Propinas" value={formatAmount(summary.tips)} />
           </section>
+
+          {meta.shiftIsOpen ? (
+            <section className="content-card tickets-card" aria-labelledby="open-accounts-title">
+              <div className="section-heading horizontal">
+                <div>
+                  <p className="utility-label">Estado transitorio de RestaurantAgent</p>
+                  <h2 id="open-accounts-title">Cuentas abiertas / transitorias</h2>
+                </div>
+                <strong>{formatAmount(summary.openAccountsTotal)}</strong>
+              </div>
+              {data.openAccounts.length > 0 ? (
+                <div className="ticket-list">
+                  {data.openAccounts.map((account) => (
+                    <div className="ticket-row transient-row" key={`${account.tempFolio}:${account.checkNumber ?? ''}`}>
+                      <span className="ticket-status-rail" data-state="open" />
+                      <span className="ticket-main">
+                        <span className="ticket-title">Cuenta {account.checkNumber || `temporal ${account.tempFolio}`}</span>
+                        <span className="ticket-meta">
+                          {formatTime(account.openedAt)}
+                          {account.table ? ` · Mesa ${account.table}` : ''}
+                          {account.waiter ? ` · Mesero ${account.waiter}` : ''}
+                        </span>
+                      </span>
+                      <strong>{formatAmount(account.total)}</strong>
+                      <span className="transient-badge">{account.paid ? 'Pagada · en proceso' : 'Abierta'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="quiet-empty">No hay cuentas transitorias para este turno.</p>
+              )}
+              <p className="data-note">Estas cuentas todavía pueden cambiar o cancelarse. No se consideran venta definitiva hasta pasar a tickets cerrados.</p>
+            </section>
+          ) : null}
 
           <section className="content-card cash-cut-card" aria-labelledby="cash-cut-title">
             <div className="section-heading horizontal">

@@ -13,6 +13,7 @@
 **/publish/
 installer/.build/
 installer/dist/
+installer/build-config.iss
 dashboard-web/node_modules/
 dashboard-web/dist/
 admin-web/node_modules/
@@ -27,6 +28,7 @@ admin-web/dist/
 *.db-wal
 **/data/
 /control.ini
+/validation-tempcheques/
 
 # Estado local de ejecucion
 .runtime/

@@ -12,6 +12,10 @@ public sealed record SyncBatch
     public List<SaleHeader> Sales { get; init; } = [];
     public List<SaleLine> Lines { get; init; } = [];
     public List<SalePayment> Payments { get; init; } = [];
+    public bool TransientSnapshotComplete { get; init; }
+    public List<TransientSaleHeader> TransientSales { get; init; } = [];
+    public List<TransientSaleLine> TransientLines { get; init; } = [];
+    public List<TransientSalePayment> TransientPayments { get; init; } = [];
     public List<Shift> Shifts { get; init; } = [];
     public List<CashierDeclaration> CashierDeclarations { get; init; } = [];
     public List<CashMovement> CashMovements { get; init; } = [];

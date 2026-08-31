@@ -92,6 +92,75 @@ internal sealed class Extractor(string connectionString, DateTime desde, DateTim
         return result;
     }
 
+    public async Task<List<TransientSaleHeader>> ExtractTransientSalesAsync(CancellationToken ct)
+    {
+        var result = new List<TransientSaleHeader>();
+        await ForEachRowAsync(Queries.TempCheques, r => result.Add(new TransientSaleHeader
+        {
+            WorkspaceId = r.GetStringOrNull("WorkspaceId"),
+            TempFolio = r.GetInt64("folio"),
+            NumCheque = r.GetStringOrNull("numcheque"),
+            Fecha = r.GetDateTimeOrNull("fecha"),
+            Cierre = r.GetDateTimeOrNull("cierre"),
+            Pagado = r.GetBool("pagado"),
+            Cancelado = r.GetBool("cancelado"),
+            IdTurno = r.GetInt32OrNull("idturno"),
+            CuentaEnUso = r.GetBool("cuentaenuso"),
+            CuentaPagadaProcesada = r.GetBoolOrNull("cuentapagadaprocesada"),
+            Estacion = r.GetStringOrNull("estacion"),
+            Mesa = r.GetStringOrNull("mesa"),
+            IdMesero = r.GetStringOrNull("idmesero"),
+            UsuarioPago = r.GetStringOrNull("usuariopago"),
+            Subtotal = r.GetDecimalOrNull("subtotal"),
+            Total = r.GetDecimalOrNull("total"),
+            Propina = r.GetDecimalOrNull("propina")
+        }), ct);
+        return result;
+    }
+
+    public async Task<List<TransientSaleLine>> ExtractTransientSaleLinesAsync(CancellationToken ct)
+    {
+        var result = new List<TransientSaleLine>();
+        await ForEachRowAsync(Queries.TempCheqDet, r => result.Add(new TransientSaleLine
+        {
+            WorkspaceId = r.GetStringOrNull("WorkspaceId"),
+            HeaderWorkspaceId = r.GetStringOrNull("headerWorkspaceId"),
+            TempFolio = r.GetInt64("foliodet"),
+            IdTurno = r.GetInt32OrNull("idturno"),
+            Movimiento = r.GetInt32("movimiento"),
+            Comanda = r.GetInt32OrNull("comanda"),
+            IdProducto = r.GetStringOrNull("idproducto"),
+            DescripcionProducto = r.GetStringOrNull("productDescription"),
+            Cantidad = r.GetDecimalOrNull("cantidad"),
+            Precio = r.GetDecimalOrNull("precio"),
+            Descuento = r.GetDecimalOrNull("descuento"),
+            Hora = r.GetDateTimeOrNull("hora"),
+            Comentario = r.GetStringOrNull("comentario")
+        }), ct);
+        return result;
+    }
+
+    public async Task<List<TransientSalePayment>> ExtractTransientSalePaymentsAsync(CancellationToken ct)
+    {
+        var result = new List<TransientSalePayment>();
+        await ForEachRowAsync(Queries.TempChequesPagos, r => result.Add(new TransientSalePayment
+        {
+            WorkspaceId = r.GetStringOrNull("WorkspaceId"),
+            HeaderWorkspaceId = r.GetStringOrNull("headerWorkspaceId"),
+            TempFolio = r.GetInt64("folio"),
+            IdTurno = r.GetInt32OrNull("idturno"),
+            IdFormaDePago = r.GetStringOrNull("idformadepago"),
+            DescripcionFormaDePago = r.GetStringOrNull("paymentMethodDescription"),
+            TipoFormaDePago = r.GetInt32OrNull("paymentMethodType"),
+            Importe = r.GetDecimalOrNull("importe"),
+            Propina = r.GetDecimalOrNull("propina"),
+            TipoDeCambio = r.GetDecimalOrNull("tipodecambio"),
+            Referencia = r.GetStringOrNull("referencia"),
+            CardBrand = r.GetStringOrNull("cardBrand")
+        }), ct);
+        return result;
+    }
+
     public async Task<List<Shift>> ExtractShiftsAsync(CancellationToken ct)
     {
         var result = new List<Shift>();

@@ -16,6 +16,8 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Sales, SalesSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Lines, LinesSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Payments, PaymentsSql, ct);
+        if (batch.TransientSnapshotComplete)
+            await ApplyTransientSnapshotAsync(connection, transaction, branchId, batch, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Shifts, ShiftsSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.CashierDeclarations, DeclarationsSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.CashMovements, CashMovementsSql, ct);
@@ -39,6 +41,10 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
             sales = batch.Sales.Count,
             lines = batch.Lines.Count,
             payments = batch.Payments.Count,
+            transientSales = batch.TransientSales.Count,
+            transientLines = batch.TransientLines.Count,
+            transientPayments = batch.TransientPayments.Count,
+            transientSnapshotComplete = batch.TransientSnapshotComplete,
             shifts = batch.Shifts.Count,
             cashDeclarations = batch.CashierDeclarations.Count,
             cashMovements = batch.CashMovements.Count,
@@ -83,6 +89,79 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         await transaction.CommitAsync(ct);
     }
 
+    private static async Task ApplyTransientSnapshotAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid branchId,
+        SyncBatch batch,
+        CancellationToken ct)
+    {
+        await using (var ensureState = new NpgsqlCommand("""
+            INSERT INTO transient_snapshot_state (branch_id, last_created_at, last_batch_id)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (branch_id) DO NOTHING;
+            """, connection, transaction))
+        {
+            ensureState.Parameters.AddWithValue(branchId);
+            ensureState.Parameters.AddWithValue(batch.CreatedAtUtc);
+            ensureState.Parameters.AddWithValue(batch.BatchId);
+            await ensureState.ExecuteNonQueryAsync(ct);
+        }
+
+        DateTime lastCreatedAt;
+        await using (var lockState = new NpgsqlCommand("""
+            SELECT last_created_at
+            FROM transient_snapshot_state
+            WHERE branch_id = $1
+            FOR UPDATE;
+            """, connection, transaction))
+        {
+            lockState.Parameters.AddWithValue(branchId);
+            lastCreatedAt = (DateTime)(await lockState.ExecuteScalarAsync(ct))!;
+        }
+        if (batch.CreatedAtUtc < lastCreatedAt) return;
+
+        await ExecuteSnapshotJsonAsync(connection, transaction, branchId, batch.BatchId,
+            batch.TransientSales, TransientSalesSql, ct);
+        await ExecuteSnapshotJsonAsync(connection, transaction, branchId, batch.BatchId,
+            batch.TransientLines, TransientLinesSql, ct);
+        await ExecuteSnapshotJsonAsync(connection, transaction, branchId, batch.BatchId,
+            batch.TransientPayments, TransientPaymentsSql, ct);
+
+        await using (var reconcile = new NpgsqlCommand("""
+            DELETE FROM transient_sales ts
+            WHERE ts.branch_id = $1
+              AND (ts.snapshot_id <> $2 OR EXISTS (
+                  SELECT 1 FROM sales s
+                  WHERE s.branch_id = ts.branch_id
+                    AND s.source_shift_id = ts.source_shift_id
+                    AND s.source_temp_folio = ts.source_temp_folio
+                    AND s.source_temp_folio IS NOT NULL));
+
+            DELETE FROM transient_sale_lines tl
+            WHERE tl.branch_id = $1
+              AND (tl.snapshot_id <> $2 OR NOT EXISTS (
+                  SELECT 1 FROM transient_sales ts
+                  WHERE ts.branch_id = tl.branch_id AND ts.idempotency_key = tl.header_key));
+
+            DELETE FROM transient_sale_payments tp
+            WHERE tp.branch_id = $1
+              AND (tp.snapshot_id <> $2 OR NOT EXISTS (
+                  SELECT 1 FROM transient_sales ts
+                  WHERE ts.branch_id = tp.branch_id AND ts.idempotency_key = tp.header_key));
+
+            UPDATE transient_snapshot_state
+            SET last_created_at = $3, last_batch_id = $2, updated_at = now()
+            WHERE branch_id = $1;
+            """, connection, transaction))
+        {
+            reconcile.Parameters.AddWithValue(branchId);
+            reconcile.Parameters.AddWithValue(batch.BatchId);
+            reconcile.Parameters.AddWithValue(batch.CreatedAtUtc);
+            await reconcile.ExecuteNonQueryAsync(ct);
+        }
+    }
+
     private static async Task ExecuteJsonAsync<T>(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
@@ -98,14 +177,32 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         await command.ExecuteNonQueryAsync(ct);
     }
 
+    private static async Task ExecuteSnapshotJsonAsync<T>(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid branchId,
+        string snapshotId,
+        List<T> values,
+        string sql,
+        CancellationToken ct)
+    {
+        if (values.Count == 0) return;
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue(branchId);
+        command.Parameters.AddWithValue(JsonSerializer.Serialize(values, JsonOptions));
+        command.Parameters.AddWithValue(snapshotId);
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
     private const string SalesSql = """
         INSERT INTO sales
-            (branch_id, idempotency_key, source_folio, source_shift_id, business_date, closed_at,
+            (branch_id, idempotency_key, source_folio, source_shift_id, source_temp_folio, business_date, closed_at,
              paid, cancelled, total, tip, payload)
         SELECT $1,
                item->>'idempotencyKey',
                (item->>'folio')::bigint,
                NULLIF(item->>'idTurno', '')::integer,
+               NULLIF(item->>'foliotTempCheques', '')::bigint,
                NULLIF(item->>'fecha', '')::timestamp,
                NULLIF(item->>'cierre', '')::timestamp,
                COALESCE((item->>'pagado')::boolean, false),
@@ -117,6 +214,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         ON CONFLICT (branch_id, idempotency_key) DO UPDATE
         SET source_folio = excluded.source_folio,
             source_shift_id = excluded.source_shift_id,
+            source_temp_folio = excluded.source_temp_folio,
             business_date = excluded.business_date,
             closed_at = excluded.closed_at,
             paid = excluded.paid,
@@ -124,6 +222,95 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
             total = excluded.total,
             tip = excluded.tip,
             payload = excluded.payload,
+            updated_at = now();
+        """;
+
+    private const string TransientSalesSql = """
+        INSERT INTO transient_sales
+            (branch_id, idempotency_key, source_temp_folio, source_shift_id, check_number,
+             opened_at, closed_at, paid, cancelled, total, tip, payload, snapshot_id)
+        SELECT $1,
+               item->>'idempotencyKey',
+               (item->>'tempFolio')::bigint,
+               NULLIF(item->>'idTurno', '')::integer,
+               NULLIF(item->>'numCheque', ''),
+               NULLIF(item->>'fecha', '')::timestamp,
+               NULLIF(item->>'cierre', '')::timestamp,
+               COALESCE((item->>'pagado')::boolean, false),
+               COALESCE((item->>'cancelado')::boolean, false),
+               NULLIF(item->>'total', '')::numeric,
+               NULLIF(item->>'propina', '')::numeric,
+               item,
+               $3
+        FROM jsonb_array_elements($2::jsonb) AS item
+        ON CONFLICT (branch_id, idempotency_key) DO UPDATE
+        SET source_temp_folio = excluded.source_temp_folio,
+            source_shift_id = excluded.source_shift_id,
+            check_number = excluded.check_number,
+            opened_at = excluded.opened_at,
+            closed_at = excluded.closed_at,
+            paid = excluded.paid,
+            cancelled = excluded.cancelled,
+            total = excluded.total,
+            tip = excluded.tip,
+            payload = excluded.payload,
+            snapshot_id = excluded.snapshot_id,
+            updated_at = now();
+        """;
+
+    private const string TransientLinesSql = """
+        INSERT INTO transient_sale_lines
+            (branch_id, idempotency_key, header_key, source_temp_folio, source_shift_id,
+             product_id, quantity, price, payload, snapshot_id)
+        SELECT $1,
+               item->>'idempotencyKey',
+               item->>'headerKey',
+               (item->>'tempFolio')::bigint,
+               NULLIF(item->>'idTurno', '')::integer,
+               item->>'idProducto',
+               NULLIF(item->>'cantidad', '')::numeric,
+               NULLIF(item->>'precio', '')::numeric,
+               item,
+               $3
+        FROM jsonb_array_elements($2::jsonb) AS item
+        ON CONFLICT (branch_id, idempotency_key) DO UPDATE
+        SET header_key = excluded.header_key,
+            source_temp_folio = excluded.source_temp_folio,
+            source_shift_id = excluded.source_shift_id,
+            product_id = excluded.product_id,
+            quantity = excluded.quantity,
+            price = excluded.price,
+            payload = excluded.payload,
+            snapshot_id = excluded.snapshot_id,
+            updated_at = now();
+        """;
+
+    private const string TransientPaymentsSql = """
+        INSERT INTO transient_sale_payments
+            (branch_id, idempotency_key, header_key, source_temp_folio, source_shift_id,
+             payment_method, amount, tip, exchange_rate, payload, snapshot_id)
+        SELECT $1,
+               item->>'idempotencyKey',
+               item->>'headerKey',
+               (item->>'tempFolio')::bigint,
+               NULLIF(item->>'idTurno', '')::integer,
+               item->>'idFormaDePago',
+               NULLIF(item->>'importe', '')::numeric,
+               NULLIF(item->>'propina', '')::numeric,
+               NULLIF(item->>'tipoDeCambio', '')::numeric,
+               item,
+               $3
+        FROM jsonb_array_elements($2::jsonb) AS item
+        ON CONFLICT (branch_id, idempotency_key) DO UPDATE
+        SET header_key = excluded.header_key,
+            source_temp_folio = excluded.source_temp_folio,
+            source_shift_id = excluded.source_shift_id,
+            payment_method = excluded.payment_method,
+            amount = excluded.amount,
+            tip = excluded.tip,
+            exchange_rate = excluded.exchange_rate,
+            payload = excluded.payload,
+            snapshot_id = excluded.snapshot_id,
             updated_at = now();
         """;
 

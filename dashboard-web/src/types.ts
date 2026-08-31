@@ -76,6 +76,7 @@ export type DashboardMeta = {
   canShowData: boolean
   shiftId: number | null
   shiftNumber: number | null
+  shiftIsOpen: boolean
 }
 
 export type DashboardShift = {
@@ -106,6 +107,9 @@ export type DashboardSummary = {
   paymentBreakdownComplete: boolean
   previousSales: number | null
   salesChangePercent: number | null
+  openAccounts: number | null
+  openAccountsTotal: number | null
+  currentActivity: number | null
 }
 
 export type HourlySalesPoint = {
@@ -124,6 +128,18 @@ export type SalesTicket = {
   paid: boolean
   cancelled: boolean
   table: string | null
+  paymentUser: string | null
+}
+
+export type TransientAccount = {
+  tempFolio: number
+  checkNumber: string | null
+  openedAt: string | null
+  total: number | null
+  tip: number | null
+  paid: boolean
+  table: string | null
+  waiter: string | null
   paymentUser: string | null
 }
 
@@ -153,6 +169,7 @@ export type DashboardHome = {
   summary: DashboardSummary
   hourlySales: HourlySalesPoint[]
   recentTickets: SalesTicket[]
+  openAccounts: TransientAccount[]
   recentCancellations: CancellationItem[]
   recentCashMovements: CashMovementItem[]
 }

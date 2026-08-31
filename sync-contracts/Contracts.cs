@@ -43,6 +43,89 @@ public sealed record SaleHeader
         : $"{IdEmpresa}:{Folio}";
 }
 
+/// <summary>
+/// Snapshot de una cuenta que todavía vive en dbo.tempcheques. No representa una
+/// venta definitiva: puede cambiar, cancelarse o desaparecer cuando SoftRestaurant
+/// la traslada a dbo.cheques.
+/// </summary>
+public sealed record TransientSaleHeader
+{
+    public string? WorkspaceId { get; init; }
+    public long TempFolio { get; init; }
+    public string? NumCheque { get; init; }
+    public DateTime? Fecha { get; init; }
+    public DateTime? Cierre { get; init; }
+    public bool Pagado { get; init; }
+    public bool Cancelado { get; init; }
+    public int? IdTurno { get; init; }
+    public bool CuentaEnUso { get; init; }
+    public bool? CuentaPagadaProcesada { get; init; }
+    public string? Estacion { get; init; }
+    public string? Mesa { get; init; }
+    public string? IdMesero { get; init; }
+    public string? UsuarioPago { get; init; }
+    public decimal? Subtotal { get; init; }
+    public decimal? Total { get; init; }
+    public decimal? Propina { get; init; }
+
+    public string IdempotencyKey => IdTurno is > 0
+        ? $"{IdTurno}:{TempFolio}"
+        : !string.IsNullOrWhiteSpace(WorkspaceId)
+            ? $"sin-turno:{WorkspaceId}"
+            : $"sin-turno:{TempFolio}";
+}
+
+public sealed record TransientSaleLine
+{
+    public string? WorkspaceId { get; init; }
+    public string? HeaderWorkspaceId { get; init; }
+    public long TempFolio { get; init; }
+    public int? IdTurno { get; init; }
+    public int Movimiento { get; init; }
+    public int? Comanda { get; init; }
+    public string? IdProducto { get; init; }
+    public string? DescripcionProducto { get; init; }
+    public decimal? Cantidad { get; init; }
+    public decimal? Precio { get; init; }
+    public decimal? Descuento { get; init; }
+    public DateTime? Hora { get; init; }
+    public string? Comentario { get; init; }
+
+    public string HeaderKey => IdTurno is > 0
+        ? $"{IdTurno}:{TempFolio}"
+        : !string.IsNullOrWhiteSpace(HeaderWorkspaceId)
+            ? $"sin-turno:{HeaderWorkspaceId}"
+            : $"sin-turno:{TempFolio}";
+    public string IdempotencyKey => !string.IsNullOrWhiteSpace(WorkspaceId)
+        ? WorkspaceId!
+        : $"{HeaderKey}:{Movimiento}:{Comanda}";
+}
+
+public sealed record TransientSalePayment
+{
+    public string? WorkspaceId { get; init; }
+    public string? HeaderWorkspaceId { get; init; }
+    public long TempFolio { get; init; }
+    public int? IdTurno { get; init; }
+    public string? IdFormaDePago { get; init; }
+    public string? DescripcionFormaDePago { get; init; }
+    public int? TipoFormaDePago { get; init; }
+    public decimal? Importe { get; init; }
+    public decimal? Propina { get; init; }
+    public decimal? TipoDeCambio { get; init; }
+    public string? Referencia { get; init; }
+    public string? CardBrand { get; init; }
+
+    public string HeaderKey => IdTurno is > 0
+        ? $"{IdTurno}:{TempFolio}"
+        : !string.IsNullOrWhiteSpace(HeaderWorkspaceId)
+            ? $"sin-turno:{HeaderWorkspaceId}"
+            : $"sin-turno:{TempFolio}";
+    public string IdempotencyKey => !string.IsNullOrWhiteSpace(WorkspaceId)
+        ? WorkspaceId!
+        : $"{HeaderKey}:{IdFormaDePago}:{Importe}:{Referencia}";
+}
+
 public sealed record SaleLine
 {
     public string? WorkspaceId { get; init; }

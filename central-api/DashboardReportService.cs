@@ -28,7 +28,8 @@ internal sealed record DashboardMeta(
     string Coverage,
     bool CanShowData,
     int? ShiftId,
-    int? ShiftNumber);
+    int? ShiftNumber,
+    bool ShiftIsOpen);
 
 internal sealed record DashboardShift(
     int Id,
@@ -56,7 +57,10 @@ internal sealed record DashboardSummary(
     decimal? CashDifference,
     bool PaymentBreakdownComplete,
     decimal? PreviousSales,
-    decimal? SalesChangePercent);
+    decimal? SalesChangePercent,
+    long? OpenAccounts,
+    decimal? OpenAccountsTotal,
+    decimal? CurrentActivity);
 
 internal sealed record HourlySalesPoint(int Hour, decimal Sales, long Tickets);
 
@@ -70,6 +74,17 @@ internal sealed record SalesTicketItem(
     bool Paid,
     bool Cancelled,
     string? Table,
+    string? PaymentUser);
+
+internal sealed record TransientAccountItem(
+    long TempFolio,
+    string? CheckNumber,
+    DateTime? OpenedAt,
+    decimal? Total,
+    decimal? Tip,
+    bool Paid,
+    string? Table,
+    string? Waiter,
     string? PaymentUser);
 
 internal sealed record TicketLineItem(
@@ -123,6 +138,7 @@ internal sealed record DashboardHomeResponse(
     DashboardSummary Summary,
     IReadOnlyList<HourlySalesPoint> HourlySales,
     IReadOnlyList<SalesTicketItem> RecentTickets,
+    IReadOnlyList<TransientAccountItem> OpenAccounts,
     IReadOnlyList<CancellationItem> RecentCancellations,
     IReadOnlyList<CashMovementItem> RecentCashMovements);
 
@@ -254,21 +270,24 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 [],
                 [],
                 [],
+                [],
                 []);
         }
 
         var summaryTask = GetSummaryAsync(meta, ct);
         var hourlyTask = GetHourlySalesAsync(meta, ct);
         var ticketsTask = GetTicketItemsAsync(meta, page: 1, pageSize: 6, search: null, ct);
+        var openAccountsTask = GetTransientAccountItemsAsync(meta, limit: 20, ct);
         var cancellationsTask = GetCancellationsAsync(meta, limit: 5, ct);
         var cashTask = GetCashMovementItemsAsync(meta, page: 1, pageSize: 5, type: null, search: null, ct);
-        await Task.WhenAll(summaryTask, hourlyTask, ticketsTask, cancellationsTask, cashTask);
+        await Task.WhenAll(summaryTask, hourlyTask, ticketsTask, openAccountsTask, cancellationsTask, cashTask);
 
         return new DashboardHomeResponse(
             meta,
             await summaryTask,
             await hourlyTask,
             (await ticketsTask).Items,
+            await openAccountsTask,
             await cancellationsTask,
             (await cashTask).Items);
     }
@@ -420,9 +439,15 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using var command = dataSource.CreateCommand("""
             SELECT b.id, b.code, b.name, b.timezone, b.last_sync_at,
                    sb.id, sb.range_start, sb.range_end, sb.reconciliation_ok,
-                   (SELECT NULLIF(s.payload->>'idTurno', '')::integer
-                    FROM shifts s WHERE s.branch_id = b.id AND s.source_shift_id = $5 LIMIT 1)
+                   selected_shift.shift_number, selected_shift.is_open
             FROM branches b
+            LEFT JOIN LATERAL (
+                SELECT COALESCE(s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer) AS shift_number,
+                       s.closed_at IS NULL AS is_open
+                FROM shifts s
+                WHERE s.branch_id = b.id AND s.source_shift_id = $5
+                LIMIT 1
+            ) selected_shift ON true
             LEFT JOIN LATERAL (
                 SELECT id, range_start, range_end, reconciliation_ok
                 FROM sync_batches
@@ -469,7 +494,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             coverage,
             reconciliationOk == true && coverage is "complete" or "partial",
             shiftId,
-            reader.IsDBNull(9) ? null : reader.GetInt32(9));
+            reader.IsDBNull(9) ? null : reader.GetInt32(9),
+            !reader.IsDBNull(10) && reader.GetBoolean(10));
     }
 
     private async Task<(Guid Id, string Timezone)?> GetBranchIdentityAsync(
@@ -624,6 +650,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             ? Math.Round((sales - previousSales.Value) / previousSales.Value * 100m, 1)
             : null;
 
+        var (openAccounts, openAccountsTotal) = await GetTransientSummaryAsync(meta, ct);
+
         return new DashboardSummary(
             reader.GetInt64(0),
             sales,
@@ -642,7 +670,76 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             cashDifference,
             paymentBreakdownComplete,
             previousSales,
-            change);
+            change,
+            openAccounts,
+            openAccountsTotal,
+            sales + openAccountsTotal);
+    }
+
+    private async Task<(long Count, decimal Total)> GetTransientSummaryAsync(
+        DashboardMeta meta,
+        CancellationToken ct)
+    {
+        if (!meta.ShiftIsOpen || meta.ShiftNumber is null) return (0, 0);
+        await using var command = dataSource.CreateCommand("""
+            SELECT COUNT(*), COALESCE(SUM(ts.total), 0)
+            FROM transient_sales ts
+            WHERE ts.branch_id = $1
+              AND ts.source_shift_id = $2
+              AND NOT ts.cancelled
+              AND NOT EXISTS (
+                  SELECT 1 FROM sales s
+                  WHERE s.branch_id = ts.branch_id
+                    AND s.source_shift_id = ts.source_shift_id
+                    AND s.source_temp_folio = ts.source_temp_folio);
+            """);
+        command.Parameters.AddWithValue(meta.BranchId);
+        command.Parameters.AddWithValue(meta.ShiftNumber.Value);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        await reader.ReadAsync(ct);
+        return (reader.GetInt64(0), reader.GetDecimal(1));
+    }
+
+    private async Task<IReadOnlyList<TransientAccountItem>> GetTransientAccountItemsAsync(
+        DashboardMeta meta,
+        int limit,
+        CancellationToken ct)
+    {
+        if (!meta.ShiftIsOpen || meta.ShiftNumber is null) return [];
+        await using var command = dataSource.CreateCommand("""
+            SELECT ts.source_temp_folio, ts.check_number, ts.opened_at, ts.total, ts.tip,
+                   ts.paid, ts.payload->>'mesa', ts.payload->>'idMesero', ts.payload->>'usuarioPago'
+            FROM transient_sales ts
+            WHERE ts.branch_id = $1
+              AND ts.source_shift_id = $2
+              AND NOT ts.cancelled
+              AND NOT EXISTS (
+                  SELECT 1 FROM sales s
+                  WHERE s.branch_id = ts.branch_id
+                    AND s.source_shift_id = ts.source_shift_id
+                    AND s.source_temp_folio = ts.source_temp_folio)
+            ORDER BY ts.opened_at DESC NULLS LAST, ts.source_temp_folio DESC
+            LIMIT $3;
+            """);
+        command.Parameters.AddWithValue(meta.BranchId);
+        command.Parameters.AddWithValue(meta.ShiftNumber.Value);
+        command.Parameters.AddWithValue(limit);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var items = new List<TransientAccountItem>();
+        while (await reader.ReadAsync(ct))
+        {
+            items.Add(new TransientAccountItem(
+                reader.GetInt64(0),
+                ReadNullableString(reader, 1),
+                ReadNullableDateTime(reader, 2),
+                ReadNullableDecimal(reader, 3),
+                ReadNullableDecimal(reader, 4),
+                reader.GetBoolean(5),
+                ReadNullableString(reader, 6),
+                ReadNullableString(reader, 7),
+                ReadNullableString(reader, 8)));
+        }
+        return items;
     }
 
     private async Task<IReadOnlyList<HourlySalesPoint>> GetHourlySalesAsync(
@@ -837,7 +934,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
 
     private static readonly DashboardSummary EmptySummary =
         new(null, null, null, null, null, null, null, null,
-            null, null, null, null, null, null, null, false, null, null);
+            null, null, null, null, null, null, null, false, null, null,
+            null, null, null);
 
     private static string? ReadNullableString(NpgsqlDataReader reader, int ordinal) =>
         reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);

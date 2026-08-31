@@ -53,6 +53,73 @@ internal static class Queries
         ORDER BY c.folio;
         """;
 
+    // tempcheques es una tabla de estado actual, no histórica. Se extrae completa en cada
+    // ciclo para que el servidor pueda retirar cuentas que cambiaron, se cancelaron o ya
+    // fueron trasladadas a cheques.
+    public const string TempCheques = """
+        SELECT
+            t.WorkspaceId,
+            t.folio,
+            t.numcheque,
+            t.fecha,
+            t.cierre,
+            t.pagado,
+            t.cancelado,
+            t.idturno,
+            t.cuentaenuso,
+            t.cuentapagadaprocesada,
+            t.estacion,
+            t.mesa,
+            t.idmesero,
+            t.usuariopago,
+            t.subtotal,
+            t.total,
+            t.propina
+        FROM dbo.tempcheques AS t
+        ORDER BY t.folio;
+        """;
+
+    public const string TempCheqDet = """
+        SELECT
+            d.WorkspaceId,
+            t.WorkspaceId AS headerWorkspaceId,
+            d.foliodet,
+            t.idturno,
+            d.movimiento,
+            d.comanda,
+            d.idproducto,
+            p.descripcion AS productDescription,
+            d.cantidad,
+            d.precio,
+            d.descuento,
+            d.hora,
+            d.comentario
+        FROM dbo.tempcheqdet AS d
+        INNER JOIN dbo.tempcheques AS t ON t.folio = d.foliodet
+        LEFT JOIN dbo.productos AS p ON p.idproducto = d.idproducto
+        ORDER BY d.foliodet, d.movimiento;
+        """;
+
+    public const string TempChequesPagos = """
+        SELECT
+            tp.WorkspaceId,
+            t.WorkspaceId AS headerWorkspaceId,
+            tp.folio,
+            t.idturno,
+            tp.idformadepago,
+            fp.descripcion AS paymentMethodDescription,
+            fp.tipo AS paymentMethodType,
+            tp.importe,
+            tp.propina,
+            tp.tipodecambio,
+            tp.referencia,
+            tp.cardBrand
+        FROM dbo.tempchequespagos AS tp
+        INNER JOIN dbo.tempcheques AS t ON t.folio = tp.folio
+        LEFT JOIN dbo.formasdepago AS fp ON fp.idformadepago = tp.idformadepago
+        ORDER BY tp.folio, tp.idformadepago;
+        """;
+
     public const string CheqDet = """
         SELECT
             d.WorkspaceId,

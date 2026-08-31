@@ -11,6 +11,9 @@ internal sealed record ExtractionResult(
     List<SaleHeader> Sales,
     List<SaleLine> Lines,
     List<SalePayment> Payments,
+    List<TransientSaleHeader> TransientSales,
+    List<TransientSaleLine> TransientLines,
+    List<TransientSalePayment> TransientPayments,
     List<Shift> Shifts,
     List<CashierDeclaration> CashierDeclarations,
     List<CashMovement> CashMovements,
@@ -34,17 +37,24 @@ internal static class ExtractionJob
         var sales = await extractor.ExtractSalesAsync(ct);
         var lines = await extractor.ExtractSaleLinesAsync(ct);
         var payments = await extractor.ExtractSalePaymentsAsync(ct);
+        var transientSales = await extractor.ExtractTransientSalesAsync(ct);
+        var transientLines = await extractor.ExtractTransientSaleLinesAsync(ct);
+        var transientPayments = await extractor.ExtractTransientSalePaymentsAsync(ct);
         var shifts = await extractor.ExtractShiftsAsync(ct);
         var declarations = await extractor.ExtractCashierDeclarationsAsync(ct);
         var cashMovements = await extractor.ExtractCashMovementsAsync(ct);
         var cancellations = await extractor.ExtractCancellationsAsync(ct);
 
         Console.WriteLine($"  ventas={sales.Count}, líneas={lines.Count}, pagos={payments.Count}, turnos={shifts.Count}");
+        Console.WriteLine($"  transitorias={transientSales.Count}, líneas transitorias={transientLines.Count}, pagos transitorios={transientPayments.Count}");
         Console.WriteLine($"  declaraciones={declarations.Count}, caja={cashMovements.Count}, cancelaciones={cancellations.Count}");
 
         EnsureUnique("ventas", sales.Select(x => x.IdempotencyKey));
         EnsureUnique("líneas", lines.Select(x => x.IdempotencyKey));
         EnsureUnique("pagos", payments.Select(x => x.IdempotencyKey));
+        EnsureUnique("cuentas transitorias", transientSales.Select(x => x.IdempotencyKey));
+        EnsureUnique("líneas transitorias", transientLines.Select(x => x.IdempotencyKey));
+        EnsureUnique("pagos transitorios", transientPayments.Select(x => x.IdempotencyKey));
         EnsureUnique("turnos", shifts.Select(x => x.IdempotencyKey));
         EnsureUnique("movimientos de caja", cashMovements.Select(x => x.IdempotencyKey));
 
@@ -55,6 +65,9 @@ internal static class ExtractionJob
         await WriteJsonAsync("ventas.json", sales, cfg.OutputDirectory, ct);
         await WriteJsonAsync("lineas.json", lines, cfg.OutputDirectory, ct);
         await WriteJsonAsync("pagos.json", payments, cfg.OutputDirectory, ct);
+        await WriteJsonAsync("cuentas_transitorias.json", transientSales, cfg.OutputDirectory, ct);
+        await WriteJsonAsync("lineas_transitorias.json", transientLines, cfg.OutputDirectory, ct);
+        await WriteJsonAsync("pagos_transitorios.json", transientPayments, cfg.OutputDirectory, ct);
         await WriteJsonAsync("turnos.json", shifts, cfg.OutputDirectory, ct);
         await WriteJsonAsync("declaraciones_cajero.json", declarations, cfg.OutputDirectory, ct);
         await WriteJsonAsync("movimientos_caja.json", cashMovements, cfg.OutputDirectory, ct);
@@ -62,7 +75,7 @@ internal static class ExtractionJob
         await WriteJsonAsync("reconciliacion.json", reconciliation, cfg.OutputDirectory, ct);
 
         return new ExtractionResult(
-            desde, hasta, sales, lines, payments, shifts, declarations,
+            desde, hasta, sales, lines, payments, transientSales, transientLines, transientPayments, shifts, declarations,
             cashMovements, cancellations, reconciliation);
     }
 
@@ -116,6 +129,10 @@ internal static class ExtractionJob
             Sales = result.Sales,
             Lines = result.Lines,
             Payments = result.Payments,
+            TransientSnapshotComplete = true,
+            TransientSales = result.TransientSales,
+            TransientLines = result.TransientLines,
+            TransientPayments = result.TransientPayments,
             Shifts = result.Shifts,
             CashierDeclarations = result.CashierDeclarations,
             CashMovements = result.CashMovements,

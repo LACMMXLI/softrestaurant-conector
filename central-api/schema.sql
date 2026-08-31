@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS sales (
     idempotency_key text NOT NULL,
     source_folio bigint NOT NULL,
     source_shift_id integer NULL,
+    source_temp_folio bigint NULL,
     business_date timestamp NULL,
     closed_at timestamp NULL,
     paid boolean NOT NULL,
@@ -102,8 +103,16 @@ CREATE TABLE IF NOT EXISTS sales (
     PRIMARY KEY (branch_id, idempotency_key)
 );
 ALTER TABLE sales ADD COLUMN IF NOT EXISTS source_shift_id integer NULL;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS source_temp_folio bigint NULL;
+UPDATE sales
+SET source_temp_folio = NULLIF(payload->>'foliotTempCheques', '')::bigint
+WHERE source_temp_folio IS NULL
+  AND NULLIF(payload->>'foliotTempCheques', '') IS NOT NULL;
 CREATE INDEX IF NOT EXISTS ix_sales_branch_date ON sales(branch_id, business_date);
 CREATE INDEX IF NOT EXISTS ix_sales_branch_folio ON sales(branch_id, source_folio);
+CREATE INDEX IF NOT EXISTS ix_sales_branch_shift_temp
+    ON sales(branch_id, source_shift_id, source_temp_folio)
+    WHERE source_temp_folio IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS sale_lines (
     branch_id uuid NOT NULL REFERENCES branches(id),
@@ -117,7 +126,6 @@ CREATE TABLE IF NOT EXISTS sale_lines (
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (branch_id, idempotency_key)
 );
-ALTER TABLE cash_movements ADD COLUMN IF NOT EXISTS source_shift_id integer NULL;
 CREATE INDEX IF NOT EXISTS ix_sale_lines_branch_folio ON sale_lines(branch_id, source_folio);
 
 CREATE TABLE IF NOT EXISTS sale_payments (
@@ -161,6 +169,7 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     branch_id uuid NOT NULL REFERENCES branches(id),
     idempotency_key text NOT NULL,
     source_folio bigint NOT NULL,
+    source_shift_id integer NULL,
     movement_date timestamp NULL,
     movement_type integer NOT NULL,
     amount numeric(18,4) NULL,
@@ -169,7 +178,76 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (branch_id, idempotency_key)
 );
+ALTER TABLE cash_movements ADD COLUMN IF NOT EXISTS source_shift_id integer NULL;
 CREATE INDEX IF NOT EXISTS ix_cash_movements_branch_date ON cash_movements(branch_id, movement_date);
+
+-- Snapshot actual de dbo.tempcheques. Estas filas son transitorias y nunca se mezclan
+-- físicamente con sales; desaparecen al dejar de formar parte del snapshot o cuando la
+-- venta definitiva llega con (idturno, foliotempcheques).
+CREATE TABLE IF NOT EXISTS transient_sales (
+    branch_id uuid NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+    idempotency_key text NOT NULL,
+    source_temp_folio bigint NOT NULL,
+    source_shift_id integer NULL,
+    check_number text NULL,
+    opened_at timestamp NULL,
+    closed_at timestamp NULL,
+    paid boolean NOT NULL,
+    cancelled boolean NOT NULL,
+    total numeric(18,4) NULL,
+    tip numeric(18,4) NULL,
+    payload jsonb NOT NULL,
+    snapshot_id text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (branch_id, idempotency_key)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_transient_sales_branch_shift_folio
+    ON transient_sales(branch_id, source_shift_id, source_temp_folio)
+    WHERE source_shift_id IS NOT NULL AND source_shift_id > 0;
+CREATE INDEX IF NOT EXISTS ix_transient_sales_branch_shift
+    ON transient_sales(branch_id, source_shift_id);
+
+CREATE TABLE IF NOT EXISTS transient_sale_lines (
+    branch_id uuid NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+    idempotency_key text NOT NULL,
+    header_key text NOT NULL,
+    source_temp_folio bigint NOT NULL,
+    source_shift_id integer NULL,
+    product_id text NULL,
+    quantity numeric(18,4) NULL,
+    price numeric(18,4) NULL,
+    payload jsonb NOT NULL,
+    snapshot_id text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (branch_id, idempotency_key)
+);
+CREATE INDEX IF NOT EXISTS ix_transient_lines_header
+    ON transient_sale_lines(branch_id, header_key);
+
+CREATE TABLE IF NOT EXISTS transient_sale_payments (
+    branch_id uuid NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+    idempotency_key text NOT NULL,
+    header_key text NOT NULL,
+    source_temp_folio bigint NOT NULL,
+    source_shift_id integer NULL,
+    payment_method text NULL,
+    amount numeric(18,4) NULL,
+    tip numeric(18,4) NULL,
+    exchange_rate numeric(18,6) NULL,
+    payload jsonb NOT NULL,
+    snapshot_id text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (branch_id, idempotency_key)
+);
+CREATE INDEX IF NOT EXISTS ix_transient_payments_header
+    ON transient_sale_payments(branch_id, header_key);
+
+CREATE TABLE IF NOT EXISTS transient_snapshot_state (
+    branch_id uuid PRIMARY KEY REFERENCES branches(id) ON DELETE CASCADE,
+    last_created_at timestamptz NOT NULL,
+    last_batch_id text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
 
 CREATE TABLE IF NOT EXISTS cancellation_summaries (
     branch_id uuid NOT NULL REFERENCES branches(id),
