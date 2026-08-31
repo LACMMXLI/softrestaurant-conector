@@ -229,7 +229,7 @@ export function App() {
                 if (next?.openedAt) setDate(next.openedAt.slice(0, 10))
               }}>
                 {shifts.length === 0 ? <option value="">Sin turnos sincronizados</option> : null}
-                {shifts.map((shift) => <option value={shift.id} key={shift.id}>{shift.isOpen ? 'Abierto' : 'Cerrado'} · #{shift.id} · {shift.cashier || 'Sin cajero'}</option>)}
+                {shifts.map((shift) => <option value={shift.id} key={shift.id}>{shift.isOpen ? 'Abierto' : 'Cerrado'} · Turno {shift.number} · {shift.cashier || 'Sin cajero'}</option>)}
               </select>
             </label>
             <button className="icon-button refresh-button" type="button" onClick={() => setRefreshKey((value) => value + 1)} aria-label="Actualizar datos">

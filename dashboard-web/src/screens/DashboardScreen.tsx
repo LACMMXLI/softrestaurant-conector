@@ -49,7 +49,7 @@ export function DashboardScreen({
         <div className="pulse-topline">
           <div>
             <p className="utility-label">Corte en movimiento</p>
-            <h2 id="pulse-title">Turno #{meta.shiftId ?? 'seleccionado'}</h2>
+            <h2 id="pulse-title">Turno {meta.shiftNumber ?? 'seleccionado'}</h2>
           </div>
           <StatusPill freshness={meta.freshness} coverage={meta.coverage} />
         </div>

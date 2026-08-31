@@ -75,10 +75,12 @@ export type DashboardMeta = {
   coverage: 'complete' | 'partial' | 'missing' | 'invalid'
   canShowData: boolean
   shiftId: number | null
+  shiftNumber: number | null
 }
 
 export type DashboardShift = {
   id: number
+  number: number
   openedAt: string | null
   closedAt: string | null
   cashier: string | null

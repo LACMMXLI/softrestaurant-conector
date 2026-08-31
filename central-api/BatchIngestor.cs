@@ -105,7 +105,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         SELECT $1,
                item->>'idempotencyKey',
                (item->>'folio')::bigint,
-               NULLIF(item->>'idTurnoInterno', '')::integer,
+               NULLIF(item->>'idTurno', '')::integer,
                NULLIF(item->>'fecha', '')::timestamp,
                NULLIF(item->>'cierre', '')::timestamp,
                COALESCE((item->>'pagado')::boolean, false),

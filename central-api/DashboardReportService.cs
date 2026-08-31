@@ -27,10 +27,12 @@ internal sealed record DashboardMeta(
     string Freshness,
     string Coverage,
     bool CanShowData,
-    int? ShiftId);
+    int? ShiftId,
+    int? ShiftNumber);
 
 internal sealed record DashboardShift(
     int Id,
+    int Number,
     DateTime? OpenedAt,
     DateTime? ClosedAt,
     string? Cashier,
@@ -190,8 +192,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         DashboardUser user, string branchCode, CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""
-            SELECT s.source_shift_id, s.opened_at, s.closed_at,
-                   s.payload->>'cajero', s.closed_at IS NULL
+            SELECT s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer,
+                   s.opened_at, s.closed_at, s.payload->>'cajero', s.closed_at IS NULL
             FROM shifts s
             INNER JOIN branches b ON b.id = s.branch_id
             WHERE b.active = true AND b.code = $1
@@ -204,8 +206,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using var reader = await command.ExecuteReaderAsync(ct);
         var result = new List<DashboardShift>();
         while (await reader.ReadAsync(ct))
-            result.Add(new DashboardShift(reader.GetInt32(0), ReadNullableDateTime(reader, 1),
-                ReadNullableDateTime(reader, 2), ReadNullableString(reader, 3), reader.GetBoolean(4)));
+            result.Add(new DashboardShift(reader.GetInt32(0), reader.GetInt32(1), ReadNullableDateTime(reader, 2),
+                ReadNullableDateTime(reader, 3), ReadNullableString(reader, 4), reader.GetBoolean(5)));
         return result;
     }
 
@@ -417,7 +419,9 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var end = start.AddDays(1);
         await using var command = dataSource.CreateCommand("""
             SELECT b.id, b.code, b.name, b.timezone, b.last_sync_at,
-                   sb.id, sb.range_start, sb.range_end, sb.reconciliation_ok
+                   sb.id, sb.range_start, sb.range_end, sb.reconciliation_ok,
+                   (SELECT NULLIF(s.payload->>'idTurno', '')::integer
+                    FROM shifts s WHERE s.branch_id = b.id AND s.source_shift_id = $5 LIMIT 1)
             FROM branches b
             LEFT JOIN LATERAL (
                 SELECT id, range_start, range_end, reconciliation_ok
@@ -440,6 +444,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         command.Parameters.AddWithValue(user.Id);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(end);
+        command.Parameters.AddWithValue((object?)shiftId ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct)) return null;
 
@@ -463,7 +468,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             GetFreshness(lastSyncAt),
             coverage,
             reconciliationOk == true && coverage is "complete" or "partial",
-            shiftId);
+            shiftId,
+            reader.IsDBNull(9) ? null : reader.GetInt32(9));
     }
 
     private async Task<(Guid Id, string Timezone)?> GetBranchIdentityAsync(
@@ -530,7 +536,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
                       AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurnoInterno', '')::integer) = $5)
+                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL
                       AND NULLIF(sp.payload->>'tipoFormaDePago', '')::integer = 1), 0),
                 COALESCE((SELECT SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1))
@@ -540,7 +546,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
                       AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurnoInterno', '')::integer) = $5)
+                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL
                       AND NULLIF(sp.payload->>'tipoFormaDePago', '')::integer = 2), 0),
                 COALESCE((SELECT SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1))
@@ -550,17 +556,17 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
                       AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurnoInterno', '')::integer) = $5)
+                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL
                       AND NULLIF(sp.payload->>'tipoFormaDePago', '')::integer IN (3, 4)), 0),
                 COALESCE((SELECT SUM(NULLIF(payload->>'fondo', '')::numeric)
                     FROM shifts
                     WHERE branch_id = $1 AND opened_at >= $2 AND opened_at < $3
-                      AND ($5::integer IS NULL OR source_shift_id = $5)), 0),
+                      AND ($5::integer IS NULL OR NULLIF(payload->>'idTurno', '')::integer = $5)), 0),
                 COALESCE((SELECT SUM(NULLIF(payload->>'efectivo', '')::numeric)
                     FROM shifts
                     WHERE branch_id = $1 AND opened_at >= $2 AND opened_at < $3
-                      AND ($5::integer IS NULL OR source_shift_id = $5)), 0),
+                      AND ($5::integer IS NULL OR NULLIF(payload->>'idTurno', '')::integer = $5)), 0),
                 COALESCE((SELECT bool_and(NULLIF(sp.payload->>'tipoFormaDePago', '') IS NOT NULL)
                     FROM sale_payments sp
                     INNER JOIN sales paid_sale
@@ -568,7 +574,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
                       AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurnoInterno', '')::integer) = $5)
+                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL), false),
                 EXISTS (
                     SELECT 1 FROM sync_batches
@@ -578,13 +584,13 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                       AND range_end >= $2)
             FROM sales
             WHERE branch_id = $1 AND business_date >= $4 AND business_date < $3
-              AND ($5::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurnoInterno', '')::integer) = $5);
+              AND ($5::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5);
             """);
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(end);
         command.Parameters.AddWithValue(previousStart);
-        command.Parameters.AddWithValue((object?)meta.ShiftId ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct);
         await reader.ReadAsync(ct);
 
@@ -633,7 +639,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             FROM sales
             WHERE branch_id = $1
               AND business_date >= $2 AND business_date < $3
-              AND ($4::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurnoInterno', '')::integer) = $4)
+              AND ($4::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4)
               AND paid AND NOT cancelled AND closed_at IS NOT NULL
             GROUP BY 1
             ORDER BY 1;
@@ -641,7 +647,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(start.AddDays(1));
-        command.Parameters.AddWithValue((object?)meta.ShiftId ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct);
         var points = new List<HourlySalesPoint>();
         while (await reader.ReadAsync(ct))
@@ -665,7 +671,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             FROM sales
             WHERE branch_id = $1
               AND business_date >= $2 AND business_date < $3
-              AND ($4::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurnoInterno', '')::integer) = $4)
+              AND ($4::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4)
               AND ($5::text IS NULL OR source_folio::text ILIKE '%' || $5 || '%'
                    OR COALESCE(payload->>'numCheque', '') ILIKE '%' || $5 || '%')
             ORDER BY COALESCE(closed_at, business_date) DESC NULLS LAST, source_folio DESC
@@ -674,7 +680,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(start.AddDays(1));
-        command.Parameters.AddWithValue((object?)meta.ShiftId ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
         command.Parameters.AddWithValue((object?)normalizedSearch ?? DBNull.Value);
         command.Parameters.AddWithValue(pageSize + 1);
         command.Parameters.AddWithValue((page - 1) * pageSize);
@@ -700,13 +706,13 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
               AND ($3::integer IS NULL OR EXISTS (SELECT 1 FROM sales s
                   WHERE s.branch_id = cancellation_summaries.branch_id
                     AND s.source_folio = cancellation_summaries.source_folio
-                    AND COALESCE(s.source_shift_id, NULLIF(s.payload->>'idTurnoInterno', '')::integer) = $3))
+                    AND COALESCE(s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer) = $3))
             ORDER BY cancellation_date DESC, updated_at DESC
             LIMIT $4;
             """);
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(meta.Date.ToDateTime(TimeOnly.MinValue));
-        command.Parameters.AddWithValue((object?)meta.ShiftId ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
         command.Parameters.AddWithValue(limit);
         await using var reader = await command.ExecuteReaderAsync(ct);
         var items = new List<CancellationItem>();
@@ -755,12 +761,11 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(start.AddDays(1));
-        command.Parameters.AddWithValue((object?)meta.ShiftId ?? DBNull.Value);
         command.Parameters.AddWithValue((object?)type ?? DBNull.Value);
         command.Parameters.AddWithValue((object?)normalizedSearch ?? DBNull.Value);
         command.Parameters.AddWithValue(pageSize + 1);
         command.Parameters.AddWithValue((page - 1) * pageSize);
-        command.Parameters.AddWithValue((object?)meta.ShiftId ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct);
         var items = new List<CashMovementItem>();
         while (await reader.ReadAsync(ct))
