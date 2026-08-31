@@ -8,50 +8,71 @@ namespace RestaurantAgent.Extractor.Ui;
 /// </summary>
 public sealed class LoginForm : Form
 {
-    private readonly TextBox apiUrlBox = new() { Width = 320 };
-    private readonly TextBox emailBox = new() { Width = 320 };
-    private readonly TextBox passwordBox = new() { Width = 320, UseSystemPasswordChar = true };
-    private readonly Label errorLabel = new() { ForeColor = Color.DarkRed, AutoSize = true, MaximumSize = new Size(320, 0) };
-    private readonly Button loginButton = new() { Text = "Iniciar sesión", Width = 120 };
+    private readonly TextBox apiUrlBox = new() { Dock = DockStyle.Fill };
+    private readonly TextBox emailBox = new() { Dock = DockStyle.Fill };
+    private readonly TextBox passwordBox = new() { Dock = DockStyle.Fill, UseSystemPasswordChar = true };
+    private readonly Label errorLabel = new() { ForeColor = UiTheme.Danger, AutoSize = true, Dock = DockStyle.Top };
+    private readonly Button loginButton = new() { Text = "Iniciar sesión", AutoSize = true, MinimumSize = new Size(140, 36) };
 
     public CentralApiClient? Client { get; private set; }
 
     public LoginForm(string? suggestedApiUrl)
     {
         Text = "RestaurantAgent Sync Agent — Iniciar sesión";
-        Width = 400;
-        Height = 320;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
+        Width = 460;
+        Height = 420;
         StartPosition = FormStartPosition.CenterScreen;
+        UiTheme.ApplyWindow(this, minWidth: 420, minHeight: 360);
+        errorLabel.Font = UiTheme.BaseFont;
 
         apiUrlBox.Text = suggestedApiUrl ?? "";
+        UiTheme.StyleTextBox(apiUrlBox);
+        UiTheme.StyleTextBox(emailBox);
+        UiTheme.StyleTextBox(passwordBox);
 
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(16), AutoSize = true };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        AddRow(layout, "URL de la plataforma:", apiUrlBox);
-        AddRow(layout, "Correo:", emailBox);
-        AddRow(layout, "Contraseña:", passwordBox);
-        layout.RowCount++;
-        layout.Controls.Add(new Label(), 0, layout.RowCount - 1);
-        layout.Controls.Add(errorLabel, 1, layout.RowCount - 1);
+        var form = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            AutoSize = true,
+            Padding = new Padding(24, 24, 24, 8)
+        };
+        form.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        form.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        form.Controls.Add(UiTheme.Heading("Iniciar sesión"), 0, 0);
+        form.SetColumnSpan(form.Controls[^1], 2);
+        form.RowCount = 1;
+
+        AddRow(form, "URL de la plataforma:", apiUrlBox);
+        AddRow(form, "Correo:", emailBox);
+        AddRow(form, "Contraseña:", passwordBox);
 
         loginButton.Click += async (_, _) => await OnLoginAsync();
         AcceptButton = loginButton;
+        UiTheme.StylePrimaryButton(loginButton);
 
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(16) };
+        var footer = new TableLayoutPanel
+        {
+            Dock = DockStyle.Bottom,
+            ColumnCount = 1,
+            AutoSize = true,
+            Padding = new Padding(24, 8, 24, 24)
+        };
+        footer.Controls.Add(errorLabel);
+        var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft };
         buttons.Controls.Add(loginButton);
+        footer.Controls.Add(buttons);
 
-        Controls.Add(layout);
-        Controls.Add(buttons);
+        Controls.Add(form);
+        Controls.Add(footer);
     }
 
     private static void AddRow(TableLayoutPanel panel, string caption, Control input)
     {
         panel.RowCount++;
-        panel.Controls.Add(new Label { Text = caption, AutoSize = true }, 0, panel.RowCount - 1);
+        panel.Controls.Add(new Label { Text = caption, AutoSize = true, Margin = new Padding(0, 8, 8, 0) }, 0, panel.RowCount - 1);
+        input.Margin = new Padding(0, 4, 0, 0);
         panel.Controls.Add(input, 1, panel.RowCount - 1);
     }
 

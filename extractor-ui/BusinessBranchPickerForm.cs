@@ -6,17 +6,23 @@ namespace RestaurantAgent.Extractor.Ui;
 /// muestra el estado del conector de cada sucursal, y ofrece "Vincular este equipo" o
 /// "Reemplazar equipo" (si ya hay uno activo). Al confirmar, entrega la credencial resultante al
 /// servicio local vía <see cref="ControlApiClient.LinkAsync"/> — nunca la guarda ella misma.
+///
+/// Layout: la ventana es redimensionable/maximizable (antes era un diálogo fijo demasiado
+/// pequeño que podía dejar el botón de acción fuera del área visible). El encabezado va arriba
+/// (Dock=Top) y los botones abajo (Dock=Bottom) — ambos con tamaño fijo — y la lista de
+/// sucursales ocupa todo el espacio restante (Dock=Fill), así que el botón de acción siempre
+/// queda visible sin importar cuánto crezca el contenido de en medio.
 /// </summary>
 public sealed class BusinessBranchPickerForm : Form
 {
     private readonly CentralApiClient centralApi;
     private readonly ControlApiClient controlApi;
 
-    private readonly ComboBox businessCombo = new() { Width = 360, DropDownStyle = ComboBoxStyle.DropDownList };
-    private readonly ListBox branchList = new() { Width = 360, Height = 180 };
-    private readonly Label statusLabel = new() { AutoSize = true, MaximumSize = new Size(360, 0) };
-    private readonly Button actionButton = new() { Text = "Vincular este equipo", Width = 180 };
-    private readonly Label errorLabel = new() { ForeColor = Color.DarkRed, AutoSize = true, MaximumSize = new Size(360, 0) };
+    private readonly ComboBox businessCombo = new() { Dock = DockStyle.Top, DropDownStyle = ComboBoxStyle.DropDownList, Height = 30 };
+    private readonly ListBox branchList = new() { Dock = DockStyle.Fill, IntegralHeight = false };
+    private readonly Label statusLabel = new() { AutoSize = true, MaximumSize = new Size(0, 0), Dock = DockStyle.Top };
+    private readonly Button actionButton = new() { Text = "Vincular este equipo", AutoSize = true, MinimumSize = new Size(200, 36) };
+    private readonly Label errorLabel = new() { ForeColor = UiTheme.Danger, AutoSize = true, Dock = DockStyle.Top };
 
     private List<BusinessMembershipDto> businesses = [];
     private List<BranchWithConnectorDto> branches = [];
@@ -29,38 +35,63 @@ public sealed class BusinessBranchPickerForm : Form
         this.controlApi = controlApi;
 
         Text = "RestaurantAgent Sync Agent — Vincular este equipo";
-        Width = 420;
-        Height = 460;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
+        Width = 520;
+        Height = 620;
         StartPosition = FormStartPosition.CenterScreen;
+        UiTheme.ApplyWindow(this, minWidth: 460, minHeight: 480);
+        UiTheme.StyleComboBox(businessCombo);
+        errorLabel.Font = UiTheme.BaseFont;
+        statusLabel.Font = UiTheme.BaseFont;
+        statusLabel.ForeColor = UiTheme.TextSecondary;
 
-        var layout = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 1, Padding = new Padding(16), AutoSize = true };
-        layout.Controls.Add(new Label { Text = "Negocio:", AutoSize = true });
-        layout.Controls.Add(businessCombo);
-        layout.Controls.Add(new Label { Text = "Sucursal:", AutoSize = true, Margin = new Padding(0, 12, 0, 0) });
-        layout.Controls.Add(branchList);
-        layout.Controls.Add(statusLabel);
-        layout.Controls.Add(errorLabel);
+        // --- Encabezado (arriba, tamaño fijo) ---
+        var header = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            AutoSize = true,
+            Padding = new Padding(20, 20, 20, 8)
+        };
+        header.Controls.Add(UiTheme.Heading("Vincular este equipo"));
+        header.Controls.Add(UiTheme.Caption("Elige el negocio y la sucursal que este equipo va a sincronizar."));
+        header.Controls.Add(new Label { Text = "Negocio", AutoSize = true, Margin = new Padding(0, 16, 0, 4), Font = UiTheme.BoldFont });
+        header.Controls.Add(businessCombo);
+        header.Controls.Add(new Label { Text = "Sucursal", AutoSize = true, Margin = new Padding(0, 16, 0, 4), Font = UiTheme.BoldFont });
+
+        // --- Pie (abajo, tamaño fijo): estado + error + botón ---
+        var footer = new TableLayoutPanel
+        {
+            Dock = DockStyle.Bottom,
+            ColumnCount = 1,
+            AutoSize = true,
+            Padding = new Padding(20, 8, 20, 20)
+        };
+        footer.Controls.Add(statusLabel);
+        footer.Controls.Add(errorLabel);
+        var buttons = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            FlowDirection = FlowDirection.RightToLeft,
+            Margin = new Padding(0, 12, 0, 0)
+        };
+        buttons.Controls.Add(actionButton);
+        footer.Controls.Add(buttons);
+
+        // --- Contenido central (crece/encoge con la ventana) ---
+        var listWrapper = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20, 0, 20, 0) };
+        listWrapper.Controls.Add(branchList);
+
+        // Orden importante: Top y Bottom se colocan en sus bordes; Fill se agrega al final para
+        // que ocupe exactamente lo que sobra entre ambos.
+        Controls.Add(listWrapper);
+        Controls.Add(footer);
+        Controls.Add(header);
 
         businessCombo.SelectedIndexChanged += async (_, _) => await LoadBranchesAsync();
         branchList.SelectedIndexChanged += (_, _) => RefreshSelection();
         actionButton.Click += async (_, _) => await OnActionAsync();
-
-        var buttons = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            AutoSize = true,
-            Height = 56,
-            FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(16),
-            WrapContents = false
-        };
-        buttons.Controls.Add(actionButton);
-
-        Controls.Add(layout);
-        Controls.Add(buttons);
+        UiTheme.StylePrimaryButton(actionButton);
+        actionButton.Enabled = false;
 
         Load += async (_, _) => await LoadBusinessesAsync();
     }

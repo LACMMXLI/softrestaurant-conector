@@ -28,9 +28,10 @@ public sealed class StatusForm : Form
         client = new ControlApiClient(controlPort);
 
         Text = "RestaurantAgent Sync Agent — Estado";
-        Width = 480;
-        Height = 420;
+        Width = 560;
+        Height = 480;
         StartPosition = FormStartPosition.CenterScreen;
+        UiTheme.ApplyWindow(this, minWidth: 480, minHeight: 420);
         FormClosing += OnFormClosing;
 
         BuildLayout();
@@ -61,17 +62,25 @@ public sealed class StatusForm : Form
         errorLabel.MaximumSize = new Size(300, 0);
         errorLabel.AutoSize = true;
 
-        var buttonsPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(16, 0, 16, 8) };
+        var buttonsPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(16, 0, 16, 12) };
         syncNowButton.Click += async (_, _) => await OnSyncNowAsync();
         diagnosticsButton.Click += async (_, _) => await OnDiagnosticsAsync();
         logsButton.Click += async (_, _) => await OnToggleLogsAsync();
+        UiTheme.StylePrimaryButton(syncNowButton);
+        UiTheme.StyleSecondaryButton(diagnosticsButton);
+        UiTheme.StyleSecondaryButton(logsButton);
+        syncNowButton.Margin = new Padding(0, 0, 8, 0);
+        diagnosticsButton.Margin = new Padding(0, 0, 8, 0);
         buttonsPanel.Controls.Add(syncNowButton);
         buttonsPanel.Controls.Add(diagnosticsButton);
         buttonsPanel.Controls.Add(logsButton);
 
         logsBox.Dock = DockStyle.Fill;
         logsBox.Font = new Font(FontFamily.GenericMonospace, 8.5f);
+        logsBox.BorderStyle = BorderStyle.FixedSingle;
 
+        // Orden: los paneles de tamaño fijo (Top) primero, el log (Fill) al final para que
+        // ocupe todo el espacio restante cuando la ventana crece.
         Controls.Add(logsBox);
         Controls.Add(buttonsPanel);
         Controls.Add(stack);
