@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS branches (
 );
 
 -- Migración compatible: token_hash pertenece únicamente al mecanismo legacy.
+ALTER TABLE branches ADD COLUMN IF NOT EXISTS token_hash text NULL;
 ALTER TABLE branches ALTER COLUMN token_hash DROP NOT NULL;
 DO $$
 BEGIN
