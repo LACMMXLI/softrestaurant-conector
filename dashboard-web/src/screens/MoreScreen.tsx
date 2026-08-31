@@ -1,6 +1,8 @@
-import { Database, LogOut, Server, ShieldCheck, UserRound } from 'lucide-react'
+import { useState } from 'react'
+import { Database, LogOut, RefreshCw, Server, ShieldCheck, UserRound } from 'lucide-react'
 import { StatusPill } from '../components/StatusPill'
 import { timeAgo } from '../format'
+import { api, ApiError } from '../api'
 import type { DashboardBranch, DashboardHome, DashboardUser } from '../types'
 
 type MoreScreenProps = {
@@ -8,9 +10,29 @@ type MoreScreenProps = {
   branch: DashboardBranch
   dashboard: DashboardHome | null
   onLogout: () => Promise<void>
+  onBranchUpdated: (branch: DashboardBranch) => void
+  onUnauthorized: () => void
 }
 
-export function MoreScreen({ user, branch, dashboard, onLogout }: MoreScreenProps) {
+export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated, onUnauthorized }: MoreScreenProps) {
+  const [requestingSync, setRequestingSync] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const canRequestSync = user.role !== 'VIEWER'
+
+  async function handleRequestSync() {
+    setRequestingSync(true)
+    setSyncError(null)
+    try {
+      const result = await api.requestSync(branch.code)
+      onBranchUpdated({ ...branch, syncRequestedAt: result.syncRequestedAt })
+    } catch (reason) {
+      if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
+      setSyncError(reason instanceof Error ? reason.message : 'No fue posible solicitar la sincronización.')
+    } finally {
+      setRequestingSync(false)
+    }
+  }
+
   return (
     <div className="screen-stack">
       <section className="screen-title">
@@ -42,6 +64,21 @@ export function MoreScreen({ user, branch, dashboard, onLogout }: MoreScreenProp
           <div><dt>Zona horaria</dt><dd>{branch.timezone}</dd></div>
           <div><dt>Conciliación</dt><dd>{branch.reconciliationOk === null ? 'Sin lote' : branch.reconciliationOk ? 'Correcta' : 'Pendiente'}</dd></div>
         </dl>
+
+        {canRequestSync ? (
+          <>
+            <button className="secondary-button" type="button" onClick={() => void handleRequestSync()} disabled={requestingSync}>
+              <RefreshCw size={16} aria-hidden="true" />
+              <span>{requestingSync ? 'Solicitando…' : 'Sincronizar ahora'}</span>
+            </button>
+            <p className="panel-hint">
+              {branch.syncRequestedAt
+                ? `Última solicitud: ${new Date(branch.syncRequestedAt).toLocaleString('es-MX')}. El agente la recoge en su siguiente latido.`
+                : 'Pide al agente de esta sucursal que sincronice en cuanto pueda.'}
+            </p>
+            {syncError ? <p className="form-error" role="alert">{syncError}</p> : null}
+          </>
+        ) : null}
       </section>
 
       <button className="logout-button" type="button" onClick={() => void onLogout()}>

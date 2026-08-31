@@ -218,8 +218,11 @@ export function ConnectorsScreen({ branch, onUnauthorized, onBranchUpdated }: Co
                 <tr>
                   <th>Equipo</th>
                   <th>Estado</th>
+                  <th>En línea</th>
+                  <th>Última sincronización</th>
+                  <th>Pendientes</th>
+                  <th>Último error</th>
                   <th>Versión</th>
-                  <th>Última actividad</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -232,8 +235,15 @@ export function ConnectorsScreen({ branch, onUnauthorized, onBranchUpdated }: Co
                         {connector.active ? 'Activo' : 'Revocado'}
                       </span>
                     </td>
-                    <td>{connector.agentVersion ?? '—'}</td>
+                    <td>
+                      <span className={isOnline(connector.lastHeartbeatAt) ? 'status-pill status-ok' : 'status-pill status-off'}>
+                        {isOnline(connector.lastHeartbeatAt) ? 'En línea' : 'Sin latido'}
+                      </span>
+                    </td>
                     <td>{connector.lastSeenAt ? new Date(connector.lastSeenAt).toLocaleString('es-MX') : 'Nunca'}</td>
+                    <td>{connector.pendingBatches ?? '—'}</td>
+                    <td className={connector.lastError ? 'form-error' : undefined}>{connector.lastError ?? '—'}</td>
+                    <td>{connector.agentVersion ?? '—'}</td>
                     <td className="table-actions">
                       <button
                         type="button"
@@ -265,4 +275,13 @@ export function ConnectorsScreen({ branch, onUnauthorized, onBranchUpdated }: Co
       </section>
     </div>
   )
+}
+
+// Heartbeat esperado cada 30-60s (ver extractor/HeartbeatWorker.cs); 3 minutos sin latido ya
+// es señal razonable de que el agente está apagado, sin SQL/red, o el servicio está detenido.
+const ONLINE_THRESHOLD_MS = 3 * 60 * 1000
+
+function isOnline(lastHeartbeatAt: string | null): boolean {
+  if (!lastHeartbeatAt) return false
+  return Date.now() - new Date(lastHeartbeatAt).getTime() < ONLINE_THRESHOLD_MS
 }

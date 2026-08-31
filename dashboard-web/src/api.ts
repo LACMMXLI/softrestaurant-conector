@@ -51,6 +51,11 @@ export const api = {
   logout: () => request<void>('/api/web/auth/logout', { method: 'POST' }),
   me: () => request<{ user: DashboardUser }>('/api/web/auth/me'),
   branches: () => request<DashboardBranch[]>('/api/web/branches'),
+  requestSync: (branchCode: string) =>
+    request<{ branchCode: string; syncRequestedAt: string }>(
+      `/api/web/branches/${encodeURIComponent(branchCode)}/request-sync`,
+      { method: 'POST' },
+    ),
   dashboard: (branchCode: string, date: string, signal?: AbortSignal) =>
     request<DashboardHome>(
       `/api/web/dashboard/home?branchCode=${encodeURIComponent(branchCode)}&date=${date}`,

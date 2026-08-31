@@ -487,6 +487,8 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
 .detail-list dt { display: flex; align-items: center; gap: 7px; color: var(--ink-soft); font-size: .72rem; }
 .detail-list dd { margin: 0; font-size: .75rem; font-weight: 750; text-align: right; }
 .logout-button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 1px solid #e1b9b6; background: transparent; color: var(--red); }
+.system-card .secondary-button { width: 100%; justify-content: center; margin-top: 14px; }
+.panel-hint { margin: 8px 0 0; color: var(--ink-soft); font-size: .68rem; line-height: 1.5; }
 
 .mobile-nav { position: fixed; z-index: 40; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); padding: 7px; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; background: rgba(15,29,37,.96); box-shadow: 0 18px 45px rgba(15,29,37,.28); backdrop-filter: blur(16px); }
 .nav-items { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }

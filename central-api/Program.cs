@@ -487,6 +487,57 @@ app.MapGet("/api/dashboard/today", async (
     return Results.Ok(summary);
 });
 
+app.MapPost("/api/agents/heartbeat", async (
+    HttpContext context,
+    HeartbeatRequest request,
+    ConnectorRegistry registry,
+    CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(request.BranchCode) || !BranchValidation.IsValidCode(request.BranchCode))
+        return Results.BadRequest(new { error = "branchCode inválido" });
+    if (request.State?.Length > 20)
+        return Results.BadRequest(new { error = "state demasiado largo" });
+    if (request.LastError?.Length > 2000)
+        return Results.BadRequest(new { error = "lastError admite máximo 2000 caracteres" });
+
+    var identity = await AgentAuthenticator.AuthenticateAsync(context, dataSource, request.BranchCode, ct);
+    if (identity is null) return Results.Unauthorized();
+
+    // El detalle por conector (estado, error, pendientes) solo existe para conectores
+    // individuales; en modo legacy (token compartido por sucursal) solo se informa la
+    // solicitud de sync pendiente, sin persistir el resto.
+    DateTime? syncRequestedAt;
+    if (identity.ConnectorId is { } connectorId)
+    {
+        var result = await registry.RecordHeartbeatAsync(
+            connectorId, identity.BranchId, request.State ?? "Idle", request.LastError,
+            Math.Max(0, request.PendingBatches), request.LastSyncRequestHandledAt, ct);
+        syncRequestedAt = result.SyncRequestedAt;
+    }
+    else
+    {
+        syncRequestedAt = await registry.GetSyncRequestedAtAsync(request.BranchCode, ct);
+    }
+
+    return Results.Ok(new { syncRequestedAt, serverTimeUtc = DateTime.UtcNow });
+});
+
+app.MapPost("/api/admin/branches/{branchCode}/request-sync", async (
+    HttpContext context,
+    string branchCode,
+    ConnectorRegistry registry,
+    WebAuthService webAuth,
+    CancellationToken ct) =>
+{
+    var principal = await AdminAuthenticator.AuthorizeAsync(context, apiOptions, webAuth, ct);
+    if (principal is null) return Results.Unauthorized();
+    if (!BranchValidation.IsValidCode(branchCode))
+        return Results.BadRequest(new { error = "branchCode inválido" });
+
+    var updated = await registry.RequestSyncAsync(branchCode, principal.User?.Id, ct);
+    return updated is null ? Results.NotFound() : Results.Ok(updated);
+});
+
 app.MapGet("/api/branches/{branchCode}/sync-status", async (
     HttpContext context,
     string branchCode,
@@ -525,3 +576,12 @@ app.MapGet("/api/branches/{branchCode}/sync-status", async (
 app.MapDashboardWebApi();
 
 app.Run();
+
+internal sealed record HeartbeatRequest(
+    string BranchCode,
+    string AgentVersion,
+    string? State,
+    DateTime? LastSuccessAt,
+    string? LastError,
+    int PendingBatches,
+    DateTime? LastSyncRequestHandledAt);

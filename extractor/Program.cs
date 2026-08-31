@@ -109,6 +109,11 @@ if (cfg.Watch)
     var builder = Host.CreateApplicationBuilder();
     builder.Services.AddWindowsService(options => options.ServiceName = "SoftRestaurant Sync Agent");
     builder.Services.AddSingleton(cfg);
+    builder.Services.AddSingleton<AgentStatusStore>();
+    builder.Services.AddSingleton<AgentLog>();
+    builder.Services.AddSingleton<SyncCoordinator>();
+    builder.Services.AddHostedService<AgentControlServer>();
+    builder.Services.AddHostedService<HeartbeatWorker>();
     builder.Services.AddHostedService<SyncWorker>();
     await builder.Build().RunAsync();
     return 0;

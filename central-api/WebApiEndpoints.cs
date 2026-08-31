@@ -79,6 +79,29 @@ internal static class WebApiEndpoints
             return dashboard is null ? Results.NotFound() : Results.Ok(dashboard);
         });
 
+        group.MapPost("/branches/{branchCode}/request-sync", async (
+            HttpContext context,
+            string branchCode,
+            WebAuthService auth,
+            DashboardReportService reports,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            // VIEWER es de solo lectura: no puede disparar acciones, solo consultar. No se usa
+            // Results.Forbid() porque esta app no registra un esquema de autenticación de
+            // ASP.NET Core (la sesión se valida a mano en WebAuthService) — devolver 403 directo.
+            if (string.Equals(user.Role, "VIEWER", StringComparison.Ordinal))
+                return Results.Json(new { error = "Este rol no puede solicitar sincronizaciones." }, statusCode: StatusCodes.Status403Forbidden);
+
+            var requestedAt = await reports.RequestSyncAsync(user, branchCode, ct);
+            return requestedAt is null
+                ? Results.NotFound()
+                : Results.Ok(new { branchCode, syncRequestedAt = requestedAt });
+        });
+
         group.MapGet("/sales", async (
             HttpContext context,
             string branchCode,

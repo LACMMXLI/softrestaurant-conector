@@ -45,6 +45,10 @@ export function App() {
 
   const closeTicket = useCallback(() => setSelectedFolio(null), [])
 
+  const updateBranch = useCallback((next: DashboardBranch) => {
+    setBranches((current) => current.map((branch) => (branch.code === next.code ? next : branch)))
+  }, [])
+
   const applyBranches = useCallback((availableBranches: DashboardBranch[]) => {
     setBranches(availableBranches)
     const stored = localStorage.getItem(storedBranchKey)
@@ -206,7 +210,16 @@ export function App() {
               onUnauthorized={becomeAnonymous}
             />
           ) : null}
-          {tab === 'more' ? <MoreScreen user={user} branch={currentBranch} dashboard={dashboard} onLogout={handleLogout} /> : null}
+          {tab === 'more' ? (
+            <MoreScreen
+              user={user}
+              branch={currentBranch}
+              dashboard={dashboard}
+              onLogout={handleLogout}
+              onBranchUpdated={updateBranch}
+              onUnauthorized={becomeAnonymous}
+            />
+          ) : null}
         </main>
 
         <nav className="mobile-nav" aria-label="Navegación principal">

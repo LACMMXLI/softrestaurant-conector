@@ -58,6 +58,7 @@ export type Branch = {
   legacyAuthEnabled: boolean
   lastSyncAt: string | null
   createdAt: string
+  syncRequestedAt: string | null
 }
 
 export type ActivationKeyResult = {
@@ -78,6 +79,11 @@ export type Connector = {
   lastUserAgent: string | null
   revokedAt: string | null
   tokenRotatedAt: string | null
+  lastStatus: string | null
+  lastError: string | null
+  pendingBatches: number | null
+  lastHeartbeatAt: string | null
+  lastSyncRequestHandledAt: string | null
 }
 
 export type RotatedCredential = {

@@ -2,7 +2,7 @@ namespace SoftRestaurant.Extractor;
 
 internal sealed record AgentRunResult(bool ReconciliationOk, int PendingBatches);
 
-internal sealed class AgentRunService(ExtractorConfig config)
+internal sealed class AgentRunService(ExtractorConfig config, AgentLog? log = null)
 {
     public async Task<AgentRunResult> RunOnceAsync(CancellationToken ct)
     {
@@ -24,12 +24,14 @@ internal sealed class AgentRunService(ExtractorConfig config)
             if (!result.Reconciliation.Ok)
             {
                 Console.Error.WriteLine("El lote no se enviará porque la reconciliación falló.");
+                log?.Warn("El lote no se enviará porque la reconciliación falló.");
             }
             else
             {
                 var batch = ExtractionJob.CreateBatch(config, result);
                 await outbox.EnqueueAsync(batch, ct);
                 Console.WriteLine($"Lote {batch.BatchId} guardado en la cola local.");
+                log?.Info($"Lote {batch.BatchId} guardado en la cola local.");
                 await FlushAsync(outbox, client, ct);
             }
         }
@@ -37,7 +39,7 @@ internal sealed class AgentRunService(ExtractorConfig config)
         return new AgentRunResult(result.Reconciliation.Ok, outbox is null ? 0 : await outbox.CountAsync(ct));
     }
 
-    private static async Task FlushAsync(SyncOutbox outbox, AgentApiClient client, CancellationToken ct)
+    private async Task FlushAsync(SyncOutbox outbox, AgentApiClient client, CancellationToken ct)
     {
         for (var sent = 0; sent < 20; sent++)
         {
@@ -48,11 +50,13 @@ internal sealed class AgentRunService(ExtractorConfig config)
                 await client.SendAsync(pending.Batch, ct);
                 await outbox.MarkSentAsync(pending.Id, ct);
                 Console.WriteLine($"Lote {pending.Id} confirmado por la API.");
+                log?.Info($"Lote {pending.Id} confirmado por la API.");
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
             {
                 await outbox.MarkFailedAsync(pending, ex.Message, ct);
                 Console.Error.WriteLine($"API no disponible; el lote queda en cola: {ex.Message}");
+                log?.Warn($"API no disponible; el lote queda en cola: {ex.Message}");
                 return;
             }
         }

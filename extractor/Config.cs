@@ -30,6 +30,8 @@ internal sealed class ExtractorConfig
     public bool SendEnabled { get; init; }
     public bool Watch { get; init; }
     public int SyncIntervalSeconds { get; init; } = 60;
+    public int HeartbeatIntervalSeconds { get; init; } = 45;
+    public int ControlPort { get; init; } = 47811;
     public int RollingDays { get; init; } = 3;
     public bool HasExplicitRange { get; init; }
     public DateTime Desde { get; init; }
@@ -87,6 +89,8 @@ internal sealed class ExtractorConfig
         string? activationKey = null;
         string machineName = Environment.MachineName;
         int syncIntervalSeconds = 60;
+        int heartbeatIntervalSeconds = 45;
+        int controlPort = 47811;
         int rollingDays = 3;
 
         var settingsPath = FindAppSettings();
@@ -148,6 +152,10 @@ internal sealed class ExtractorConfig
         queuePath = Environment.GetEnvironmentVariable("SRX_QUEUE_PATH") ?? queuePath;
         outDir = Environment.GetEnvironmentVariable("SRX_OUTPUT_PATH") ?? outDir;
         if (!string.IsNullOrWhiteSpace(user)) trusted = false;
+        if (int.TryParse(Environment.GetEnvironmentVariable("SRX_HEARTBEAT_SECONDS"), out var envHeartbeat))
+            heartbeatIntervalSeconds = envHeartbeat;
+        if (int.TryParse(Environment.GetEnvironmentVariable("SRX_CONTROL_PORT"), out var envControlPort))
+            controlPort = envControlPort;
 
         // 4) argumentos de línea de comandos
         DateTime? desdeArg = null, hastaArg = null;
@@ -197,6 +205,8 @@ internal sealed class ExtractorConfig
             throw new ArgumentException("SRX_MACHINE_NAME debe tener entre 1 y 200 caracteres.");
 
         syncIntervalSeconds = Math.Max(15, syncIntervalSeconds);
+        heartbeatIntervalSeconds = Math.Clamp(heartbeatIntervalSeconds, 30, 60);
+        controlPort = controlPort is > 0 and <= 65535 ? controlPort : 47811;
         rollingDays = Math.Clamp(rollingDays, 1, 30);
 
         // Rango por defecto: ayer a hoy (semiabierto), igual al ciclo real de sincronización.
@@ -225,6 +235,8 @@ internal sealed class ExtractorConfig
             SendEnabled = sendEnabled,
             Watch = watch,
             SyncIntervalSeconds = syncIntervalSeconds,
+            HeartbeatIntervalSeconds = heartbeatIntervalSeconds,
+            ControlPort = controlPort,
             RollingDays = rollingDays,
             HasExplicitRange = desdeArg.HasValue || hastaArg.HasValue,
             Desde = desde,

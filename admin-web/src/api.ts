@@ -71,6 +71,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ active }),
     }),
+  requestSync: (code: string) =>
+    request<Branch>(`/api/admin/branches/${encodeURIComponent(code)}/request-sync`, {
+      method: 'POST',
+    }),
 
   connectors: (branchCode: string) =>
     request<Connector[]>(`/api/admin/branches/${encodeURIComponent(branchCode)}/connectors`),

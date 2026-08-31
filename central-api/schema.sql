@@ -46,6 +46,20 @@ CREATE TABLE IF NOT EXISTS connectors (
 );
 CREATE INDEX IF NOT EXISTS ix_connectors_branch ON connectors(branch_id, active);
 
+-- Latido independiente del agente (ver central-api/Program.cs POST /api/agents/heartbeat y
+-- extractor/HeartbeatWorker.cs): last_heartbeat_at indica si el agente está vivo, separado de
+-- last_seen_at (que ya se actualiza en cualquier llamada autenticada, incluida la ingesta).
+ALTER TABLE connectors ADD COLUMN IF NOT EXISTS last_status text NULL;
+ALTER TABLE connectors ADD COLUMN IF NOT EXISTS last_error text NULL;
+ALTER TABLE connectors ADD COLUMN IF NOT EXISTS pending_batches integer NULL;
+ALTER TABLE connectors ADD COLUMN IF NOT EXISTS last_heartbeat_at timestamptz NULL;
+ALTER TABLE connectors ADD COLUMN IF NOT EXISTS last_sync_request_handled_at timestamptz NULL;
+
+-- Mecanismo simple de solicitud remota de sincronización: el panel marca la sucursal, el
+-- agente la recoge en su siguiente latido (HeartbeatWorker) y la corre vía SyncCoordinator.
+ALTER TABLE branches ADD COLUMN IF NOT EXISTS sync_requested_at timestamptz NULL;
+ALTER TABLE branches ADD COLUMN IF NOT EXISTS sync_requested_by uuid NULL REFERENCES app_users(id);
+
 CREATE TABLE IF NOT EXISTS connector_activation_keys (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     branch_id uuid NOT NULL REFERENCES branches(id),

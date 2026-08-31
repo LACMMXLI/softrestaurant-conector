@@ -15,7 +15,8 @@ internal sealed record BranchView(
     bool Active,
     bool LegacyAuthEnabled,
     DateTime? LastSyncAt,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    DateTime? SyncRequestedAt);
 internal sealed record ActivationKeyRequest(int? ExpiresInMinutes, string? Note);
 internal sealed record ActivateConnectorRequest(
     string ActivationKey,
@@ -36,18 +37,26 @@ internal sealed record ConnectorView(
     string? LastUserAgent,
     DateTime? RevokedAt,
     DateTime? TokenRotatedAt,
-    JsonElement Metadata);
+    JsonElement Metadata,
+    string? LastStatus,
+    string? LastError,
+    int? PendingBatches,
+    DateTime? LastHeartbeatAt,
+    DateTime? LastSyncRequestHandledAt);
+
+internal sealed record HeartbeatResult(DateTime? SyncRequestedAt);
 
 internal sealed class ConnectorRegistry(NpgsqlDataSource dataSource)
 {
     private const string BranchColumns =
-        "id, code, name, timezone, active, legacy_auth_enabled, last_sync_at, created_at";
+        "id, code, name, timezone, active, legacy_auth_enabled, last_sync_at, created_at, sync_requested_at";
 
     private static BranchView ReadBranch(NpgsqlDataReader reader) => new(
         reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
         reader.GetBoolean(4), reader.GetBoolean(5),
         reader.IsDBNull(6) ? null : reader.GetDateTime(6),
-        reader.GetDateTime(7));
+        reader.GetDateTime(7),
+        reader.IsDBNull(8) ? null : reader.GetDateTime(8));
 
     /// <summary>Alta de una sucursal nueva. Devuelve null si el código ya existe (conflicto).</summary>
     public async Task<BranchView?> CreateBranchAsync(
@@ -213,7 +222,9 @@ internal sealed class ConnectorRegistry(NpgsqlDataSource dataSource)
         await using var command = dataSource.CreateCommand("""
             SELECT c.id, b.code, c.machine_name, c.active, c.agent_version,
                    c.created_at, c.last_seen_at, c.last_ip, c.last_user_agent,
-                   c.revoked_at, c.token_rotated_at, c.metadata
+                   c.revoked_at, c.token_rotated_at, c.metadata,
+                   c.last_status, c.last_error, c.pending_batches, c.last_heartbeat_at,
+                   c.last_sync_request_handled_at
             FROM branches b
             LEFT JOIN connectors c ON c.branch_id = b.id
             WHERE b.code = $1
@@ -236,9 +247,82 @@ internal sealed class ConnectorRegistry(NpgsqlDataSource dataSource)
                 reader.IsDBNull(8) ? null : reader.GetString(8),
                 reader.IsDBNull(9) ? null : reader.GetDateTime(9),
                 reader.IsDBNull(10) ? null : reader.GetDateTime(10),
-                metadata.RootElement.Clone()));
+                metadata.RootElement.Clone(),
+                reader.IsDBNull(12) ? null : reader.GetString(12),
+                reader.IsDBNull(13) ? null : reader.GetString(13),
+                reader.IsDBNull(14) ? null : reader.GetInt32(14),
+                reader.IsDBNull(15) ? null : reader.GetDateTime(15),
+                reader.IsDBNull(16) ? null : reader.GetDateTime(16)));
         }
         return branchFound ? result : null;
+    }
+
+    /// <summary>
+    /// Registra el latido independiente de un conector (ver extractor/HeartbeatWorker.cs):
+    /// actualiza únicamente las columnas de estado reportado, nunca <c>last_seen_at</c> (esa la
+    /// mantiene <see cref="AgentAuthenticator"/> en cualquier llamada autenticada). Devuelve la
+    /// solicitud de sincronización remota pendiente para la sucursal, si la hay.
+    /// </summary>
+    public async Task<HeartbeatResult> RecordHeartbeatAsync(
+        Guid connectorId, Guid branchId, string status, string? error, int pendingBatches,
+        DateTime? lastSyncRequestHandledAt, CancellationToken ct)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+
+        await using (var update = new NpgsqlCommand("""
+            UPDATE connectors
+            SET last_status = $3,
+                last_error = $4,
+                pending_batches = $5,
+                last_heartbeat_at = now(),
+                last_sync_request_handled_at = $6,
+                updated_at = now()
+            WHERE id = $1 AND branch_id = $2;
+            """, connection))
+        {
+            update.Parameters.AddWithValue(connectorId);
+            update.Parameters.AddWithValue(branchId);
+            update.Parameters.AddWithValue(status);
+            update.Parameters.AddWithValue(NpgsqlDbType.Text, error is null ? DBNull.Value : error);
+            update.Parameters.AddWithValue(pendingBatches);
+            update.Parameters.AddWithValue(NpgsqlDbType.TimestampTz, lastSyncRequestHandledAt is null ? DBNull.Value : lastSyncRequestHandledAt);
+            await update.ExecuteNonQueryAsync(ct);
+        }
+
+        await using var select = new NpgsqlCommand(
+            "SELECT sync_requested_at FROM branches WHERE id = $1;", connection);
+        select.Parameters.AddWithValue(branchId);
+        var syncRequestedAt = await select.ExecuteScalarAsync(ct) as DateTime?;
+        return new HeartbeatResult(syncRequestedAt);
+    }
+
+    /// <summary>Sucursal activa: cuál era la última solicitud de sync remota, si hay alguna.</summary>
+    public async Task<DateTime?> GetSyncRequestedAtAsync(string branchCode, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            SELECT sync_requested_at FROM branches WHERE code = $1;
+            """);
+        command.Parameters.AddWithValue(branchCode);
+        return await command.ExecuteScalarAsync(ct) as DateTime?;
+    }
+
+    /// <summary>
+    /// Marca una solicitud de sincronización remota para la sucursal. Mecanismo simple (un solo
+    /// timestamp, no una cola de comandos): el agente la recoge en su siguiente latido.
+    /// Devuelve null si la sucursal no existe o está inactiva.
+    /// </summary>
+    public async Task<BranchView?> RequestSyncAsync(string branchCode, Guid? requestedByUserId, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand($"""
+            UPDATE branches
+            SET sync_requested_at = now(), sync_requested_by = $2, updated_at = now()
+            WHERE code = $1 AND active = true
+            RETURNING {BranchColumns};
+            """);
+        command.Parameters.AddWithValue(branchCode);
+        command.Parameters.AddWithValue(NpgsqlDbType.Uuid, requestedByUserId is null ? DBNull.Value : requestedByUserId);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? ReadBranch(reader) : null;
     }
 
     public async Task<bool> RevokeAsync(Guid connectorId, CancellationToken ct)

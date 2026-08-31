@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowLeft, Ban, CheckCircle2, Save } from 'lucide-react'
+import { ArrowLeft, Ban, CheckCircle2, RefreshCw, Save } from 'lucide-react'
 import { api, ApiError } from '../api'
 import { ConnectorsScreen } from './ConnectorsScreen'
 import type { Branch } from '../types'
@@ -17,6 +17,7 @@ export function BranchDetailScreen({ branch, onBack, onBranchUpdated, onUnauthor
   const [timezone, setTimezone] = useState(branch.timezone)
   const [saving, setSaving] = useState(false)
   const [togglingStatus, setTogglingStatus] = useState(false)
+  const [requestingSync, setRequestingSync] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
@@ -31,6 +32,20 @@ export function BranchDetailScreen({ branch, onBack, onBranchUpdated, onUnauthor
       setError(reason instanceof Error ? reason.message : 'No fue posible guardar los cambios.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleRequestSync() {
+    setRequestingSync(true)
+    setError(null)
+    try {
+      const updated = await api.requestSync(branch.code)
+      onBranchUpdated(updated)
+    } catch (reason) {
+      if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
+      setError(reason instanceof Error ? reason.message : 'No fue posible solicitar la sincronización.')
+    } finally {
+      setRequestingSync(false)
     }
   }
 
@@ -63,6 +78,23 @@ export function BranchDetailScreen({ branch, onBack, onBranchUpdated, onUnauthor
           <span className={branch.active ? 'status-pill status-ok' : 'status-pill status-off'}>
             {branch.active ? 'Activa' : 'Inactiva'}
           </span>
+        </div>
+
+        <div className="panel-card-footer">
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => void handleRequestSync()}
+            disabled={requestingSync || !branch.active}
+          >
+            <RefreshCw size={16} aria-hidden="true" className={requestingSync ? 'spinning' : ''} />
+            <span>{requestingSync ? 'Solicitando…' : 'Sincronizar ahora'}</span>
+          </button>
+          <p className="panel-hint">
+            {branch.syncRequestedAt
+              ? `Última solicitud: ${new Date(branch.syncRequestedAt).toLocaleString('es-MX')}. El agente la recoge en su siguiente latido.`
+              : 'Pide al agente de esta sucursal que sincronice en cuanto pueda, en vez de esperar a su próximo ciclo automático.'}
+          </p>
         </div>
 
         <form className="inline-form" onSubmit={handleSave}>

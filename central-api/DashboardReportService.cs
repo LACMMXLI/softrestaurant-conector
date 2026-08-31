@@ -10,7 +10,8 @@ internal sealed record DashboardBranch(
     string Freshness,
     bool? ReconciliationOk,
     DateTime? RangeStart,
-    DateTime? RangeEnd);
+    DateTime? RangeEnd,
+    DateTime? SyncRequestedAt);
 
 internal sealed record DashboardMeta(
     Guid BranchId,
@@ -137,7 +138,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
     {
         await using var command = dataSource.CreateCommand("""
             SELECT b.code, b.name, b.timezone, b.last_sync_at,
-                   sb.reconciliation_ok, sb.range_start, sb.range_end
+                   sb.reconciliation_ok, sb.range_start, sb.range_end, b.sync_requested_at
             FROM branches b
             LEFT JOIN LATERAL (
                 SELECT reconciliation_ok, range_start, range_end
@@ -171,9 +172,37 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 GetFreshness(lastSyncAt),
                 ReadNullableBool(reader, 4),
                 ReadNullableDateTime(reader, 5),
-                ReadNullableDateTime(reader, 6)));
+                ReadNullableDateTime(reader, 6),
+                ReadNullableDateTime(reader, 7)));
         }
         return branches;
+    }
+
+    /// <summary>
+    /// Marca una solicitud de sincronización remota para la sucursal (mismo mecanismo simple
+    /// que usa admin-web: un timestamp en <c>branches.sync_requested_at</c>, sin cola de
+    /// comandos). Aplica la misma regla de acceso que <see cref="GetBranchesAsync"/>
+    /// (ver <c>BranchAccess.CanAccessBranch</c>); el llamador ya debe haber verificado que el
+    /// rol del usuario puede escribir (no VIEWER).
+    /// </summary>
+    public async Task<DateTime?> RequestSyncAsync(DashboardUser user, string branchCode, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            UPDATE branches b
+            SET sync_requested_at = now(), sync_requested_by = $4, updated_at = now()
+            WHERE b.active = true AND b.code = $1
+              -- Misma regla que GetBranchesAsync: ver BranchAccess.CanAccessBranch.
+              AND ($2 OR EXISTS (
+                  SELECT 1 FROM app_user_branches ub
+                  WHERE ub.user_id = $3 AND ub.branch_id = b.id
+              ))
+            RETURNING sync_requested_at;
+            """);
+        command.Parameters.AddWithValue(branchCode);
+        command.Parameters.AddWithValue(user.IsSuperAdmin);
+        command.Parameters.AddWithValue(user.Id);
+        command.Parameters.AddWithValue(user.Id);
+        return await command.ExecuteScalarAsync(ct) as DateTime?;
     }
 
     public async Task<DashboardHomeResponse?> GetHomeAsync(

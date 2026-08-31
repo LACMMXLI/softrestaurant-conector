@@ -14,6 +14,7 @@ export type DashboardBranch = {
   reconciliationOk: boolean | null
   rangeStart: string | null
   rangeEnd: string | null
+  syncRequestedAt: string | null
 }
 
 export type DashboardMeta = {
