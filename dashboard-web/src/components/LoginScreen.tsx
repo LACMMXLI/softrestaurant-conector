@@ -1,6 +1,24 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowRight, Eye, EyeOff, ReceiptText } from 'lucide-react'
+import {
+  ArrowRight,
+  BarChart3,
+  Building2,
+  Clock3,
+  CreditCard,
+  Eye,
+  EyeOff,
+  Laptop,
+  Menu,
+  MonitorSmartphone,
+  ReceiptText,
+  ShieldCheck,
+  Smartphone,
+  Store,
+  TrendingUp,
+  Wifi,
+  X,
+} from 'lucide-react'
 
 type LoginScreenProps = {
   error: string | null
@@ -8,79 +26,167 @@ type LoginScreenProps = {
   onLogin: (email: string, password: string) => Promise<void>
 }
 
+const capabilities = [
+  { icon: TrendingUp, title: 'Ventas en tiempo real', copy: 'Consulta el avance del día con la última sincronización disponible.' },
+  { icon: Building2, title: 'Sucursales', copy: 'Cambia de ubicación sin mezclar información ni permisos.' },
+  { icon: Clock3, title: 'Turnos y cajas', copy: 'Revisa la actividad operativa con su contexto de fecha y sucursal.' },
+  { icon: ReceiptText, title: 'Tickets', copy: 'Abre el detalle de cada venta desde un mismo lugar.' },
+  { icon: CreditCard, title: 'Formas de pago', copy: 'Entiende cómo se compone la venta del periodo consultado.' },
+  { icon: BarChart3, title: 'Cobertura visible', copy: 'Identifica datos completos, parciales o pendientes de conciliar.' },
+]
+
+function ProductLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className={`landing-logo${compact ? ' landing-logo--compact' : ''}`}>
+      <span className="landing-logo__mark"><ReceiptText size={compact ? 18 : 22} strokeWidth={2} /></span>
+      <span><strong>SoftRestaurant</strong><small>Pulso operativo</small></span>
+    </span>
+  )
+}
+
+function DashboardPreview() {
+  return (
+    <div className="device-stage" aria-label="Vista ilustrativa del dashboard en computadora y celular">
+      <div className="laptop-device">
+        <div className="laptop-screen">
+          <div className="preview-sidebar"><ProductLogo compact /><span>Inicio</span><span>Ventas</span><span>Sucursales</span><span>Operación</span></div>
+          <div className="preview-content">
+            <div className="preview-topline"><span>Resumen general</span><span className="preview-live"><Wifi size={10} /> Sincronizado</span></div>
+            <p className="preview-caption">Vista de ejemplo</p>
+            <div className="preview-value">Información de tu sucursal</div>
+            <svg className="preview-chart" viewBox="0 0 340 74" role="img" aria-label="Gráfica ilustrativa de ventas">
+              <defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2f91ff" stopOpacity=".24" /><stop offset="1" stopColor="#2f91ff" stopOpacity="0" /></linearGradient></defs>
+              <path d="M0 66 L35 57 L67 60 L99 45 L128 49 L159 30 L191 39 L224 23 L255 31 L286 18 L315 25 L340 5 L340 74 L0 74Z" fill="url(#chart-fill)" />
+              <polyline points="0,66 35,57 67,60 99,45 128,49 159,30 191,39 224,23 255,31 286,18 315,25 340,5" fill="none" stroke="#2f91ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div className="preview-grid"><div><span>Ventas por sucursal</span><i /><i /><i /></div><div><span>Formas de pago</span><b className="preview-donut" /></div></div>
+          </div>
+        </div>
+        <div className="laptop-base" />
+      </div>
+      <div className="phone-device">
+        <div className="phone-speaker" />
+        <div className="phone-head"><ProductLogo compact /><span>•••</span></div>
+        <p>Tu restaurante</p>
+        <strong>Datos al momento</strong>
+        <span className="phone-status">Cobertura visible</span>
+        <div className="phone-cards"><span>Sucursales<b>Según tu acceso</b></span><span>Cortes<b>Por periodo</b></span></div>
+        <div className="phone-total"><small>Resumen del día</small><b>Listo para consultar</b></div>
+        <div className="phone-nav"><span>⌂</span><span>▤</span><span>⌁</span><span>•••</span></div>
+      </div>
+    </div>
+  )
+}
+
 export function LoginScreen({ error, busy, onLogin }: LoginScreenProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     await onLogin(email, password)
   }
 
+  function closeMenu() {
+    setMenuOpen(false)
+  }
+
   return (
-    <main className="login-page">
-      <section className="login-intro" aria-labelledby="login-title">
-        <div className="brand-mark" aria-hidden="true">
-          <ReceiptText size={26} strokeWidth={1.8} />
-        </div>
-        <p className="eyebrow">SoftRestaurant · Pulso operativo</p>
-        <h1 id="login-title">Tu operación, sin esperar al corte.</h1>
-        <p className="login-copy">
-          Consulta ventas, tickets y actividad de caja con la hora exacta de la última sincronización.
-        </p>
-        <div className="login-proof">
-          <span className="proof-line" />
-          <p>Los datos provienen de PostgreSQL y conservan la conciliación del conector.</p>
-        </div>
-      </section>
-
-      <section className="login-card" aria-label="Iniciar sesión">
-        <div>
-          <p className="utility-label">Acceso autorizado</p>
-          <h2>Entrar al dashboard</h2>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <label className="field-label" htmlFor="email">Correo</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-
-          <label className="field-label" htmlFor="password">Contraseña</label>
-          <div className="password-field">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-            <button
-              type="button"
-              className="icon-button password-toggle"
-              onClick={() => setShowPassword((visible) => !visible)}
-              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-            >
-              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-            </button>
-          </div>
-
-          {error ? <p className="form-error" role="alert">{error}</p> : null}
-
-          <button className="primary-button" type="submit" disabled={busy}>
-            <span>{busy ? 'Verificando…' : 'Entrar'}</span>
-            <ArrowRight size={19} aria-hidden="true" />
+    <main className="landing-page">
+      <section className="landing-hero" id="inicio">
+        <nav className="landing-nav" aria-label="Navegación pública">
+          <a href="#inicio" aria-label="Ir al inicio"><ProductLogo /></a>
+          <button className="landing-menu-button" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="landing-links" aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}>
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
-        </form>
+          <div className={`landing-links${menuOpen ? ' is-open' : ''}`} id="landing-links">
+            <a href="#inicio" onClick={closeMenu}>Inicio</a>
+            <a href="#beneficios" onClick={closeMenu}>Beneficios</a>
+            <a href="#dispositivos" onClick={closeMenu}>Características</a>
+            <a href="#acceso" onClick={closeMenu}>Acceso</a>
+          </div>
+          <a className="nav-login" href="#acceso">Iniciar sesión</a>
+        </nav>
+
+        <div className="hero-inner">
+          <div className="hero-copy">
+            <p className="hero-kicker">Información operativa, estés donde estés</p>
+            <h1>Tu restaurante,<br /><span>siempre contigo</span></h1>
+            <p className="hero-lead">Conecta la información de SoftRestaurant con un panel web para consultar ventas, sucursales y operación desde cualquier dispositivo.</p>
+            <div className="hero-actions">
+              <a className="landing-button landing-button--primary" href="#beneficios">Conocer el sistema <ArrowRight size={18} /></a>
+              <a className="landing-button landing-button--ghost" href="#acceso">Ya soy cliente</a>
+            </div>
+            <div className="hero-trust"><span><Wifi size={17} /> Sin reemplazar tu sistema</span><span><ShieldCheck size={17} /> Acceso protegido</span><span><MonitorSmartphone size={17} /> Diseño adaptable</span></div>
+          </div>
+          <DashboardPreview />
+        </div>
       </section>
+
+      <section className="landing-section benefits-section" id="beneficios">
+        <div className="landing-container benefits-layout">
+          <div className="section-intro">
+            <p className="section-kicker">Cómo funciona</p>
+            <h2>No necesitas estar en el restaurante para saber cómo va el día.</h2>
+            <p>El conector lleva la información autorizada a un panel web. Cada consulta conserva el contexto de sucursal, fecha, sincronización y cobertura.</p>
+            <div className="connection-note"><ProductLogo compact /><span>No reemplaza SoftRestaurant.<strong>Lo conecta.</strong></span></div>
+          </div>
+          <div className="capability-grid">
+            {capabilities.map(({ icon: Icon, title, copy }) => (
+              <article className="capability" key={title}><span className="capability-icon"><Icon size={23} /></span><h3>{title}</h3><p>{copy}</p></article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-section devices-section" id="dispositivos">
+        <div className="landing-container devices-layout">
+          <div className="section-intro">
+            <p className="section-kicker">Tu información, en tus dispositivos</p>
+            <h2>Control claro,<br />donde lo necesitas.</h2>
+            <p>Consulta desde celular, tablet o computadora. La experiencia se adapta al tamaño de pantalla sin perder contexto operativo.</p>
+            <div className="device-options"><span><Smartphone size={24} />Celular</span><span><MonitorSmartphone size={24} />Tablet</span><span><Laptop size={26} />Computadora</span></div>
+          </div>
+          <div className="devices-visual" aria-hidden="true">
+            <div className="devices-halo" />
+            <div className="mini-laptop"><div><span>Resumen</span><svg viewBox="0 0 160 42"><polyline points="0,38 26,31 52,33 78,18 104,24 130,14 160,4" /></svg><i /><i /></div></div>
+            <div className="mini-tablet"><span>Panel web</span><svg viewBox="0 0 120 38"><polyline points="0,34 24,27 48,29 72,15 96,20 120,4" /></svg></div>
+            <div className="mini-phone"><span>Hoy</span><b>Operación visible</b><i /></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="branches-band">
+        <div className="landing-container branches-layout">
+          <div className="section-intro section-intro--light">
+            <p className="section-kicker">Una vista para cada negocio</p>
+            <h2>Más de una sucursal.<br />Una sola vista.</h2>
+            <p>Los usuarios ven únicamente las sucursales que tienen asignadas. La administración global permanece separada y protegida.</p>
+          </div>
+          <div className="branch-panel" aria-label="Ejemplo de acceso por sucursal"><div><Store size={20} /><strong>Sucursales asignadas</strong></div><span>Centro <b>Disponible</b></span><span>Norte <b>Disponible</b></span><span>Otras <em>Según permisos</em></span></div>
+        </div>
+      </section>
+
+      <section className="access-section" id="acceso">
+        <div className="landing-container access-layout">
+          <div className="access-copy"><p className="section-kicker">Acceso para clientes</p><h2>Consulta tu operación.</h2><p>Inicia sesión con la cuenta y las sucursales que tu administrador te asignó.</p><div className="access-proof"><ShieldCheck size={20} /><span>Sesión protegida y permisos por sucursal</span></div></div>
+          <section className="login-card" aria-label="Iniciar sesión">
+            <div><p className="utility-label">Panel de control</p><h2>Iniciar sesión</h2><p className="login-card-copy">Accede a tu información operativa.</p></div>
+            <form onSubmit={handleSubmit}>
+              <label className="field-label" htmlFor="email">Correo electrónico</label>
+              <input id="email" name="email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required />
+              <label className="field-label" htmlFor="password">Contraseña</label>
+              <div className="password-field"><input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="icon-button password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
+              {error ? <p className="form-error" role="alert">{error}</p> : null}
+              <button className="primary-button" type="submit" disabled={busy}><span>{busy ? 'Verificando…' : 'Entrar'}</span><ArrowRight size={19} aria-hidden="true" /></button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <footer className="landing-footer"><div className="landing-container"><ProductLogo compact /><span>Información operativa con contexto y cobertura visible.</span><a href="#inicio">Volver al inicio</a></div></footer>
     </main>
   )
 }
