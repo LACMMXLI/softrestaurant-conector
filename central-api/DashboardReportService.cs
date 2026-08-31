@@ -503,31 +503,45 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using var command = dataSource.CreateCommand("""
             SELECT
                 COUNT(*) FILTER (
-                    WHERE business_date >= $2 AND business_date < $3
+                    WHERE (($5::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5))
                       AND paid AND NOT cancelled AND closed_at IS NOT NULL),
                 COALESCE(SUM(total) FILTER (
-                    WHERE business_date >= $2 AND business_date < $3
+                    WHERE (($5::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5))
                       AND paid AND NOT cancelled AND closed_at IS NOT NULL), 0),
                 COALESCE(AVG(total) FILTER (
-                    WHERE business_date >= $2 AND business_date < $3
+                    WHERE (($5::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5))
                       AND paid AND NOT cancelled AND closed_at IS NOT NULL), 0),
                 COALESCE(SUM(tip) FILTER (
-                    WHERE business_date >= $2 AND business_date < $3
+                    WHERE (($5::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5))
                       AND paid AND NOT cancelled AND closed_at IS NOT NULL), 0),
                 COUNT(*) FILTER (
-                    WHERE business_date >= $2 AND business_date < $3 AND cancelled),
+                    WHERE (($5::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5))
+                      AND cancelled),
                 COALESCE(SUM(total) FILTER (
-                    WHERE business_date >= $4 AND business_date < $2
+                    WHERE $5::integer IS NULL AND business_date >= $4 AND business_date < $2
                       AND paid AND NOT cancelled AND closed_at IS NOT NULL), 0),
                 COALESCE((SELECT SUM(occurrences) FROM cancellation_summaries
-                    WHERE branch_id = $1 AND cancellation_date = $2::date), 0),
+                    WHERE branch_id = $1
+                      AND (($5::integer IS NULL AND cancellation_date = $2::date)
+                           OR ($5::integer IS NOT NULL AND EXISTS (
+                               SELECT 1 FROM sales cancelled_sale
+                               WHERE cancelled_sale.branch_id = cancellation_summaries.branch_id
+                                 AND cancelled_sale.source_folio = cancellation_summaries.source_folio
+                                 AND COALESCE(cancelled_sale.source_shift_id, NULLIF(cancelled_sale.payload->>'idTurno', '')::integer) = $5)))), 0),
                 COALESCE((SELECT SUM(amount) FROM cash_movements
-                    WHERE branch_id = $1 AND movement_date >= $2 AND movement_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5)
+                    WHERE branch_id = $1
+                      AND (($5::integer IS NULL AND movement_date >= $2 AND movement_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5))
                       AND movement_type = 2 AND NOT cancelled), 0),
                 COALESCE((SELECT SUM(amount) FROM cash_movements
-                    WHERE branch_id = $1 AND movement_date >= $2 AND movement_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5)
+                    WHERE branch_id = $1
+                      AND (($5::integer IS NULL AND movement_date >= $2 AND movement_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5))
                       AND movement_type = 1 AND NOT cancelled), 0),
                 COALESCE((SELECT SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1))
                     FROM sale_payments sp
@@ -535,8 +549,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                       ON paid_sale.branch_id = sp.branch_id
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
-                      AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
+                      AND (($5::integer IS NULL AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5))
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL
                       AND NULLIF(sp.payload->>'tipoFormaDePago', '')::integer = 1), 0),
                 COALESCE((SELECT SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1))
@@ -545,8 +559,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                       ON paid_sale.branch_id = sp.branch_id
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
-                      AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
+                      AND (($5::integer IS NULL AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5))
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL
                       AND NULLIF(sp.payload->>'tipoFormaDePago', '')::integer = 2), 0),
                 COALESCE((SELECT SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1))
@@ -555,26 +569,28 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                       ON paid_sale.branch_id = sp.branch_id
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
-                      AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
+                      AND (($5::integer IS NULL AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5))
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL
                       AND NULLIF(sp.payload->>'tipoFormaDePago', '')::integer IN (3, 4)), 0),
                 COALESCE((SELECT SUM(NULLIF(payload->>'fondo', '')::numeric)
                     FROM shifts
-                    WHERE branch_id = $1 AND opened_at >= $2 AND opened_at < $3
-                      AND ($5::integer IS NULL OR NULLIF(payload->>'idTurno', '')::integer = $5)), 0),
+                    WHERE branch_id = $1
+                      AND (($5::integer IS NULL AND opened_at >= $2 AND opened_at < $3)
+                           OR ($5::integer IS NOT NULL AND NULLIF(payload->>'idTurno', '')::integer = $5))), 0),
                 COALESCE((SELECT SUM(NULLIF(payload->>'efectivo', '')::numeric)
                     FROM shifts
-                    WHERE branch_id = $1 AND opened_at >= $2 AND opened_at < $3
-                      AND ($5::integer IS NULL OR NULLIF(payload->>'idTurno', '')::integer = $5)), 0),
+                    WHERE branch_id = $1
+                      AND (($5::integer IS NULL AND opened_at >= $2 AND opened_at < $3)
+                           OR ($5::integer IS NOT NULL AND NULLIF(payload->>'idTurno', '')::integer = $5))), 0),
                 COALESCE((SELECT bool_and(NULLIF(sp.payload->>'tipoFormaDePago', '') IS NOT NULL)
                     FROM sale_payments sp
                     INNER JOIN sales paid_sale
                       ON paid_sale.branch_id = sp.branch_id
                      AND paid_sale.source_folio = sp.source_folio
                     WHERE sp.branch_id = $1
-                      AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3
-                      AND ($5::integer IS NULL OR COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5)
+                      AND (($5::integer IS NULL AND paid_sale.business_date >= $2 AND paid_sale.business_date < $3)
+                           OR ($5::integer IS NOT NULL AND COALESCE(paid_sale.source_shift_id, NULLIF(paid_sale.payload->>'idTurno', '')::integer) = $5))
                       AND paid_sale.paid AND NOT paid_sale.cancelled AND paid_sale.closed_at IS NOT NULL), false),
                 EXISTS (
                     SELECT 1 FROM sync_batches
@@ -583,8 +599,9 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                       AND range_start <= $4
                       AND range_end >= $2)
             FROM sales
-            WHERE branch_id = $1 AND business_date >= $4 AND business_date < $3
-              AND ($5::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5);
+            WHERE branch_id = $1
+              AND (($5::integer IS NULL AND business_date >= $4 AND business_date < $3)
+                   OR ($5::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $5));
             """);
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
@@ -638,8 +655,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                    COALESCE(SUM(total), 0), COUNT(*)
             FROM sales
             WHERE branch_id = $1
-              AND business_date >= $2 AND business_date < $3
-              AND ($4::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4)
+              AND (($4::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                   OR ($4::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4))
               AND paid AND NOT cancelled AND closed_at IS NOT NULL
             GROUP BY 1
             ORDER BY 1;
@@ -670,8 +687,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                    payload->>'mesa', payload->>'usuarioPago'
             FROM sales
             WHERE branch_id = $1
-              AND business_date >= $2 AND business_date < $3
-              AND ($4::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4)
+              AND (($4::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                   OR ($4::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4))
               AND ($5::text IS NULL OR source_folio::text ILIKE '%' || $5 || '%'
                    OR COALESCE(payload->>'numCheque', '') ILIKE '%' || $5 || '%')
             ORDER BY COALESCE(closed_at, business_date) DESC NULLS LAST, source_folio DESC
@@ -702,11 +719,12 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                    payload->>'description', quantity, price, occurrences,
                    payload->>'user', payload->>'reason'
             FROM cancellation_summaries
-            WHERE branch_id = $1 AND cancellation_date = $2::date
-              AND ($3::integer IS NULL OR EXISTS (SELECT 1 FROM sales s
-                  WHERE s.branch_id = cancellation_summaries.branch_id
-                    AND s.source_folio = cancellation_summaries.source_folio
-                    AND COALESCE(s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer) = $3))
+            WHERE branch_id = $1
+              AND (($3::integer IS NULL AND cancellation_date = $2::date)
+                   OR ($3::integer IS NOT NULL AND EXISTS (SELECT 1 FROM sales s
+                       WHERE s.branch_id = cancellation_summaries.branch_id
+                         AND s.source_folio = cancellation_summaries.source_folio
+                         AND COALESCE(s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer) = $3)))
             ORDER BY cancellation_date DESC, updated_at DESC
             LIMIT $4;
             """);
@@ -747,8 +765,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                    payload->>'concepto', payload->>'referencia'
             FROM cash_movements
             WHERE branch_id = $1
-              AND movement_date >= $2 AND movement_date < $3
-              AND ($8::integer IS NULL OR COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $8)
+              AND (($8::integer IS NULL AND movement_date >= $2 AND movement_date < $3)
+                   OR ($8::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $8))
               AND NOT cancelled
               AND ($4::integer IS NULL OR movement_type = $4)
               AND ($5::text IS NULL
