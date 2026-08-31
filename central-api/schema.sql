@@ -58,7 +58,7 @@ ALTER TABLE connectors ADD COLUMN IF NOT EXISTS last_sync_request_handled_at tim
 -- Mecanismo simple de solicitud remota de sincronización: el panel marca la sucursal, el
 -- agente la recoge en su siguiente latido (HeartbeatWorker) y la corre vía SyncCoordinator.
 ALTER TABLE branches ADD COLUMN IF NOT EXISTS sync_requested_at timestamptz NULL;
-ALTER TABLE branches ADD COLUMN IF NOT EXISTS sync_requested_by uuid NULL REFERENCES app_users(id);
+ALTER TABLE branches ADD COLUMN IF NOT EXISTS sync_requested_by uuid NULL;
 
 CREATE TABLE IF NOT EXISTS connector_activation_keys (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -192,6 +192,17 @@ CREATE TABLE IF NOT EXISTS app_users (
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'branches_sync_requested_by_fkey'
+    ) THEN
+        ALTER TABLE branches
+            ADD CONSTRAINT branches_sync_requested_by_fkey
+            FOREIGN KEY (sync_requested_by) REFERENCES app_users(id);
+    END IF;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS ux_app_users_email_lower ON app_users(lower(email));
 
 -- Migración compatible: bases existentes tienen el CHECK sin SUPERADMIN (panel admin del SaaS).
