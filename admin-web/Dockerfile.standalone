@@ -8,7 +8,7 @@ COPY admin-web/ ./
 RUN npm run build
 
 FROM nginx:alpine AS runtime
-ENV ADMIN_API_ORIGIN=https://restaurant-agent-api.fatboymexicali.com
+ENV ADMIN_API_ORIGIN=https://softrestaurant-api.fatboymexicali.com
 ENV NGINX_ENVSUBST_FILTER=ADMIN_API_ORIGIN
 
 COPY admin-web/nginx.standalone.conf.template /etc/nginx/templates/default.conf.template
