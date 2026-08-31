@@ -2,24 +2,24 @@
   #define BuildVersion "1.1.1"
 #endif
 #ifndef BuildApiUrl
-  #define BuildApiUrl "https://softrestaurant-api.fatboymexicali.com"
+  #define BuildApiUrl "https://restaurant-agent-api.fatboymexicali.com"
 #endif
 #ifndef BuildOutputName
-  #define BuildOutputName "SoftRestaurant-Sync-Agent-Setup"
+  #define BuildOutputName "RestaurantAgent-Sync-Agent-Setup"
 #endif
 
-#define AppName "SoftRestaurant Sync Agent"
+#define AppName "RestaurantAgent Sync Agent"
 #define AppPublisher "Fatboy"
-#define ServiceName "SoftRestaurantSyncAgent"
-#define AgentExe "SoftRestaurant.Extractor.exe"
-#define AgentUiExe "SoftRestaurant.Extractor.Ui.exe"
+#define ServiceName "RestaurantAgentSyncAgent"
+#define AgentExe "RestaurantAgent.Extractor.exe"
+#define AgentUiExe "RestaurantAgent.Extractor.Ui.exe"
 
 [Setup]
 AppId={{2D9E79BA-B15A-4B4E-88D4-E5719AD0E3D7}
 AppName={#AppName}
 AppVersion={#BuildVersion}
 AppPublisher={#AppPublisher}
-DefaultDirName={autopf64}\Fatboy\SoftRestaurant Sync Agent
+DefaultDirName={autopf64}\Fatboy\RestaurantAgent Sync Agent
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
@@ -44,8 +44,8 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Source: ".build\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Dirs]
-Name: "{commonappdata}\SoftRestaurantSyncAgent"
-Name: "{commonappdata}\SoftRestaurantSyncAgent\out"
+Name: "{commonappdata}\RestaurantAgentSyncAgent"
+Name: "{commonappdata}\RestaurantAgentSyncAgent\out"
 
 [Icons]
 Name: "{group}\Estado del servicio"; Filename: "{sys}\services.msc"
@@ -55,7 +55,7 @@ Name: "{group}\Panel del agente"; Filename: "{app}\{#AgentUiExe}"
 ; aplicaría al usuario que corre el instalador, normalmente un administrador, no al personal
 ; que usa la caja). Es solo un cliente HTTP local: si el servicio está detenido, el panel lo
 ; indica y no pasa nada más.
-Name: "{commonstartup}\SoftRestaurant Sync Agent - Panel"; Filename: "{app}\{#AgentUiExe}"
+Name: "{commonstartup}\RestaurantAgent Sync Agent - Panel"; Filename: "{app}\{#AgentUiExe}"
 
 [Run]
 Filename: "{app}\{#AgentUiExe}"; Description: "Abrir el panel del agente"; Flags: nowait postinstall skipifsilent runasoriginaluser
@@ -125,13 +125,13 @@ begin
   StringChangeEx(Result, #9, '\t', True);
 end;
 
-procedure DetectSoftRestaurant(out SqlServer, SqlDatabase: string);
+procedure DetectRestaurantAgent(out SqlServer, SqlDatabase: string);
 var
   CandidatePaths: array[0..2] of string;
   I: Integer;
 begin
   SqlServer := '.\SQLEXPRESS';
-  SqlDatabase := 'softrestaurant11';
+  SqlDatabase := 'restaurant11';
   DetectedIniPath := '';
 
   CandidatePaths[0] := 'C:\nationalsoft\Softrestaurant11.0\restaurant.ini';
@@ -158,7 +158,7 @@ var
   ResultCode: Integer;
 begin
   Result := False;
-  DataRootPath := ExpandConstant('{commonappdata}\SoftRestaurantSyncAgent');
+  DataRootPath := ExpandConstant('{commonappdata}\RestaurantAgentSyncAgent');
   ProtectedConfigPath := DataRootPath + '\agent-settings.dpapi';
   ExeForCheck := ExpandConstant('{app}\{#AgentExe}');
 
@@ -194,15 +194,15 @@ begin
   // equipos con instalacion previa (unica ruta que ejercita CheckExistingConfig).
   ExistingConfigValid := False;
 
-  DetectSoftRestaurant(SqlServer, SqlDatabase);
+  DetectRestaurantAgent(SqlServer, SqlDatabase);
   if DetectedIniPath <> '' then
-    DetectionText := 'Se detectó SoftRestaurant en:' + #13#10 + DetectedIniPath
+    DetectionText := 'Se detectó RestaurantAgent en:' + #13#10 + DetectedIniPath
   else
     DetectionText := 'No se encontró restaurant.ini. Confirma manualmente el servidor y la base.';
 
   DatabasePage := CreateInputQueryPage(
     wpSelectDir,
-    'Conexión local de SoftRestaurant',
+    'Conexión local de RestaurantAgent',
     'Confirma la instancia y la base detectadas',
     DetectionText);
   DatabasePage.Add('Servidor o instancia SQL:', False);
@@ -212,8 +212,8 @@ begin
 
   CredentialsPage := CreateInputQueryPage(
     DatabasePage.ID,
-    'Credenciales de SoftRestaurant',
-    'Usa el mismo usuario SQL configurado en SoftRestaurant',
+    'Credenciales de RestaurantAgent',
+    'Usa el mismo usuario SQL configurado en RestaurantAgent',
     'El agente ejecuta únicamente consultas SELECT. La contraseña no se mostrará en el resumen.');
   CredentialsPage.Add('Usuario SQL:', False);
   CredentialsPage.Add('Contraseña SQL:', True);
@@ -262,13 +262,13 @@ begin
   begin
     if Trim(CredentialsPage.Values[0]) = '' then
     begin
-      MsgBox('Indica el usuario SQL que utiliza SoftRestaurant.', mbError, MB_OK);
+      MsgBox('Indica el usuario SQL que utiliza RestaurantAgent.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
     if CredentialsPage.Values[1] = '' then
     begin
-      MsgBox('Indica la contraseña SQL de SoftRestaurant.', mbError, MB_OK);
+      MsgBox('Indica la contraseña SQL de RestaurantAgent.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
@@ -434,11 +434,11 @@ begin
   ExpectedImagePath := '"' + ExePath + '" --watch';
   if not RunSc('crear el servicio',
     'create "' + AgentServiceName + '" binPath= "\"' + ExePath +
-    '\" --watch" start= auto DisplayName= "SoftRestaurant Sync Agent"', False) then
+    '\" --watch" start= auto DisplayName= "RestaurantAgent Sync Agent"', False) then
     Abort;
 
   RunSc('configurar la descripción', 'description "' + AgentServiceName +
-    '" "Extrae reportes de SoftRestaurant en modo SELECT y los sincroniza con Fatboy."', True);
+    '" "Extrae reportes de RestaurantAgent en modo SELECT y los sincroniza con Fatboy."', True);
   RunSc('configurar la recuperación', 'failure "' + AgentServiceName +
     '" reset= 86400 actions= restart/60000/restart/60000/restart/60000', True);
 
@@ -475,7 +475,7 @@ begin
   if CurUninstallStep = usUninstall then
   begin
     StopAndDeleteService;
-    DeleteFile(ExpandConstant('{commonappdata}\SoftRestaurantSyncAgent\agent-settings.dpapi'));
+    DeleteFile(ExpandConstant('{commonappdata}\RestaurantAgentSyncAgent\agent-settings.dpapi'));
   end;
 end;
 
@@ -496,7 +496,7 @@ begin
       '  se modifican.' + NewLine + NewLine +
       'Backend:' + NewLine +
       '  ' + AgentApiUrl + NewLine + NewLine +
-      'Se actualizará el servicio "SoftRestaurant Sync Agent" a esta versión sin pedir' + NewLine +
+      'Se actualizará el servicio "RestaurantAgent Sync Agent" a esta versión sin pedir' + NewLine +
       'ni sobrescribir ningún dato de configuración.';
     Exit;
   end;
@@ -515,10 +515,10 @@ begin
     '  iniciar sesión y vincularlo a tu sucursal.' + NewLine + NewLine +
     'Backend:' + NewLine +
     '  ' + AgentApiUrl + NewLine + NewLine +
-    'SoftRestaurant:' + NewLine +
+    'RestaurantAgent:' + NewLine +
     DetectionSummary +
     '  Servidor: ' + DatabasePage.Values[0] + NewLine +
     '  Base: ' + DatabasePage.Values[1] + NewLine +
     '  Usuario: ' + CredentialsPage.Values[0] + NewLine + NewLine +
-    'Se creará el servicio automático "SoftRestaurant Sync Agent".';
+    'Se creará el servicio automático "RestaurantAgent Sync Agent".';
 end;

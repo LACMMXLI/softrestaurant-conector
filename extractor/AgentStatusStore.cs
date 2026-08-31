@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal enum AgentOperationalState { Idle, Syncing, Error, Revoked }
 

@@ -2,7 +2,7 @@
 
 ## 1. Alcance y método
 
-Este informe documenta la base `softrestaurant11` restaurada en `CARDONA\SQLEXPRESS`. El respaldo terminó el 24 de agosto de 2026 y contiene operación desde el 5 de febrero hasta el 24 de agosto de 2026.
+Este informe documenta la base `restaurant11` restaurada en `CARDONA\SQLEXPRESS`. El respaldo terminó el 24 de agosto de 2026 y contiene operación desde el 5 de febrero hasta el 24 de agosto de 2026.
 
 El análisis fue estrictamente de solo lectura. Se consultaron:
 

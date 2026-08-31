@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 /// <summary>
 /// Reglas de validación de sucursal compartidas entre las rutas /api/web/* (lectura) y

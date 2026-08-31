@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 /// <summary>Reglas de validación para las cuentas administradas desde /api/admin/users y el autorregistro en /api/web/auth/register.</summary>
 internal static partial class UserValidation
@@ -21,7 +21,7 @@ internal static partial class UserValidation
         email.Length <= MaxEmailLength &&
         EmailPattern().IsMatch(email);
 
-    /// <summary>Misma política que DASHBOARD_OWNER_PASSWORD / DASHBOARD_ADMIN_PASSWORD: 12+ caracteres.</summary>
+    /// <summary>Política de contraseñas de las cuentas gestionadas desde la aplicación.</summary>
     public static bool IsValidPassword(string? password) =>
         !string.IsNullOrEmpty(password) &&
         password.Length >= MinPasswordLength &&

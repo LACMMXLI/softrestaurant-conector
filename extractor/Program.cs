@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SoftRestaurant.Extractor;
+using RestaurantAgent.Extractor;
 
 if (args.Length > 0 && args[0] == "--protect-config")
 {
@@ -104,7 +104,7 @@ catch (Exception ex) when (ex is ArgumentException or FormatException or JsonExc
     return 64;
 }
 
-Console.WriteLine("SoftRestaurant Sync Agent — solo lectura");
+Console.WriteLine("RestaurantAgent Sync Agent — solo lectura");
 Console.WriteLine($"  SQL: {cfg.Server} / {cfg.Database} ({(cfg.TrustedConnection ? "Windows Auth" : "SQL Login")})");
 Console.WriteLine($"  Sucursal: {cfg.BranchCode}");
 Console.WriteLine($"  Modo: {(cfg.Watch ? "servicio periódico" : cfg.SendEnabled ? "extracción y envío" : "extracción local")}");
@@ -112,7 +112,7 @@ Console.WriteLine($"  Modo: {(cfg.Watch ? "servicio periódico" : cfg.SendEnable
 if (cfg.Watch)
 {
     var builder = Host.CreateApplicationBuilder();
-    builder.Services.AddWindowsService(options => options.ServiceName = "SoftRestaurant Sync Agent");
+    builder.Services.AddWindowsService(options => options.ServiceName = "RestaurantAgent Sync Agent");
     builder.Services.AddSingleton(cfg);
     builder.Services.AddSingleton<AgentStatusStore>();
     builder.Services.AddSingleton<AgentLog>();

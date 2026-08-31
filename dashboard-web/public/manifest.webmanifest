@@ -1,7 +1,7 @@
 {
-  "name": "Pulso SoftRestaurant",
+  "name": "Pulso Agente Restaurante",
   "short_name": "Pulso",
-  "description": "Consulta móvil de ventas y operación sincronizada desde SoftRestaurant.",
+  "description": "Consulta móvil de ventas y operación sincronizada desde Agente Restaurante.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#eef3f2",

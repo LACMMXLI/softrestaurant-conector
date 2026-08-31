@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
-using SoftRestaurant.Sync.Contracts;
+using RestaurantAgent.Sync.Contracts;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal sealed record PendingBatch(string Id, SyncBatch Batch, int Attempts);
 

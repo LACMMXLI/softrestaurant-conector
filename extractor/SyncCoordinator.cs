@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal enum SyncTrigger { Cycle, ManualGui, Remote }
 
@@ -52,7 +52,7 @@ internal sealed class SyncCoordinator(ExtractorConfig config, AgentStatusStore s
                 State = result.ReconciliationOk ? AgentOperationalState.Idle : AgentOperationalState.Error,
                 LastCycleAt = DateTime.UtcNow,
                 LastSuccessAt = result.ReconciliationOk ? DateTime.UtcNow : s.LastSuccessAt,
-                LastError = result.ReconciliationOk ? null : "La conciliación con SoftRestaurant no coincidió.",
+                LastError = result.ReconciliationOk ? null : "La conciliación con RestaurantAgent no coincidió.",
                 LastReconciliationOk = result.ReconciliationOk,
                 PendingBatches = result.PendingBatches
             });

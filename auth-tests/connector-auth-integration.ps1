@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string] $ApiUrl = 'https://softrestaurant-api.fatboymexicali.com',
+    [string] $ApiUrl = 'https://restaurant-agent-api.fatboymexicali.com',
     [Parameter(Mandatory)] [string] $AdminEmail,
     [Parameter(Mandatory)] [securestring] $AdminPassword,
     [string] $BranchCode = "auth-validation-$([Guid]::NewGuid().ToString('N').Substring(0,8))"

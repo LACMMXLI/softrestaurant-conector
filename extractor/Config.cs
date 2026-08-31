@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 /// <summary>
 /// Configuración de conexión y extracción, resuelta con esta prioridad:
@@ -58,7 +58,7 @@ internal sealed class ExtractorConfig
             TrustServerCertificate = TrustServerCertificate,
             Encrypt = Encrypt,
             ConnectTimeout = ConnectTimeoutSeconds,
-            ApplicationName = "SoftRestaurant.Extractor"
+            ApplicationName = "RestaurantAgent.Extractor"
         };
 
         if (TrustedConnection || string.IsNullOrWhiteSpace(User))
@@ -94,7 +94,7 @@ internal sealed class ExtractorConfig
     {
         // 1) base: appsettings.json (si existe junto al ejecutable o al proyecto)
         string server = "CARDONA\\SQLEXPRESS";
-        string database = "softrestaurant11";
+        string database = "restaurant11";
         bool trusted = true;
         string? user = null;
         string? password = null;
@@ -304,7 +304,7 @@ internal static class ProtectedSettings
 {
     private static readonly string DefaultPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-        "SoftRestaurantSyncAgent",
+        "RestaurantAgentSyncAgent",
         "agent-settings.dpapi");
 
     public static void ProtectFile(string inputPath, string outputPath)

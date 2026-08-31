@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal sealed record HeartbeatRequest(
     string BranchCode,

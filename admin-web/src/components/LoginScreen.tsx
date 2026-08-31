@@ -24,7 +24,7 @@ export function LoginScreen({ error, busy, onLogin }: LoginScreenProps) {
         <div className="brand-mark" aria-hidden="true">
           <ShieldCheck size={26} strokeWidth={1.8} />
         </div>
-        <p className="eyebrow">SoftRestaurant Sync · Administración</p>
+        <p className="eyebrow">RestaurantAgent Sync · Administración</p>
         <h1>Panel de administración</h1>
         <p className="login-copy">Acceso restringido a cuentas con rol SUPERADMIN.</p>
 

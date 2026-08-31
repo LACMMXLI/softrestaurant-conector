@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.0" />
-    <ProjectReference Include="..\sync-contracts\SoftRestaurant.Sync.Contracts.csproj" />
+    <ProjectReference Include="..\sync-contracts\RestaurantAgent.Sync.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="SoftRestaurant.Auth.Tests" />
+    <InternalsVisibleTo Include="RestaurantAgent.Auth.Tests" />
   </ItemGroup>
 
 </Project>

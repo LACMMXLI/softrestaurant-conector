@@ -1,4 +1,4 @@
-# Panel de administración SoftRestaurant Sync (SaaS)
+# Panel de administración RestaurantAgent Sync (SaaS)
 
 SPA React separada de `dashboard-web`. Consume `/api/web/auth/*` para iniciar sesión y
 `/api/admin/*` para operar el negocio: alta, edición y activación/desactivación de
@@ -13,8 +13,8 @@ cliente es solo para dar mensajes claros, no la única defensa.
 
 ## Desarrollo
 
-Con la API corriendo en `http://localhost:5080` y una cuenta `SUPERADMIN` de bootstrap
-(`DASHBOARD_ADMIN_EMAIL` / `DASHBOARD_ADMIN_PASSWORD` en el entorno de `central-api`):
+Con la API corriendo en `http://localhost:5080` y una cuenta `SUPERADMIN` creada desde la
+aplicación:
 
 ```powershell
 npm install
@@ -39,7 +39,7 @@ da acceso a operaciones sensibles (llaves de activación, revocación de conecto
 Para desplegar solamente este panel como un recurso independiente en Coolify, usar
 `admin-web/Dockerfile.standalone`. Esa imagen conserva `/api/*` en el mismo origen del
 navegador y lo reenvía a `ADMIN_API_ORIGIN`, cuyo valor predeterminado es
-`https://softrestaurant-api.fatboymexicali.com`. El recurso independiente no crea ni
+`https://restaurant-agent-api.fatboymexicali.com`. El recurso independiente no crea ni
 reinicia PostgreSQL, la API, el dashboard operativo ni el agente local.
 
 ## Alcance de esta versión

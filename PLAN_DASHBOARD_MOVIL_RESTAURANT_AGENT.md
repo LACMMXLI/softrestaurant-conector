@@ -1,8 +1,8 @@
-# Plan de desarrollo del dashboard móvil de SoftRestaurant
+# Plan de desarrollo del dashboard móvil de RestaurantAgent
 
 ## 1. Objetivo
 
-Construir una aplicación web móvil, clara y operativa para consultar la información consolidada por el conector de SoftRestaurant. PostgreSQL será la única fuente del dashboard. La aplicación no consultará SQL Server directamente y nunca modificará datos de SoftRestaurant.
+Construir una aplicación web móvil, clara y operativa para consultar la información consolidada por el conector de RestaurantAgent. PostgreSQL será la única fuente del dashboard. La aplicación no consultará SQL Server directamente y nunca modificará datos de RestaurantAgent.
 
 El resultado debe poder desplegarse en Coolify junto con la API existente y reutilizar la base PostgreSQL actual, sin crear una base paralela ni cargar datos de demostración.
 
@@ -23,7 +23,7 @@ El resultado debe poder desplegarse en Coolify junto con la API existente y reut
 Ya existe el recorrido:
 
 ```text
-SoftRestaurant / SQL Server (solo SELECT)
+RestaurantAgent / SQL Server (solo SELECT)
         -> agente Windows .NET 8
         -> cola SQLite
         -> HTTPS autenticado
@@ -194,7 +194,7 @@ Antes de habilitar todos los reportes se agregarán instantáneas de sólo lectu
 - grupos;
 - formas de pago;
 - meseros;
-- usuarios operativos de SoftRestaurant;
+- usuarios operativos de RestaurantAgent;
 - estaciones;
 - áreas de restaurante.
 
@@ -210,7 +210,7 @@ Tablas centrales propuestas:
 - `stations`;
 - `restaurant_areas`.
 
-Los usuarios del dashboard son distintos de los usuarios operativos importados de SoftRestaurant.
+Los usuarios del dashboard son distintos de los usuarios operativos importados de RestaurantAgent.
 
 ## 8. Autenticación y permisos del dashboard
 
@@ -401,7 +401,7 @@ Ninguna variable secreta se incluirá en Git.
 - conservar compatibilidad con lotes actuales;
 - probar idempotencia de los nuevos catálogos.
 
-Criterio de salida: dos sincronizaciones iguales no duplican datos y los nombres de catálogo coinciden con SoftRestaurant.
+Criterio de salida: dos sincronizaciones iguales no duplican datos y los nombres de catálogo coinciden con RestaurantAgent.
 
 ### Fase 2 — autenticación y API de reportes
 
@@ -505,7 +505,7 @@ El dashboard se considerará terminado sólo cuando:
 5. permita navegar desde un KPI hasta los tickets que lo componen;
 6. esté desplegado con HTTPS en Coolify;
 7. conserve PostgreSQL privado y el SQL Server de cada sucursal sin exposición externa;
-8. sus cifras principales coincidan con SoftRestaurant durante la validación acordada;
+8. sus cifras principales coincidan con RestaurantAgent durante la validación acordada;
 9. tenga pruebas automáticas y evidencia del recorrido real en producción;
 10. no muestre inventario, catálogos o métricas que no estén respaldados por datos verificados.
 
@@ -521,6 +521,6 @@ El primer incremento debe entregar una ruta vertical completa:
 6. detalle con líneas y pagos;
 7. cancelaciones y salidas de caja;
 8. despliegue del frontend mediante Docker en Coolify;
-9. comparación de un día completo contra SoftRestaurant.
+9. comparación de un día completo contra RestaurantAgent.
 
 Después de conciliar ese incremento se habilitan productos, grupos, formas de pago legibles, personal, cortes y comparación consolidada entre sucursales.

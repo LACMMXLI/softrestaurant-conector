@@ -1,6 +1,6 @@
-# SoftRestaurant Sync Agent
+# RestaurantAgent Sync Agent
 
-Extractor y emisor de **solo lectura** contra `softrestaurant11`. Conserva el modo
+Extractor y emisor de **solo lectura** contra `restaurant11`. Conserva el modo
 local validado de la Fase 1 y añade el piloto de sincronización hacia la API central.
 [PLAN_DESARROLLO_SISTEMA_REPORTES_SOFT_RESTAURANT.md](../PLAN_DESARROLLO_SISTEMA_REPORTES_SOFT_RESTAURANT.md):
 consultas versionadas, contrato JSON normalizado, prueba de llaves idempotentes y
@@ -41,7 +41,7 @@ Sin argumentos, extrae por defecto el rango **[ayer, hoy]**.
 |---|---|---|
 | `--desde` / `--hasta` | Rango semiabierto sobre `fecha`/`apertura` (hasta se interpreta inclusive y se convierte internamente a exclusivo) | ayer → hoy |
 | `--server` | Instancia SQL Server | `CARDONA\SQLEXPRESS` |
-| `--database` | Base de datos | `softrestaurant11` |
+| `--database` | Base de datos | `restaurant11` |
 | `--user` / `--password` | Credenciales SQL (si se omiten, usa Windows Auth) | ninguno |
 | `--trusted` | Fuerza Windows Auth aunque haya `--user` | — |
 | `--out` | Carpeta de salida | `./out` |
@@ -73,10 +73,10 @@ Para importar manualmente una credencial de dispositivo (soporte/recuperación) 
 GUI, ejecutando como la cuenta del servicio:
 
 ```powershell
-Stop-Service SoftRestaurantSyncAgent
-& 'C:\Program Files\Fatboy\SoftRestaurant Sync Agent\SoftRestaurant.Extractor.exe' `
+Stop-Service RestaurantAgentSyncAgent
+& 'C:\Program Files\Fatboy\RestaurantAgent Sync Agent\RestaurantAgent.Extractor.exe' `
   --import-connector-credential .\credencial.json
-Start-Service SoftRestaurantSyncAgent
+Start-Service RestaurantAgentSyncAgent
 ```
 
 El JSON debe contener `installationId`, `branchCode`, `businessId` (opcional) y `deviceToken`
@@ -85,7 +85,7 @@ o el equivalente de soporte `POST /api/admin/branches/{branchCode}/replace-devic
 protegerlos con DPAPI, el agente elimina automáticamente ese archivo.
 
 **Producción actual:** el instalador permite usar el mismo login SQL configurado en
-SoftRestaurant. El agente conserva una lista fija de consultas `SELECT` y no ejecuta
+RestaurantAgent. El agente conserva una lista fija de consultas `SELECT` y no ejecuta
 `INSERT`/`UPDATE`/`DELETE`/`EXECUTE`/`ALTER` contra la base origen. Usar una credencial con
 permisos más amplios eleva el impacto de una filtración, por lo que el equipo debe mantenerse
 restringido a administradores del negocio.
@@ -130,7 +130,7 @@ Dos corridas consecutivas producen salida idéntica byte a byte (reenviar es seg
 - Extracción de catálogo (`productos`, `productosdetalle`, `grupos`) — no incluida aquí,
   el plan la agrupa en `/ingestion/catalog` por separado.
 - El servicio, la cola y el instalador gráfico ya funcionan. El instalador autodetecta
-  `restaurant.ini`, solicita las credenciales SQL de SoftRestaurant y guarda la configuración
+  `restaurant.ini`, solicita las credenciales SQL de RestaurantAgent y guarda la configuración
   cifrada con DPAPI para la máquina local. El registro del servicio conserva únicamente la
   ruta del archivo protegido.
 - El backend incluye ingesta, estado de sincronización y resumen del día. Usuarios,

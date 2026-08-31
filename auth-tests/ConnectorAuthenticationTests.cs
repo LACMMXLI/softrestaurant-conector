@@ -1,11 +1,11 @@
 using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Configuration;
-using SoftRestaurant.CentralApi;
-using SoftRestaurant.Extractor;
+using RestaurantAgent.CentralApi;
+using RestaurantAgent.Extractor;
 using Xunit;
 
-namespace SoftRestaurant.Auth.Tests;
+namespace RestaurantAgent.Auth.Tests;
 
 public sealed class ConnectorAuthenticationTests
 {
@@ -67,7 +67,7 @@ public sealed class ConnectorAuthenticationTests
                 {
                   "SRX_API_URL":"https://api.example.test",
                   "SRX_SQL_SERVER":"localhost",
-                  "SRX_SQL_DATABASE":"softrestaurant-test",
+                  "SRX_SQL_DATABASE":"restaurant-agent-test",
                   "SRX_SQL_USER":"test",
                   "SRX_SQL_PASSWORD":"test-password"
                 }

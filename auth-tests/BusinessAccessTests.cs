@@ -1,7 +1,7 @@
-using SoftRestaurant.CentralApi;
+using RestaurantAgent.CentralApi;
 using Xunit;
 
-namespace SoftRestaurant.Auth.Tests;
+namespace RestaurantAgent.Auth.Tests;
 
 /// <summary>
 /// Prueba la regla de aislamiento por negocio implementada en BusinessAccess (y replicada en

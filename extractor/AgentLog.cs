@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 /// <summary>
 /// Log de archivo simple para el agente en modo servicio: cuando corre como servicio de

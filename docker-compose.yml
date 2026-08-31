@@ -3,8 +3,8 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-softrestaurant_reports}
-      POSTGRES_USER: ${POSTGRES_USER:-softrestaurant}
+      POSTGRES_DB: ${POSTGRES_DB:-restaurant_agent_reports}
+      POSTGRES_USER: ${POSTGRES_USER:-restaurant_agent}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD in Coolify}
     volumes:
       - postgres_data:/var/lib/postgresql
@@ -21,17 +21,8 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-softrestaurant_reports};Username=${POSTGRES_USER:-softrestaurant};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-restaurant_agent_reports};Username=${POSTGRES_USER:-restaurant_agent};Password=${POSTGRES_PASSWORD}
       CONNECTOR_ADMIN_KEY: ${SERVICE_PASSWORD_64_CONNECTOR_ADMIN:?Coolify debe generar SERVICE_PASSWORD_64_CONNECTOR_ADMIN}
-      BOOTSTRAP_BRANCH_CODE: ${BOOTSTRAP_BRANCH_CODE:-sucursal-piloto}
-      BOOTSTRAP_BRANCH_NAME: ${BOOTSTRAP_BRANCH_NAME:-Sucursal piloto}
-      BOOTSTRAP_BUSINESS_NAME: ${BOOTSTRAP_BUSINESS_NAME:-Negocio principal}
-      DASHBOARD_OWNER_EMAIL: ${DASHBOARD_OWNER_EMAIL:?Define DASHBOARD_OWNER_EMAIL}
-      DASHBOARD_OWNER_PASSWORD: ${DASHBOARD_OWNER_PASSWORD:?Define DASHBOARD_OWNER_PASSWORD}
-      DASHBOARD_ADMIN_EMAIL: ${DASHBOARD_ADMIN_EMAIL:?Define DASHBOARD_ADMIN_EMAIL}
-      DASHBOARD_ADMIN_PASSWORD: ${DASHBOARD_ADMIN_PASSWORD:?Define DASHBOARD_ADMIN_PASSWORD}
-      DASHBOARD_SESSION_HOURS: ${DASHBOARD_SESSION_HOURS:-24}
-      DASHBOARD_STALE_MINUTES: ${DASHBOARD_STALE_MINUTES:-10}
       INSTALLER_DOWNLOAD_URL: ${INSTALLER_DOWNLOAD_URL:-}
       INSTALLER_VERSION: ${INSTALLER_VERSION:-}
     depends_on:

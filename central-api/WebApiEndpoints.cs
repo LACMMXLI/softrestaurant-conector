@@ -1,4 +1,4 @@
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed record DashboardLoginRequest(string Email, string Password);
 internal sealed record DashboardRegisterRequest(string Email, string Password, string DisplayName);

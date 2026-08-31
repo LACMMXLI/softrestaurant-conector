@@ -3,10 +3,10 @@ param(
     [Parameter(Mandatory = $true)] [string] $ApiUrl,
     [string] $MachineName = $env:COMPUTERNAME,
     [string] $SqlServer = '.\SQLEXPRESS',
-    [string] $SqlDatabase = 'softrestaurant11',
+    [string] $SqlDatabase = 'restaurant11',
     [string] $SqlUser,
     [string] $SqlPassword,
-    [string] $ServiceName = 'SoftRestaurantSyncAgent'
+    [string] $ServiceName = 'RestaurantAgentSyncAgent'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,7 +16,7 @@ if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
 }
 
 $registryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName"
-$dataRoot = Join-Path $env:ProgramData 'SoftRestaurantSyncAgent'
+$dataRoot = Join-Path $env:ProgramData 'RestaurantAgentSyncAgent'
 New-Item -ItemType Directory -Path $dataRoot -Force | Out-Null
 & "$env:SystemRoot\System32\icacls.exe" $dataRoot /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'No se pudieron proteger los permisos de ProgramData.' }
@@ -47,8 +47,8 @@ finally {
 
 $service = New-Service `
     -Name $ServiceName `
-    -DisplayName 'SoftRestaurant Sync Agent' `
-    -Description 'Extrae SoftRestaurant en solo lectura y sincroniza con la API central.' `
+    -DisplayName 'RestaurantAgent Sync Agent' `
+    -Description 'Extrae RestaurantAgent en solo lectura y sincroniza con la API central.' `
     -BinaryPathName ('"{0}" --watch' -f $resolvedExecutable) `
     -StartupType Automatic
 

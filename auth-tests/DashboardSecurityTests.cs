@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using SoftRestaurant.CentralApi;
+using RestaurantAgent.CentralApi;
 using Xunit;
 
-namespace SoftRestaurant.Auth.Tests;
+namespace RestaurantAgent.Auth.Tests;
 
 public sealed class DashboardSecurityTests
 {
@@ -21,49 +21,20 @@ public sealed class DashboardSecurityTests
     }
 
     [Fact]
-    public void Dashboard_owner_email_and_password_must_be_configured_together()
+    public void User_credentials_in_environment_are_ignored_and_do_not_block_startup()
     {
         var configuration = BuildConfiguration(new Dictionary<string, string?>
         {
-            ["DASHBOARD_OWNER_EMAIL"] = "owner@example.test"
+            ["LEGACY_OWNER_EMAIL"] = "legacy@example.test",
+            ["LEGACY_OWNER_PASSWORD"] = "legacy-password",
+            ["LEGACY_ADMIN_EMAIL"] = "legacy-admin@example.test",
+            ["LEGACY_ADMIN_PASSWORD"] = "legacy-password"
         });
 
-        Assert.Throws<InvalidOperationException>(() => ApiOptions.FromConfiguration(configuration));
-    }
+        var options = ApiOptions.FromConfiguration(configuration);
 
-    [Fact]
-    public void Dashboard_owner_password_requires_twelve_characters()
-    {
-        var configuration = BuildConfiguration(new Dictionary<string, string?>
-        {
-            ["DASHBOARD_OWNER_EMAIL"] = "owner@example.test",
-            ["DASHBOARD_OWNER_PASSWORD"] = "short"
-        });
-
-        Assert.Throws<InvalidOperationException>(() => ApiOptions.FromConfiguration(configuration));
-    }
-
-    [Fact]
-    public void Dashboard_admin_email_and_password_must_be_configured_together()
-    {
-        var configuration = BuildConfiguration(new Dictionary<string, string?>
-        {
-            ["DASHBOARD_ADMIN_EMAIL"] = "admin@example.test"
-        });
-
-        Assert.Throws<InvalidOperationException>(() => ApiOptions.FromConfiguration(configuration));
-    }
-
-    [Fact]
-    public void Dashboard_admin_password_requires_twelve_characters()
-    {
-        var configuration = BuildConfiguration(new Dictionary<string, string?>
-        {
-            ["DASHBOARD_ADMIN_EMAIL"] = "admin@example.test",
-            ["DASHBOARD_ADMIN_PASSWORD"] = "short"
-        });
-
-        Assert.Throws<InvalidOperationException>(() => ApiOptions.FromConfiguration(configuration));
+        Assert.Equal(24, options.DashboardSessionHours);
+        Assert.Equal(10, options.DashboardStaleMinutes);
     }
 
     [Fact]

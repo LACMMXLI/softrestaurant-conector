@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Sync.Contracts;
+namespace RestaurantAgent.Sync.Contracts;
 
 public sealed record SaleHeader
 {

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Npgsql;
-using SoftRestaurant.CentralApi;
-using SoftRestaurant.Sync.Contracts;
+using RestaurantAgent.CentralApi;
+using RestaurantAgent.Sync.Contracts;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,8 +58,6 @@ if (apiOptions.ConnectorAdminKey.Length == 0)
     app.Logger.LogWarning("CONNECTOR_ADMIN_KEY no está configurado; los endpoints administrativos quedan deshabilitados.");
 var dataSource = app.Services.GetRequiredService<NpgsqlDataSource>();
 await DbInitializer.InitializeAsync(dataSource, apiOptions, CancellationToken.None);
-await app.Services.GetRequiredService<WebAuthService>()
-    .EnsureBootstrapOwnerAsync(CancellationToken.None);
 
 app.MapGet("/api/health/live", () => Results.Ok(new { status = "ok" }));
 
@@ -393,7 +391,7 @@ app.MapPost("/api/ingestion/batches", async (
     if (batch.RangeEnd <= batch.RangeStart)
         return Results.BadRequest(new { error = "El rango es inválido" });
     if (!batch.ReconciliationOk || batch.Reconciliation.Any(x => !x.Match))
-        return Results.UnprocessableEntity(new { error = "El lote no está conciliado con SoftRestaurant" });
+        return Results.UnprocessableEntity(new { error = "El lote no está conciliado con RestaurantAgent" });
 
     var identity = await AgentAuthenticator.AuthenticateAsync(context, dataSource, batch.BranchCode, ct);
     if (identity is null) return Results.Unauthorized();

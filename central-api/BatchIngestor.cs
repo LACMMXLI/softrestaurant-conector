@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Npgsql;
-using SoftRestaurant.Sync.Contracts;
+using RestaurantAgent.Sync.Contracts;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
 {

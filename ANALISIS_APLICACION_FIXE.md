@@ -1,4 +1,4 @@
-# Análisis técnico de la aplicación FIXE para SoftRestaurant
+# Análisis técnico de la aplicación FIXE para RestaurantAgent
 
 ## 1. Objetivo del análisis
 
@@ -8,24 +8,24 @@ Este documento registra los hallazgos obtenidos al analizar la aplicación local
 C:\Extraido
 ```
 
-El propósito es comprender cómo resuelve la extracción y sincronización de información desde SoftRestaurant, comparar su enfoque con el sistema que se está desarrollando en este proyecto y determinar qué ideas pueden reutilizarse sin copiar sus debilidades de seguridad, confiabilidad y calidad de datos.
+El propósito es comprender cómo resuelve la extracción y sincronización de información desde RestaurantAgent, comparar su enfoque con el sistema que se está desarrollando en este proyecto y determinar qué ideas pueden reutilizarse sin copiar sus debilidades de seguridad, confiabilidad y calidad de datos.
 
 El análisis fue exclusivamente estático:
 
 - No se instaló ni ejecutó el MSI.
 - No se ejecutaron `FlowFormsApp.exe`, `FService.exe` ni `wv.exe`.
 - No se hicieron solicitudes a los servidores de FIXE.
-- No se modificó la base de datos de SoftRestaurant.
+- No se modificó la base de datos de RestaurantAgent.
 - No se encontraron instrucciones SQL de escritura en los ensamblados analizados.
 
 ## 2. Conclusión ejecutiva
 
-La aplicación es un conector de extracción y sincronización para reportes. Instala un servicio de Windows que consulta periódicamente una API central, recibe una lista de conjuntos de datos solicitados, ejecuta consultas `SELECT` contra la base local de SoftRestaurant y envía los resultados por HTTPS en paquetes.
+La aplicación es un conector de extracción y sincronización para reportes. Instala un servicio de Windows que consulta periódicamente una API central, recibe una lista de conjuntos de datos solicitados, ejecuta consultas `SELECT` contra la base local de RestaurantAgent y envía los resultados por HTTPS en paquetes.
 
 La solución confirma que la arquitectura general que se está desarrollando es viable:
 
 1. Un agente local instalado en Windows.
-2. Acceso de solo lectura a SoftRestaurant.
+2. Acceso de solo lectura a RestaurantAgent.
 3. Comunicación saliente con una API central.
 4. Identificación de cada sucursal mediante un token.
 5. Envío por lotes de ventas, pagos, catálogos, inventarios y datos operativos.
@@ -96,7 +96,7 @@ Instalador MSI 1.4.0
              |
              +-- Abre portal de activación mediante WebView2
              +-- Obtiene token y sucursal desde la URL final
-             +-- Detecta la instalación local de SoftRestaurant
+             +-- Detecta la instalación local de RestaurantAgent
              +-- Lee DataSource y Catalog desde restaurant.ini
              +-- Actualiza C:\Fixe\Config\Config.xml
                       |
@@ -106,12 +106,12 @@ Instalador MSI 1.4.0
                       +-- Se ejecuta cada 5 minutos
                       +-- Consulta sync_sucursales en la nube
                       +-- Recibe fechas y banderas de extracción
-                      +-- Ejecuta SELECT contra SoftRestaurant
+                      +-- Ejecuta SELECT contra RestaurantAgent
                       +-- Divide resultados en paquetes
                       +-- Envía cada paquete a la API central
 ```
 
-## 5. Configuración inicial y detección de SoftRestaurant
+## 5. Configuración inicial y detección de RestaurantAgent
 
 `FlowFormsApp.exe` abre la siguiente página dentro de WebView2:
 
@@ -523,7 +523,7 @@ También existen métodos que construyen una conexión sin asignar la cadena cor
 
 ## 14. Qué conviene reutilizar conceptualmente
 
-1. Detección de instalaciones conocidas de SoftRestaurant.
+1. Detección de instalaciones conocidas de RestaurantAgent.
 2. Lectura controlada de `restaurant.ini`.
 3. Asistente de activación de sucursal.
 4. Servicio Windows con inicio automático.
@@ -550,7 +550,7 @@ También existen métodos que construyen una conexión sin asignar la cadena cor
 ## 16. Arquitectura recomendada para nuestro sistema
 
 ```text
-SoftRestaurant SQL Server
+RestaurantAgent SQL Server
         |
         | Cuenta SQL exclusiva de solo lectura
         v
@@ -669,7 +669,7 @@ El agente sólo debe retirar el paquete de SQLite después de recibir y persisti
 
 - Confirmar que todas las consultas son `SELECT`.
 - Probar con una cuenta SQL restringida.
-- Comparar tickets, líneas, pagos y totales con SoftRestaurant.
+- Comparar tickets, líneas, pagos y totales con RestaurantAgent.
 - Probar cambios tardíos: pago, cierre, cancelación y total.
 
 ### Sincronización
@@ -691,18 +691,18 @@ El agente sólo debe retirar el paquete de SQLite después de recibir y persisti
 ### Instalación
 
 - Instalar en una máquina limpia.
-- Confirmar detección de SoftRestaurant 11.
+- Confirmar detección de RestaurantAgent 11.
 - Confirmar arranque automático después de reiniciar.
-- Desinstalar sin borrar datos de SoftRestaurant ni archivos operativos ajenos.
+- Desinstalar sin borrar datos de RestaurantAgent ni archivos operativos ajenos.
 
 ## 20. Dictamen final
 
-La aplicación FIXE demuestra una solución funcional de la misma familia que el sistema deseado: agente local, servicio Windows, lectura de SoftRestaurant y sincronización a una plataforma central.
+La aplicación FIXE demuestra una solución funcional de la misma familia que el sistema deseado: agente local, servicio Windows, lectura de RestaurantAgent y sincronización a una plataforma central.
 
 Su mayor valor para este proyecto es servir como referencia para:
 
 - Instalación y activación.
-- Detección automática de SoftRestaurant.
+- Detección automática de RestaurantAgent.
 - Operación continua como servicio.
 - Catálogo de entidades sincronizables.
 - Envío de información por lotes.

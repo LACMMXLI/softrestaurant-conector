@@ -11,7 +11,7 @@
          ahora") contra la API de control local del servicio, no toca la configuración
          protegida ni el propio servicio de Windows. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>SoftRestaurant.Extractor.Ui</AssemblyName>
+    <AssemblyName>RestaurantAgent.Extractor.Ui</AssemblyName>
   </PropertyGroup>
 
 </Project>

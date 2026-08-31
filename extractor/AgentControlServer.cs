@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal sealed record DiagnosticCheck(string Name, bool Ok, string Detail);
 internal sealed record DiagnosticsReport(bool Ok, IReadOnlyList<DiagnosticCheck> Checks);
@@ -131,11 +131,11 @@ internal sealed class AgentControlServer(
             await using var command = connection.CreateCommand();
             command.CommandText = "SELECT 1;";
             await command.ExecuteScalarAsync(ct);
-            return new DiagnosticCheck("SQL Server (SoftRestaurant)", true, $"{config.Server} / {config.Database}");
+            return new DiagnosticCheck("SQL Server (RestaurantAgent)", true, $"{config.Server} / {config.Database}");
         }
         catch (Exception ex)
         {
-            return new DiagnosticCheck("SQL Server (SoftRestaurant)", false, ex.Message);
+            return new DiagnosticCheck("SQL Server (RestaurantAgent)", false, ex.Message);
         }
     }
 

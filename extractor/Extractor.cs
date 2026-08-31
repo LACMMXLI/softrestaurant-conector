@@ -1,7 +1,7 @@
 using Microsoft.Data.SqlClient;
-using SoftRestaurant.Sync.Contracts;
+using RestaurantAgent.Sync.Contracts;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal sealed class Extractor(string connectionString, DateTime desde, DateTime hasta)
 {

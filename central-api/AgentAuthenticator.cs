@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed record AgentIdentity(Guid BranchId, Guid ConnectorInstallationId, string BranchCode);
 

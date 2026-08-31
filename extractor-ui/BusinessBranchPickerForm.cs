@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Extractor.Ui;
+namespace RestaurantAgent.Extractor.Ui;
 
 /// <summary>
 /// Segundo y último paso del flujo de vinculación: con la sesión humana ya abierta
@@ -28,7 +28,7 @@ public sealed class BusinessBranchPickerForm : Form
         this.centralApi = centralApi;
         this.controlApi = controlApi;
 
-        Text = "SoftRestaurant Sync Agent — Vincular este equipo";
+        Text = "RestaurantAgent Sync Agent — Vincular este equipo";
         Width = 420;
         Height = 460;
         FormBorderStyle = FormBorderStyle.FixedDialog;

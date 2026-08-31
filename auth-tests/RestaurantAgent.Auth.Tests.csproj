@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <AssemblyName>SoftRestaurant.Auth.Tests</AssemblyName>
+    <AssemblyName>RestaurantAgent.Auth.Tests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +15,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <ProjectReference Include="..\central-api\SoftRestaurant.CentralApi.csproj" />
-    <ProjectReference Include="..\extractor\SoftRestaurant.Extractor.csproj" />
+    <ProjectReference Include="..\central-api\RestaurantAgent.CentralApi.csproj" />
+    <ProjectReference Include="..\extractor\RestaurantAgent.Extractor.csproj" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 /// <summary>
 /// Regla de autorización única para "¿puede este usuario ver/administrar este negocio (y por

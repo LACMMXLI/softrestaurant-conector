@@ -2,7 +2,7 @@ using System.Text.Json;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed record LinkDeviceRequest(string MachineName, string? AgentVersion, JsonElement? Metadata);
 internal sealed record DeviceCredential(Guid InstallationId, string BranchCode, Guid BusinessId, string Token, string? ApiUrl);

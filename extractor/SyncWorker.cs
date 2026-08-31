@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Hosting;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 /// <summary>
 /// Ciclo periódico de sincronización. Ya no ejecuta la corrida directamente: se la pide a

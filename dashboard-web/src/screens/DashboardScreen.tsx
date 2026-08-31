@@ -129,7 +129,7 @@ export function DashboardScreen({
                     Diferencia candidata: <strong>{formatAmount(summary.cashDifference)}</strong>
                   </span>
                 </div>
-                <p className="data-note">Cálculo: fondo + cobros en efectivo + entradas − salidas. La diferencia es candidata hasta contrastarla con el corte impreso de SoftRestaurant.</p>
+                <p className="data-note">Cálculo: fondo + cobros en efectivo + entradas − salidas. La diferencia es candidata hasta contrastarla con el corte impreso de RestaurantAgent.</p>
               </>
             ) : (
               <div className="coverage-note" role="status">

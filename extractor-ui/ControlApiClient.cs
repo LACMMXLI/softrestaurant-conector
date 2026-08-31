@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SoftRestaurant.Extractor.Ui;
+namespace RestaurantAgent.Extractor.Ui;
 
 public sealed class AgentStatusDto
 {

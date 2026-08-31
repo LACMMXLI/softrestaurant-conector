@@ -1,8 +1,8 @@
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
-using SoftRestaurant.Sync.Contracts;
+using RestaurantAgent.Sync.Contracts;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal sealed class AgentApiClient(string apiUrl, string token, string installationId)
 {

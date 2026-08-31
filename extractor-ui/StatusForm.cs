@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace SoftRestaurant.Extractor.Ui;
+namespace RestaurantAgent.Extractor.Ui;
 
 /// <summary>
 /// Ventana de estado del agente. Consulta la API de control local cada 5s; nunca toca la
@@ -27,7 +27,7 @@ public sealed class StatusForm : Form
     {
         client = new ControlApiClient(controlPort);
 
-        Text = "SoftRestaurant Sync Agent — Estado";
+        Text = "RestaurantAgent Sync Agent — Estado";
         Width = 480;
         Height = 420;
         StartPosition = FormStartPosition.CenterScreen;
@@ -53,7 +53,7 @@ public sealed class StatusForm : Form
         stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         AddRow(stack, "Servicio:", serviceLabel);
-        AddRow(stack, "Conexión SoftRestaurant (SQL):", sqlLabel);
+        AddRow(stack, "Conexión RestaurantAgent (SQL):", sqlLabel);
         AddRow(stack, "Conexión con el servidor:", apiLabel);
         AddRow(stack, "Última sincronización correcta:", lastSyncLabel);
         AddRow(stack, "Datos pendientes de enviar:", pendingLabel);

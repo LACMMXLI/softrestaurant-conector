@@ -1,4 +1,4 @@
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 /// <summary>
 /// Decide si desactivar o cambiar el rol de una cuenta dejaría al sistema sin ningún

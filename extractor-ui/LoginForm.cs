@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Extractor.Ui;
+namespace RestaurantAgent.Extractor.Ui;
 
 /// <summary>
 /// Primer paso del flujo de vinculación: inicia sesión con la cuenta humana del SaaS
@@ -18,7 +18,7 @@ public sealed class LoginForm : Form
 
     public LoginForm(string? suggestedApiUrl)
     {
-        Text = "SoftRestaurant Sync Agent — Iniciar sesión";
+        Text = "RestaurantAgent Sync Agent — Iniciar sesión";
         Width = 400;
         Height = 320;
         FormBorderStyle = FormBorderStyle.FixedDialog;

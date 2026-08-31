@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Npgsql;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed record BusinessCreateRequest(string Name);
 internal sealed record BusinessView(Guid Id, string Name, string Slug, bool Active, DateTime CreatedAt);

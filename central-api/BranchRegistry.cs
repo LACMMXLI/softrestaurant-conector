@@ -1,7 +1,7 @@
 using Npgsql;
 using NpgsqlTypes;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed record BranchCreateRequest(Guid BusinessId, string Code, string Name, string? Timezone);
 internal sealed record BranchUpdateRequest(string Name, string? Timezone);

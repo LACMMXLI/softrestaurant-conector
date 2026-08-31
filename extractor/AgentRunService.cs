@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 internal sealed record AgentRunResult(bool ReconciliationOk, int PendingBatches);
 

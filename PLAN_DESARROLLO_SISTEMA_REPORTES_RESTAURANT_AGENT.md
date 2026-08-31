@@ -71,7 +71,7 @@ Responsabilidades:
 El instalador será un `.exe` o `.msi` con asistente para:
 
 1. Elegir la instancia, por ejemplo `SERVIDOR\SQLEXPRESS`.
-2. Elegir `softrestaurant11`.
+2. Elegir `restaurant11`.
 3. Introducir el código de activación generado en la web.
 4. Probar conexión y permisos de lectura.
 5. Instalar e iniciar el servicio.

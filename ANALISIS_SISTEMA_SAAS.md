@@ -1,4 +1,4 @@
-# SoftRestaurant Sync Agent — Análisis técnico del sistema
+# RestaurantAgent Sync Agent — Análisis técnico del sistema
 
 **Fecha del análisis:** 31 de agosto de 2026
 **Versión del modelo descrito:** SaaS Account → Business → Branch → ConnectorInstallation (post-migración, instalador v2.0.0)
@@ -8,13 +8,13 @@
 
 ## 1. Descripción general
 
-El sistema es una plataforma SaaS que extrae información operativa de **SoftRestaurant 11**
+El sistema es una plataforma SaaS que extrae información operativa de **RestaurantAgent 11**
 (punto de venta de restaurantes, sobre SQL Server) y la pone disponible en un panel web, sin
-modificar ni depender del sistema de licencias de SoftRestaurant. Está compuesto por un agente
+modificar ni depender del sistema de licencias de RestaurantAgent. Está compuesto por un agente
 de Windows que lee la base de datos en modo solo lectura, una API central que consolida los
 datos en PostgreSQL, y dos aplicaciones web (panel de cliente y panel de administración).
 
-El objetivo del sistema **no es reemplazar SoftRestaurant**, sino ofrecer visibilidad remota
+El objetivo del sistema **no es reemplazar RestaurantAgent**, sino ofrecer visibilidad remota
 de la operación (ventas, cortes de caja, cancelaciones, turnos) desde cualquier dispositivo,
 para dueños y gerentes de restaurantes que administran una o varias sucursales.
 
@@ -42,7 +42,7 @@ Account (cuenta humana)
 
 | Componente | Carpeta | Lenguaje / stack | Rol |
 |---|---|---|---|
-| Agente extractor | `extractor/` | C# / .NET 8 (Windows Service) | Lee SoftRestaurant vía SQL Server (solo `SELECT`), concilia y envía los datos |
+| Agente extractor | `extractor/` | C# / .NET 8 (Windows Service) | Lee RestaurantAgent vía SQL Server (solo `SELECT`), concilia y envía los datos |
 | Panel local (bandeja) | `extractor-ui/` | C# / .NET 8, WinForms | GUI para login, vinculación del equipo y monitoreo del servicio |
 | API central | `central-api/` | C# / .NET 8 (ASP.NET Core Minimal APIs) | Recibe lotes del agente, gestiona cuentas/negocios/sucursales/conectores, sirve el dashboard |
 | Base de datos | PostgreSQL 18 | SQL (esquema propio, sin ORM/EF Core) | Almacena ventas, turnos, cuentas, negocios y conectores |
@@ -52,7 +52,7 @@ Account (cuenta humana)
 | Instalador | `installer/` | Inno Setup 6 (script `.iss`) + PowerShell | Empaqueta agente + GUI en un instalador único para Windows |
 | Pruebas | `auth-tests/` | C# / xUnit | 82 pruebas automatizadas de autenticación, autorización y validación |
 
-**Base de datos de origen:** SQL Server (la de SoftRestaurant, típicamente `softrestaurant11`),
+**Base de datos de origen:** SQL Server (la de RestaurantAgent, típicamente `restaurant11`),
 accedida en modo **solo lectura** — el agente nunca ejecuta `INSERT`/`UPDATE`/`DELETE`/`ALTER`
 contra ella.
 
@@ -73,7 +73,7 @@ aislado del panel admin).
 - Entidades extraídas: ventas (`cheques`), líneas de venta, pagos, turnos, declaraciones de
   cajero, movimientos de caja, cancelaciones.
 - **Reconciliación obligatoria**: antes de enviar un lote, compara los totales extraídos contra
-  los totales de control de SoftRestaurant; si no coinciden, el lote no se envía (evita
+  los totales de control de RestaurantAgent; si no coinciden, el lote no se envía (evita
   reportar datos inconsistentes).
 - **Cola local (outbox)** en SQLite: si no hay Internet o la API no responde, los lotes quedan
   en cola y se reintentan con backoff, sin perder información.
@@ -138,7 +138,7 @@ autenticación distintos que nunca se mezclan**:
   dato de la cuenta humana que hizo la vinculación — solo su propia credencial de dispositivo.
 - Esa credencial se protege en disco con **DPAPI** (`ProtectedData.Protect`, ámbito
   `DataProtectionScope.LocalMachine`), en un archivo cifrado en
-  `%ProgramData%\SoftRestaurantSyncAgent\agent-settings.dpapi`, con permisos NTFS restringidos
+  `%ProgramData%\RestaurantAgentSyncAgent\agent-settings.dpapi`, con permisos NTFS restringidos
   únicamente a `SYSTEM` y `Administradores` (vía `icacls`, configurado por el instalador).
 - Cambiar la contraseña de la cuenta, cerrar todas sus sesiones web, o cerrar la GUI **no
   afecta en nada** al servicio: sigue sincronizando con su propia identidad.
@@ -163,9 +163,9 @@ generada por un administrador. **Eso se eliminó por completo.** El flujo actual
 3. Descarga el instalador universal (mismo instalador para todos los clientes, no hay uno por
    sucursal) desde la sección "Instalar conector".
 4. Instala el agente en la computadora de la sucursal. El instalador:
-   - Detecta automáticamente la instancia SQL Server y la base de datos de SoftRestaurant
+   - Detecta automáticamente la instancia SQL Server y la base de datos de RestaurantAgent
      (busca `restaurant.ini` de SR 9.5/10/11 en las rutas típicas de instalación).
-   - Pide usuario/contraseña SQL (el mismo que ya usa SoftRestaurant).
+   - Pide usuario/contraseña SQL (el mismo que ya usa RestaurantAgent).
    - **No pide ningún código.**
    - Crea el servicio de Windows con arranque automático y recuperación ante fallos
      (`sc.exe failure ... restart/60000`), de modo que arranca solo aunque nadie inicie sesión
@@ -198,15 +198,15 @@ generada por un administrador. **Eso se eliminó por completo.** El flujo actual
 ## 6. Método de instalación
 
 - **Instalador único (Inno Setup 6)**, sin variantes por cliente/negocio/sucursal:
-  `SoftRestaurant-Sync-Agent-<versión>-x64.exe`.
+  `RestaurantAgent-Sync-Agent-<versión>-x64.exe`.
 - Requiere permisos de administrador de Windows (crea un servicio).
 - Arquitectura x64 únicamente.
-- Contenido: agente (`SoftRestaurant.Extractor.exe`) y GUI (`SoftRestaurant.Extractor.Ui.exe`),
+- Contenido: agente (`RestaurantAgent.Extractor.exe`) y GUI (`RestaurantAgent.Extractor.Ui.exe`),
   ambos publicados como ejecutables **autocontenidos** de .NET (no requieren tener el .NET
   Runtime preinstalado en la máquina destino).
 - Pasos del asistente: detección/confirmación de conexión SQL → credenciales SQL → resumen →
   instalación. Ya no hay paso de activación.
-- Post-instalación: crea el servicio de Windows (`SoftRestaurantSyncAgent`), accesos directos
+- Post-instalación: crea el servicio de Windows (`RestaurantAgentSyncAgent`), accesos directos
   ("Estado del servicio", "Panel del agente") y un acceso de autoarranque de la GUI para
   cualquier usuario que inicie sesión en esa máquina.
 - En una actualización sobre una instalación existente, el instalador detecta si ya hay una
@@ -258,7 +258,7 @@ generada por un administrador. **Eso se eliminó por completo.** El flujo actual
   en el servidor que la cuenta (o el dispositivo) tiene acceso real a ese recurso — nunca se
   confía en lo que el navegador oculta o muestra. Una cuenta de un cliente no puede ver, vincular,
   sincronizar ni revocar recursos de otro cliente manipulando IDs.
-- El agente solo ejecuta consultas `SELECT` contra SoftRestaurant; no tiene permisos ni código
+- El agente solo ejecuta consultas `SELECT` contra RestaurantAgent; no tiene permisos ni código
   para modificar la base origen.
 - `AgentControlServer` (la API local del servicio) solo escucha en `127.0.0.1`, nunca es
   accesible desde la red del restaurante.

@@ -1,9 +1,9 @@
-# Piloto de sincronización SoftRestaurant
+# Piloto de sincronización RestaurantAgent
 
 Implementación mínima del flujo acordado:
 
 ```text
-SoftRestaurant / SQL Server (solo SELECT)
+RestaurantAgent / SQL Server (solo SELECT)
         -> agente .NET 8 para Windows
         -> cola local SQLite
         -> activación de un solo uso + token por conector
@@ -33,17 +33,16 @@ Abrir `http://localhost:8080`. El dashboard y la API comparten origen; Nginx ree
 `/api/*` al contenedor interno. La salud de la API queda en
 `http://localhost:5080/api/health/ready`.
 
-El usuario inicial se crea de forma idempotente con `DASHBOARD_OWNER_EMAIL` y
-`DASHBOARD_OWNER_PASSWORD`. La contraseña se almacena con hash y nunca se devuelve por API.
+Las cuentas se crean y administran desde la aplicación. Las contraseñas se almacenan
+únicamente como hash y nunca se devuelven por API.
 
 ## Despliegue en Coolify
 
 1. Crear un recurso Docker Compose conectado a este repositorio y seleccionar
    `docker-compose.coolify.yml`.
-2. Definir `DASHBOARD_OWNER_EMAIL` y dejar que Coolify genere
-   `SERVICE_PASSWORD_64_POSTGRES`, `SERVICE_PASSWORD_64_CONNECTOR_ADMIN` y
-   `SERVICE_PASSWORD_64_DASHBOARD_OWNER`.
-3. Conservar el volumen nombrado `softrestaurant_postgres_data` en actualizaciones.
+2. Dejar que Coolify genere `SERVICE_PASSWORD_64_POSTGRES` y
+   `SERVICE_PASSWORD_64_CONNECTOR_ADMIN`; no se configuran credenciales de usuarios.
+3. Conservar el volumen nombrado `restaurant_agent_postgres_data` en actualizaciones.
 4. Asignar el dominio HTTPS al servicio `web`, puerto `8080`. La API no necesita dominio
    público independiente porque el dashboard la publica bajo `/api`.
 5. Verificar `/healthz`, iniciar sesión y revisar el indicador de cobertura/frescura antes
@@ -55,14 +54,14 @@ presentes. Ya no incrusta código en Base64: Coolify construye exactamente el co
 ## Publicar el agente Windows
 
 ```powershell
-dotnet publish .\extractor\SoftRestaurant.Extractor.csproj `
+dotnet publish .\extractor\RestaurantAgent.Extractor.csproj `
   -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true -o .\publish\agent
 ```
 
 El instalador gráfico solicita una clave de activación de un solo uso. En la primera
 conexión el backend entrega una identidad y token exclusivos del equipo; Windows los
-guarda cifrados con DPAPI. El agente nunca necesita permisos de escritura en SoftRestaurant.
+guarda cifrados con DPAPI. El agente nunca necesita permisos de escritura en RestaurantAgent.
 
 ## Alcance actual
 

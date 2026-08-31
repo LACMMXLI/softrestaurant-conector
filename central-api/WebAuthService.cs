@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Npgsql;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed record DashboardUser(Guid Id, string Email, string DisplayName, string Role)
 {
@@ -26,11 +26,7 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
 
     private readonly PasswordHasher<DashboardUser> passwordHasher = new();
 
-    /// <summary>
-    /// Hashea una contraseña con exactamente el mismo mecanismo (ASP.NET Core Identity
-    /// <see cref="PasswordHasher{TUser}"/>) que usan el login y el bootstrap de owner/admin.
-    /// La usa UserRegistry al crear cuentas o restablecer contraseñas desde el panel admin.
-    /// </summary>
+    /// <summary>Hashea contraseñas antes de persistirlas; nunca se almacena texto plano.</summary>
     public string HashPassword(DashboardUser candidate, string password) =>
         passwordHasher.HashPassword(candidate, password);
 
@@ -45,53 +41,6 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
             "DELETE FROM app_sessions WHERE user_id = $1;");
         command.Parameters.AddWithValue(userId);
         await command.ExecuteNonQueryAsync(ct);
-    }
-
-    public async Task EnsureBootstrapOwnerAsync(CancellationToken ct)
-    {
-        // "OWNER" ya no es un rol de cuenta (app_users.role solo admite SUPERADMIN/USER — el
-        // permiso real vive en business_members). La cuenta bootstrap se crea como USER y, si
-        // existe el negocio bootstrap (ver DbInitializer, creado solo cuando hay
-        // BOOTSTRAP_BRANCH_CODE), se le otorga membresía OWNER ahí para no romper el flujo de
-        // instalaciones piloto existentes.
-        var ownerId = await EnsureBootstrapUserAsync(options.DashboardOwnerEmail, options.DashboardOwnerPassword, "USER", ct);
-        await EnsureBootstrapUserAsync(options.DashboardAdminEmail, options.DashboardAdminPassword, "SUPERADMIN", ct);
-
-        if (ownerId is not { } id) return;
-        await using var membership = dataSource.CreateCommand("""
-            INSERT INTO business_members (business_id, user_id, role)
-            SELECT id, $1, 'OWNER' FROM businesses WHERE slug = 'negocio-principal'
-            ON CONFLICT (business_id, user_id) DO NOTHING;
-            """);
-        membership.Parameters.AddWithValue(id);
-        await membership.ExecuteNonQueryAsync(ct);
-    }
-
-    private async Task<Guid?> EnsureBootstrapUserAsync(
-        string? email, string? password, string role, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return null;
-
-        var normalizedEmail = NormalizeEmail(email);
-        var candidate = new DashboardUser(Guid.Empty, normalizedEmail, normalizedEmail, role);
-        var passwordHash = passwordHasher.HashPassword(candidate, password);
-
-        await using var command = dataSource.CreateCommand("""
-            INSERT INTO app_users (email, display_name, password_hash, role)
-            VALUES ($1, $1, $2, $3)
-            ON CONFLICT DO NOTHING
-            RETURNING id;
-            """);
-        command.Parameters.AddWithValue(normalizedEmail);
-        command.Parameters.AddWithValue(passwordHash);
-        command.Parameters.AddWithValue(role);
-        var result = await command.ExecuteScalarAsync(ct);
-        if (result is Guid id) return id;
-
-        await using var lookup = dataSource.CreateCommand(
-            "SELECT id FROM app_users WHERE lower(email) = $1;");
-        lookup.Parameters.AddWithValue(normalizedEmail);
-        return await lookup.ExecuteScalarAsync(ct) as Guid?;
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string] $Version = '1.2.0',
-    [string] $ApiUrl = 'https://softrestaurant-api.fatboymexicali.com',
+    [string] $ApiUrl = 'https://restaurant-agent-api.fatboymexicali.com',
     [switch] $TestBuild
 )
 
@@ -22,12 +22,12 @@ if ($ApiUrl -notmatch '^https://') {
 }
 
 $buildKind = if ($TestBuild) { 'TEST' } else { 'x64' }
-$outputName = "SoftRestaurant-Sync-Agent-$Version-$buildKind"
+$outputName = "RestaurantAgent-Sync-Agent-$Version-$buildKind"
 
 New-Item -ItemType Directory -Path $publishDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $distDirectory -Force | Out-Null
 
-dotnet publish (Join-Path $workspaceRoot 'extractor\SoftRestaurant.Extractor.csproj') `
+dotnet publish (Join-Path $workspaceRoot 'extractor\RestaurantAgent.Extractor.csproj') `
     -c Release `
     -r win-x64 `
     --self-contained true `
@@ -43,7 +43,7 @@ if ($LASTEXITCODE -ne 0) {
 # Panel local (GUI de bandeja): se publica en la misma carpeta que el agente para que
 # [Files] del .iss lo tome junto con todo lo demás (copia recursiva de .build\publish\*).
 # No requiere administrador para ejecutarse ni toca la configuración protegida del servicio.
-dotnet publish (Join-Path $workspaceRoot 'extractor-ui\SoftRestaurant.Extractor.Ui.csproj') `
+dotnet publish (Join-Path $workspaceRoot 'extractor-ui\RestaurantAgent.Extractor.Ui.csproj') `
     -c Release `
     -r win-x64 `
     --self-contained true `
@@ -68,7 +68,7 @@ $includeText = @"
 
 try {
     [IO.File]::WriteAllText($configInclude, $includeText, [Text.UTF8Encoding]::new($false))
-    & $iscc (Join-Path $installerRoot 'SoftRestaurantSyncAgent.build.iss')
+    & $iscc (Join-Path $installerRoot 'RestaurantAgentSyncAgent.build.iss')
     if ($LASTEXITCODE -ne 0) {
         throw 'Falló la compilación del instalador.'
     }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -17,11 +17,11 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
-    <ProjectReference Include="..\sync-contracts\SoftRestaurant.Sync.Contracts.csproj" />
+    <ProjectReference Include="..\sync-contracts\RestaurantAgent.Sync.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="SoftRestaurant.Auth.Tests" />
+    <InternalsVisibleTo Include="RestaurantAgent.Auth.Tests" />
   </ItemGroup>
 
 </Project>

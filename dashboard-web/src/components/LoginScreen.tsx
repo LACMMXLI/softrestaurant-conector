@@ -40,7 +40,7 @@ function ProductLogo({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`landing-logo${compact ? ' landing-logo--compact' : ''}`}>
       <span className="landing-logo__mark"><ReceiptText size={compact ? 18 : 22} strokeWidth={2} /></span>
-      <span><strong>SoftRestaurant</strong><small>Pulso operativo</small></span>
+      <span><strong>RestaurantAgent</strong><small>Pulso operativo</small></span>
     </span>
   )
 }
@@ -118,7 +118,7 @@ export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenPro
           <div className="hero-copy">
             <p className="hero-kicker">Información operativa, estés donde estés</p>
             <h1>Tu restaurante,<br /><span>siempre contigo</span></h1>
-            <p className="hero-lead">Conecta la información de SoftRestaurant con un panel web para consultar ventas, sucursales y operación desde cualquier dispositivo.</p>
+            <p className="hero-lead">Conecta la información de RestaurantAgent con un panel web para consultar ventas, sucursales y operación desde cualquier dispositivo.</p>
             <div className="hero-actions">
               <a className="landing-button landing-button--primary" href="#beneficios">Conocer el sistema <ArrowRight size={18} /></a>
               <a className="landing-button landing-button--ghost" href="#acceso">Ya soy cliente</a>
@@ -135,7 +135,7 @@ export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenPro
             <p className="section-kicker">Cómo funciona</p>
             <h2>No necesitas estar en el restaurante para saber cómo va el día.</h2>
             <p>El conector lleva la información autorizada a un panel web. Cada consulta conserva el contexto de sucursal, fecha, sincronización y cobertura.</p>
-            <div className="connection-note"><ProductLogo compact /><span>No reemplaza SoftRestaurant.<strong>Lo conecta.</strong></span></div>
+            <div className="connection-note"><ProductLogo compact /><span>No reemplaza RestaurantAgent.<strong>Lo conecta.</strong></span></div>
           </div>
           <div className="capability-grid">
             {capabilities.map(({ icon: Icon, title, copy }) => (

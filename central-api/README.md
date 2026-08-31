@@ -1,4 +1,4 @@
-# SoftRestaurant Central API
+# RestaurantAgent Central API
 
 API para recibir lotes del agente local, consolidarlos en PostgreSQL y servir el dashboard.
 No se conecta a SQL Server ni acepta consultas SQL remotas.
@@ -80,14 +80,9 @@ Desplegar `docker-compose.coolify.yml` desde el repositorio y definir al menos:
 
 - `SERVICE_PASSWORD_64_POSTGRES`
 - `SERVICE_PASSWORD_64_CONNECTOR_ADMIN` (32 caracteres o más)
-- `DASHBOARD_OWNER_EMAIL`
-- `SERVICE_PASSWORD_64_DASHBOARD_OWNER` (12 caracteres o más)
-- `DASHBOARD_ADMIN_EMAIL`
-- `SERVICE_PASSWORD_64_DASHBOARD_ADMIN` (12 caracteres o más) — cuenta `SUPERADMIN` para `admin-web`
-
-Opcionalmente ajustar `BOOTSTRAP_BRANCH_CODE`, `BOOTSTRAP_BRANCH_NAME`,
-`BOOTSTRAP_BUSINESS_NAME`, `DASHBOARD_SESSION_HOURS`, `DASHBOARD_STALE_MINUTES` e
-`INSTALLER_DOWNLOAD_URL`/`INSTALLER_VERSION` (para la sección "Instalar conector" del dashboard).
+Las cuentas, incluyendo SUPERADMIN, se crean desde la aplicación mediante sus endpoints
+protegidos; no se leen contraseñas de usuarios desde variables de entorno. Son opcionales
+`INSTALLER_DOWNLOAD_URL`/`INSTALLER_VERSION` para la sección "Instalar conector".
 
 Asignar el dominio HTTPS de Coolify al puerto `8080` del servicio `web`. Nginx sirve la PWA
 y reenvía `/api/*` al servicio interno `api`. El esquema, el negocio bootstrap y el usuario
@@ -102,8 +97,8 @@ Para desplegar la API del panel como un recurso aislado, sin reiniciar el Compos
 usar `docker-compose.admin-api.yml`. Este Compose contiene solamente `admin-api` y se une
 como consumidor a la red externa del stack central para reutilizar PostgreSQL; no crea ni
 reinicia la base de datos, el dashboard operativo ni el agente. Deben definirse
-`POSTGRES_PASSWORD`, `CONNECTOR_ADMIN_KEY`, `DASHBOARD_ADMIN_EMAIL` y
-`DASHBOARD_ADMIN_PASSWORD` en el recurso independiente.
+`POSTGRES_PASSWORD` y `CONNECTOR_ADMIN_KEY` en el recurso independiente. Las cuentas se
+crean desde la aplicación y no se leen credenciales de usuario desde el entorno.
 
 ## Flujo normal (autoservicio, sin intervención de operador)
 

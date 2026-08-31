@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace SoftRestaurant.CentralApi;
+namespace RestaurantAgent.CentralApi;
 
 internal sealed record UserView(
     Guid Id,

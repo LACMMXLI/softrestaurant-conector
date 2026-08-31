@@ -31,7 +31,7 @@ $requiredMarkers = @(
     'dockerfile: central-api/Dockerfile',
     'dockerfile: dashboard-web/Dockerfile',
     'SERVICE_PASSWORD_64_DASHBOARD_OWNER',
-    'softrestaurant_postgres_data:/var/lib/postgresql'
+    'restaurant-agent_postgres_data:/var/lib/postgresql'
 )
 
 foreach ($marker in $requiredMarkers) {

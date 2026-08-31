@@ -18,7 +18,7 @@ dashboard-web/dist/
 admin-web/node_modules/
 admin-web/dist/
 
-# Datos locales y respaldos de SoftRestaurant
+# Datos locales y respaldos de RestaurantAgent
 *.bak
 *.mdf
 *.ldf

@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
-using SoftRestaurant.CentralApi;
+using RestaurantAgent.CentralApi;
 using Xunit;
 
-namespace SoftRestaurant.Auth.Tests;
+namespace RestaurantAgent.Auth.Tests;
 
 public sealed class AdminAuthenticatorTests
 {

@@ -1,15 +1,15 @@
-namespace SoftRestaurant.Extractor.Ui;
+namespace RestaurantAgent.Extractor.Ui;
 
 internal static class Program
 {
     [STAThread]
     private static void Main()
     {
-        using var singleInstance = new Mutex(true, "SoftRestaurantSyncAgent.Ui.SingleInstance", out var isNew);
+        using var singleInstance = new Mutex(true, "RestaurantAgentSyncAgent.Ui.SingleInstance", out var isNew);
         if (!isNew)
         {
             MessageBox.Show("El panel del agente ya está abierto (revisa la bandeja del sistema).",
-                "SoftRestaurant Sync Agent", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                "RestaurantAgent Sync Agent", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 

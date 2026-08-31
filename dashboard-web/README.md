@@ -1,4 +1,4 @@
-# Dashboard móvil SoftRestaurant
+# Dashboard móvil RestaurantAgent
 
 PWA React que consume únicamente `/api/web/*`. No contiene fixtures, cifras de demostración
 ni nombres de catálogo inventados.

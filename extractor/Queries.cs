@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 /// <summary>
 /// Consultas SELECT versionadas para la Fase 1 (contrato y extractor de solo lectura).

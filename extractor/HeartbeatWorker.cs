@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Hosting;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 /// <summary>
 /// Envía el latido del agente cada <see cref="ExtractorConfig.HeartbeatIntervalSeconds"/> (30–60s),

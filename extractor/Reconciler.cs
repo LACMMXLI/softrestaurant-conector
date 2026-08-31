@@ -1,6 +1,6 @@
-using SoftRestaurant.Sync.Contracts;
+using RestaurantAgent.Sync.Contracts;
 
-namespace SoftRestaurant.Extractor;
+namespace RestaurantAgent.Extractor;
 
 /// <summary>
 /// Comparador diario: recalcula los mismos totales de dos maneras independientes

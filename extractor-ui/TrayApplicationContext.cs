@@ -1,4 +1,4 @@
-namespace SoftRestaurant.Extractor.Ui;
+namespace RestaurantAgent.Extractor.Ui;
 
 /// <summary>
 /// Contexto de la app de bandeja: vive mientras haya un ícono en la bandeja del sistema, sin
@@ -30,7 +30,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         trayIcon = new NotifyIcon
         {
             Icon = SystemIcons.Application,
-            Text = "SoftRestaurant Sync Agent",
+            Text = "RestaurantAgent Sync Agent",
             Visible = true,
             ContextMenuStrip = menu
         };
@@ -47,7 +47,7 @@ public sealed class TrayApplicationContext : ApplicationContext
             var config = await client.GetConfigAsync(cts.Token);
             if (config is null || config.Linked) return;
 
-            trayIcon.ShowBalloonTip(6000, "SoftRestaurant Sync Agent",
+            trayIcon.ShowBalloonTip(6000, "RestaurantAgent Sync Agent",
                 "Este equipo todavía no está vinculado a ninguna sucursal. Haz clic aquí para vincularlo.",
                 ToolTipIcon.Info);
             await RunLinkFlowAsync();
@@ -79,7 +79,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         using var picker = new BusinessBranchPickerForm(login.Client, client);
         if (picker.ShowDialog() == DialogResult.OK && picker.Linked)
         {
-            trayIcon.ShowBalloonTip(4000, "SoftRestaurant Sync Agent",
+            trayIcon.ShowBalloonTip(4000, "RestaurantAgent Sync Agent",
                 "Equipo vinculado correctamente. La sincronización comenzará en breve.", ToolTipIcon.Info);
         }
     }
