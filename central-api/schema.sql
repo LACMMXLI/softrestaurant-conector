@@ -272,10 +272,11 @@ CREATE TABLE IF NOT EXISTS business_members (
 );
 CREATE INDEX IF NOT EXISTS ix_business_members_user ON business_members(user_id);
 
--- app_users.role ahora solo distingue operador de plataforma (SUPERADMIN, panel admin) de
--- cuenta normal (USER); el permiso real de negocio vive en business_members.role.
-DO $$
-BEGIN
+  -- app_users.role ahora solo distingue operador de plataforma (SUPERADMIN, panel admin) de
+  -- cuenta normal (USER); el permiso real de negocio vive en business_members.role.
+  UPDATE app_users SET role = 'USER' WHERE role IN ('OWNER','MANAGER','VIEWER');
+  DO $$
+  BEGIN
     IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'app_users_role_check') THEN
         ALTER TABLE app_users DROP CONSTRAINT app_users_role_check;
     END IF;
