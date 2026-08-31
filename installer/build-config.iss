@@ -1,3 +1,3 @@
-#define BuildVersion "1.2.1"
+#define BuildVersion "1.2.2"
 #define BuildApiUrl "https://sqqbfzv19zq0zhoika57ctbl.fatboymexicali.com"
-#define BuildOutputName "RestaurantAgent-Sync-Agent-1.2.1-x64"
+#define BuildOutputName "RestaurantAgent-Sync-Agent-1.2.2-x64"
