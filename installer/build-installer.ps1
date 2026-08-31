@@ -37,7 +37,23 @@ dotnet publish (Join-Path $workspaceRoot 'extractor\SoftRestaurant.Extractor.csp
     -p:DebugSymbols=false `
     -o $publishDirectory
 if ($LASTEXITCODE -ne 0) {
-    throw 'Falló dotnet publish.'
+    throw 'Falló dotnet publish del agente.'
+}
+
+# Panel local (GUI de bandeja): se publica en la misma carpeta que el agente para que
+# [Files] del .iss lo tome junto con todo lo demás (copia recursiva de .build\publish\*).
+# No requiere administrador para ejecutarse ni toca la configuración protegida del servicio.
+dotnet publish (Join-Path $workspaceRoot 'extractor-ui\SoftRestaurant.Extractor.Ui.csproj') `
+    -c Release `
+    -r win-x64 `
+    --self-contained true `
+    -p:PublishSingleFile=true `
+    -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:DebugType=None `
+    -p:DebugSymbols=false `
+    -o $publishDirectory
+if ($LASTEXITCODE -ne 0) {
+    throw 'Falló dotnet publish del panel local.'
 }
 
 function ConvertTo-InnoLiteral([string] $Value) {

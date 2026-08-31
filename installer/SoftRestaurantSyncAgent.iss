@@ -12,6 +12,7 @@
 #define AppPublisher "Fatboy"
 #define ServiceName "SoftRestaurantSyncAgent"
 #define AgentExe "SoftRestaurant.Extractor.exe"
+#define AgentUiExe "SoftRestaurant.Extractor.Ui.exe"
 
 [Setup]
 AppId={{2D9E79BA-B15A-4B4E-88D4-E5719AD0E3D7}
@@ -48,6 +49,16 @@ Name: "{commonappdata}\SoftRestaurantSyncAgent\out"
 
 [Icons]
 Name: "{group}\Estado del servicio"; Filename: "{sys}\services.msc"
+Name: "{group}\Panel del agente"; Filename: "{app}\{#AgentUiExe}"
+; Autoarranque para CUALQUIER usuario que inicie sesión en este equipo (no requiere admin en
+; tiempo de ejecución): un acceso directo en el Startup común, no una clave HKCU (que solo
+; aplicaría al usuario que corre el instalador, normalmente un administrador, no al personal
+; que usa la caja). Es solo un cliente HTTP local: si el servicio está detenido, el panel lo
+; indica y no pasa nada más.
+Name: "{commonstartup}\SoftRestaurant Sync Agent - Panel"; Filename: "{app}\{#AgentUiExe}"
+
+[Run]
+Filename: "{app}\{#AgentUiExe}"; Description: "Abrir el panel del agente"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [Code]
 const
