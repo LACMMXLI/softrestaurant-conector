@@ -8,12 +8,13 @@ import type { CashMovementsPage, DashboardHome } from '../types'
 type OperationsScreenProps = {
   branchCode: string
   date: string
+  shiftId: number | null
   data: DashboardHome | null
   loading: boolean
   onUnauthorized: () => void
 }
 
-export function OperationsScreen({ branchCode, date, data, loading, onUnauthorized }: OperationsScreenProps) {
+export function OperationsScreen({ branchCode, date, shiftId, data, loading, onUnauthorized }: OperationsScreenProps) {
   const [search, setSearch] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [type, setType] = useState<number | null>(null)
@@ -26,7 +27,7 @@ export function OperationsScreen({ branchCode, date, data, loading, onUnauthoriz
     const controller = new AbortController()
     setMovementsLoading(true)
     setError(null)
-    api.cashMovements(branchCode, date, page, type, submittedSearch, controller.signal)
+    api.cashMovements(branchCode, date, shiftId, page, type, submittedSearch, controller.signal)
       .then((nextResult) => {
         if (!controller.signal.aborted) setResult(nextResult)
       })
@@ -39,7 +40,7 @@ export function OperationsScreen({ branchCode, date, data, loading, onUnauthoriz
         if (!controller.signal.aborted) setMovementsLoading(false)
       })
     return () => controller.abort()
-  }, [branchCode, date, onUnauthorized, page, submittedSearch, type])
+  }, [branchCode, date, onUnauthorized, page, shiftId, submittedSearch, type])
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -69,7 +70,7 @@ export function OperationsScreen({ branchCode, date, data, loading, onUnauthoriz
       <section className="screen-title">
         <p className="utility-label">Eventos del día</p>
         <h1>Operación</h1>
-        <p>Consulta todas las entradas, salidas y cancelaciones sincronizadas para la fecha seleccionada.</p>
+        <p>Consulta todas las entradas, salidas y cancelaciones sincronizadas para el turno seleccionado.</p>
       </section>
 
       <section className="operation-grid full">

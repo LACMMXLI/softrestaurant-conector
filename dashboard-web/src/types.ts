@@ -74,6 +74,15 @@ export type DashboardMeta = {
   freshness: 'fresh' | 'stale' | 'missing'
   coverage: 'complete' | 'partial' | 'missing' | 'invalid'
   canShowData: boolean
+  shiftId: number | null
+}
+
+export type DashboardShift = {
+  id: number
+  openedAt: string | null
+  closedAt: string | null
+  cashier: string | null
+  isOpen: boolean
 }
 
 export type DashboardSummary = {

@@ -3,7 +3,7 @@ import { EmptyState } from '../components/EmptyState'
 import { SalesChart } from '../components/SalesChart'
 import { StatusPill } from '../components/StatusPill'
 import { TicketRow } from '../components/TicketRow'
-import { formatAmount, formatDateLabel, formatInteger, timeAgo } from '../format'
+import { formatAmount, formatInteger, timeAgo } from '../format'
 import type { DashboardHome } from '../types'
 
 type DashboardScreenProps = {
@@ -49,7 +49,7 @@ export function DashboardScreen({
         <div className="pulse-topline">
           <div>
             <p className="utility-label">Corte en movimiento</p>
-            <h2 id="pulse-title">{formatDateLabel(meta.date)}</h2>
+            <h2 id="pulse-title">Turno #{meta.shiftId ?? 'seleccionado'}</h2>
           </div>
           <StatusPill freshness={meta.freshness} coverage={meta.coverage} />
         </div>

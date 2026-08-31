@@ -8,11 +8,12 @@ import type { SalesPage } from '../types'
 type SalesScreenProps = {
   branchCode: string
   date: string
+  shiftId: number | null
   onOpenTicket: (folio: number) => void
   onUnauthorized: () => void
 }
 
-export function SalesScreen({ branchCode, date, onOpenTicket, onUnauthorized }: SalesScreenProps) {
+export function SalesScreen({ branchCode, date, shiftId, onOpenTicket, onUnauthorized }: SalesScreenProps) {
   const [search, setSearch] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -25,7 +26,7 @@ export function SalesScreen({ branchCode, date, onOpenTicket, onUnauthorized }: 
     setLoading(true)
     setError(null)
     setResult(null)
-    api.sales(branchCode, date, page, submittedSearch, controller.signal)
+    api.sales(branchCode, date, shiftId, page, submittedSearch, controller.signal)
       .then((nextResult) => {
         if (!controller.signal.aborted) setResult(nextResult)
       })
@@ -38,7 +39,7 @@ export function SalesScreen({ branchCode, date, onOpenTicket, onUnauthorized }: 
         if (!controller.signal.aborted) setLoading(false)
       })
     return () => controller.abort()
-  }, [branchCode, date, onUnauthorized, page, submittedSearch])
+  }, [branchCode, date, onUnauthorized, page, shiftId, submittedSearch])
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -57,7 +58,7 @@ export function SalesScreen({ branchCode, date, onOpenTicket, onUnauthorized }: 
       <section className="screen-title">
         <p className="utility-label">Detalle verificable</p>
         <h1>Todos los tickets</h1>
-        <p>Recorre página por página todos los registros que forman los totales del día seleccionado.</p>
+        <p>Recorre los registros que forman los totales del turno seleccionado.</p>
       </section>
 
       <form className="search-form" onSubmit={submitSearch} role="search">
@@ -91,8 +92,8 @@ export function SalesScreen({ branchCode, date, onOpenTicket, onUnauthorized }: 
       ) : null}
       {!loading && result?.meta.canShowData && result.items.length === 0 ? (
         <EmptyState
-          title={submittedSearch ? 'No encontramos ese ticket' : 'No hay tickets para esta fecha'}
-          message={submittedSearch ? 'Prueba con otro folio o elimina la búsqueda.' : 'El periodo está cubierto, pero no contiene tickets registrados.'}
+          title={submittedSearch ? 'No encontramos ese ticket' : 'No hay tickets para este turno'}
+          message={submittedSearch ? 'Prueba con otro folio o elimina la búsqueda.' : 'El turno está cubierto, pero no contiene tickets registrados.'}
         />
       ) : null}
       {result?.meta.canShowData && result.items.length > 0 ? (

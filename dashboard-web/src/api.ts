@@ -4,6 +4,7 @@ import type {
   BusinessMembership,
   DashboardBranch,
   DashboardHome,
+  DashboardShift,
   DashboardUser,
   CashMovementsPage,
   ConnectorInstallation,
@@ -83,25 +84,30 @@ export const api = {
       `/api/web/branches/${encodeURIComponent(branchCode)}/request-sync`,
       { method: 'POST' },
     ),
-  dashboard: (branchCode: string, date: string, signal?: AbortSignal) =>
+  dashboard: (branchCode: string, date: string, shiftId: number | null, signal?: AbortSignal) =>
     request<DashboardHome>(
-      `/api/web/dashboard/home?branchCode=${encodeURIComponent(branchCode)}&date=${date}`,
+      `/api/web/dashboard/home?branchCode=${encodeURIComponent(branchCode)}&date=${date}${shiftId === null ? '' : `&shiftId=${shiftId}`}`,
       { signal },
     ),
-  sales: (branchCode: string, date: string, page: number, search: string, signal?: AbortSignal) => {
+  shifts: (branchCode: string, signal?: AbortSignal) =>
+    request<DashboardShift[]>(`/api/web/dashboard/shifts?branchCode=${encodeURIComponent(branchCode)}`, { signal }),
+  sales: (branchCode: string, date: string, shiftId: number | null, page: number, search: string, signal?: AbortSignal) => {
     const params = new URLSearchParams({ branchCode, date, page: String(page), pageSize: '20' })
+    if (shiftId !== null) params.set('shiftId', String(shiftId))
     if (search.trim()) params.set('search', search.trim())
     return request<SalesPage>(`/api/web/sales?${params}`, { signal })
   },
   cashMovements: (
     branchCode: string,
     date: string,
+    shiftId: number | null,
     page: number,
     type: number | null,
     search: string,
     signal?: AbortSignal,
   ) => {
     const params = new URLSearchParams({ branchCode, date, page: String(page), pageSize: '20' })
+    if (shiftId !== null) params.set('shiftId', String(shiftId))
     if (type !== null) params.set('type', String(type))
     if (search.trim()) params.set('search', search.trim())
     return request<CashMovementsPage>(`/api/web/cash-movements?${params}`, { signal })

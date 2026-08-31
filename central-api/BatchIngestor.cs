@@ -100,11 +100,12 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
 
     private const string SalesSql = """
         INSERT INTO sales
-            (branch_id, idempotency_key, source_folio, business_date, closed_at,
+            (branch_id, idempotency_key, source_folio, source_shift_id, business_date, closed_at,
              paid, cancelled, total, tip, payload)
         SELECT $1,
                item->>'idempotencyKey',
                (item->>'folio')::bigint,
+               NULLIF(item->>'idTurnoInterno', '')::integer,
                NULLIF(item->>'fecha', '')::timestamp,
                NULLIF(item->>'cierre', '')::timestamp,
                COALESCE((item->>'pagado')::boolean, false),
@@ -115,6 +116,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         FROM jsonb_array_elements($2::jsonb) AS item
         ON CONFLICT (branch_id, idempotency_key) DO UPDATE
         SET source_folio = excluded.source_folio,
+            source_shift_id = excluded.source_shift_id,
             business_date = excluded.business_date,
             closed_at = excluded.closed_at,
             paid = excluded.paid,
@@ -205,11 +207,12 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
 
     private const string CashMovementsSql = """
         INSERT INTO cash_movements
-            (branch_id, idempotency_key, source_folio, movement_date, movement_type,
+            (branch_id, idempotency_key, source_folio, source_shift_id, movement_date, movement_type,
              amount, cancelled, payload)
         SELECT $1,
                item->>'idempotencyKey',
                (item->>'folio')::bigint,
+               NULLIF(item->>'idTurno', '')::integer,
                NULLIF(item->>'fecha', '')::timestamp,
                (item->>'tipo')::integer,
                NULLIF(item->>'importe', '')::numeric,
@@ -218,6 +221,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         FROM jsonb_array_elements($2::jsonb) AS item
         ON CONFLICT (branch_id, idempotency_key) DO UPDATE
         SET source_folio = excluded.source_folio,
+            source_shift_id = excluded.source_shift_id,
             movement_date = excluded.movement_date,
             movement_type = excluded.movement_type,
             amount = excluded.amount,

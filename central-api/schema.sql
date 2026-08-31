@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS sales (
     branch_id uuid NOT NULL REFERENCES branches(id),
     idempotency_key text NOT NULL,
     source_folio bigint NOT NULL,
+    source_shift_id integer NULL,
     business_date timestamp NULL,
     closed_at timestamp NULL,
     paid boolean NOT NULL,
@@ -100,6 +101,7 @@ CREATE TABLE IF NOT EXISTS sales (
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (branch_id, idempotency_key)
 );
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS source_shift_id integer NULL;
 CREATE INDEX IF NOT EXISTS ix_sales_branch_date ON sales(branch_id, business_date);
 CREATE INDEX IF NOT EXISTS ix_sales_branch_folio ON sales(branch_id, source_folio);
 
@@ -107,6 +109,7 @@ CREATE TABLE IF NOT EXISTS sale_lines (
     branch_id uuid NOT NULL REFERENCES branches(id),
     idempotency_key text NOT NULL,
     source_folio bigint NOT NULL,
+    source_shift_id integer NULL,
     product_id text NULL,
     quantity numeric(18,4) NULL,
     price numeric(18,4) NULL,
@@ -114,6 +117,7 @@ CREATE TABLE IF NOT EXISTS sale_lines (
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (branch_id, idempotency_key)
 );
+ALTER TABLE cash_movements ADD COLUMN IF NOT EXISTS source_shift_id integer NULL;
 CREATE INDEX IF NOT EXISTS ix_sale_lines_branch_folio ON sale_lines(branch_id, source_folio);
 
 CREATE TABLE IF NOT EXISTS sale_payments (

@@ -339,6 +339,7 @@ internal static class WebApiEndpoints
             HttpContext context,
             string branchCode,
             DateOnly date,
+            int? shiftId,
             WebAuthService auth,
             DashboardReportService reports,
             CancellationToken ct) =>
@@ -347,8 +348,23 @@ internal static class WebApiEndpoints
             if (validation is not null) return validation;
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
-            var dashboard = await reports.GetHomeAsync(user, branchCode, date, ct);
+            var dashboard = await reports.GetHomeAsync(user, branchCode, date, shiftId, ct);
             return dashboard is null ? Results.NotFound() : Results.Ok(dashboard);
+        });
+
+        group.MapGet("/dashboard/shifts", async (
+            HttpContext context,
+            string branchCode,
+            WebAuthService auth,
+            DashboardReportService reports,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var user = await auth.AuthenticateAsync(context, ct);
+            return user is null
+                ? Results.Unauthorized()
+                : Results.Ok(await reports.GetShiftsAsync(user, branchCode, ct));
         });
 
         group.MapPost("/branches/{branchCode}/request-sync", async (
@@ -382,6 +398,7 @@ internal static class WebApiEndpoints
             HttpContext context,
             string branchCode,
             DateOnly date,
+            int? shiftId,
             int? page,
             int? pageSize,
             string? search,
@@ -398,7 +415,7 @@ internal static class WebApiEndpoints
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
             var result = await reports.GetSalesAsync(
-                user, branchCode, date, safePage, safePageSize, search, ct);
+                user, branchCode, date, shiftId, safePage, safePageSize, search, ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         });
 
@@ -406,6 +423,7 @@ internal static class WebApiEndpoints
             HttpContext context,
             string branchCode,
             DateOnly date,
+            int? shiftId,
             int? page,
             int? pageSize,
             int? type,
@@ -426,7 +444,7 @@ internal static class WebApiEndpoints
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
             var result = await reports.GetCashMovementsPageAsync(
-                user, branchCode, date, safePage, safePageSize, type, search, ct);
+                user, branchCode, date, shiftId, safePage, safePageSize, type, search, ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         });
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BarChart3, Building2, CalendarDays, LayoutDashboard, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
+import { BarChart3, Building2, LayoutDashboard, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { LoginScreen } from './components/LoginScreen'
 import { TicketSheet } from './components/TicketSheet'
@@ -9,7 +9,7 @@ import { DashboardScreen } from './screens/DashboardScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { OperationsScreen } from './screens/OperationsScreen'
 import { SalesScreen } from './screens/SalesScreen'
-import type { DashboardBranch, DashboardHome, DashboardUser } from './types'
+import type { DashboardBranch, DashboardHome, DashboardShift, DashboardUser } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
 type Tab = 'home' | 'sales' | 'operations' | 'businesses' | 'more'
@@ -22,6 +22,8 @@ export function App() {
   const [branches, setBranches] = useState<DashboardBranch[]>([])
   const [branchCode, setBranchCode] = useState('')
   const [date, setDate] = useState('')
+  const [shifts, setShifts] = useState<DashboardShift[]>([])
+  const [shiftId, setShiftId] = useState<number | null>(null)
   const [tab, setTab] = useState<Tab>('home')
   const [dashboard, setDashboard] = useState<DashboardHome | null>(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
@@ -41,6 +43,8 @@ export function App() {
     setUser(null)
     setBranches([])
     setDashboard(null)
+    setShifts([])
+    setShiftId(null)
     setSelectedFolio(null)
   }, [])
 
@@ -57,10 +61,19 @@ export function App() {
     if (!selected) {
       setBranchCode('')
       setDate('')
+      setShifts([])
+      setShiftId(null)
       return
     }
     setBranchCode(selected.code)
     setDate(dateInTimezone(selected.timezone))
+    setShiftId(null)
+    void api.shifts(selected.code).then((available) => {
+      setShifts(available)
+      const current = available.find((shift) => shift.isOpen) ?? available[0]
+      setShiftId(current?.id ?? null)
+      if (current?.openedAt) setDate(current.openedAt.slice(0, 10))
+    }).catch(() => setShifts([]))
   }, [])
 
   useEffect(() => {
@@ -80,12 +93,12 @@ export function App() {
   }, [applyBranches, becomeAnonymous])
 
   useEffect(() => {
-    if (sessionState !== 'authenticated' || !branchCode || !date) return
+    if (sessionState !== 'authenticated' || !branchCode || !date || shiftId === null) return
     const controller = new AbortController()
     setDashboardLoading(true)
     setDashboardError(null)
     setDashboard(null)
-    api.dashboard(branchCode, date, controller.signal)
+    api.dashboard(branchCode, date, shiftId, controller.signal)
       .then((nextDashboard) => {
         if (!controller.signal.aborted) setDashboard(nextDashboard)
       })
@@ -98,7 +111,7 @@ export function App() {
         if (!controller.signal.aborted) setDashboardLoading(false)
       })
     return () => controller.abort()
-  }, [becomeAnonymous, branchCode, date, refreshKey, sessionState])
+  }, [becomeAnonymous, branchCode, date, refreshKey, sessionState, shiftId])
 
   async function handleLogin(email: string, password: string) {
     setLoginBusy(true)
@@ -147,6 +160,13 @@ export function App() {
     localStorage.setItem(storedBranchKey, nextCode)
     setBranchCode(nextCode)
     setDate(dateInTimezone(nextBranch.timezone))
+    setShiftId(null)
+    void api.shifts(nextCode).then((available) => {
+      setShifts(available)
+      const current = available.find((shift) => shift.isOpen) ?? available[0]
+      setShiftId(current?.id ?? null)
+      if (current?.openedAt) setDate(current.openedAt.slice(0, 10))
+    }).catch(() => setShifts([]))
     setDashboard(null)
   }
 
@@ -201,10 +221,16 @@ export function App() {
                 {branches.map((branch) => <option value={branch.code} key={branch.code}>{branch.name}</option>)}
               </select>
             </label>
-            <label className="context-date">
-              <CalendarDays size={17} aria-hidden="true" />
-              <span className="sr-only">Fecha</span>
-              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+            <label className="context-select">
+              <span className="sr-only">Turno</span>
+              <select value={shiftId ?? ''} onChange={(event) => {
+                const next = shifts.find((shift) => shift.id === Number(event.target.value))
+                setShiftId(next?.id ?? null)
+                if (next?.openedAt) setDate(next.openedAt.slice(0, 10))
+              }}>
+                {shifts.length === 0 ? <option value="">Sin turnos sincronizados</option> : null}
+                {shifts.map((shift) => <option value={shift.id} key={shift.id}>{shift.isOpen ? 'Abierto' : 'Cerrado'} · #{shift.id} · {shift.cashier || 'Sin cajero'}</option>)}
+              </select>
             </label>
             <button className="icon-button refresh-button" type="button" onClick={() => setRefreshKey((value) => value + 1)} aria-label="Actualizar datos">
               <RefreshCw size={18} className={dashboardLoading ? 'spinning' : ''} />
@@ -224,13 +250,14 @@ export function App() {
             />
           ) : null}
           {tab === 'sales' ? (
-            <SalesScreen key={`${branchCode}:${date}`} branchCode={branchCode} date={date} onOpenTicket={setSelectedFolio} onUnauthorized={becomeAnonymous} />
+            <SalesScreen key={`${branchCode}:${shiftId}`} branchCode={branchCode} date={date} shiftId={shiftId} onOpenTicket={setSelectedFolio} onUnauthorized={becomeAnonymous} />
           ) : null}
           {tab === 'operations' ? (
             <OperationsScreen
-              key={`${branchCode}:${date}`}
+              key={`${branchCode}:${shiftId}`}
               branchCode={branchCode}
               date={date}
+              shiftId={shiftId}
               data={dashboard}
               loading={dashboardLoading}
               onUnauthorized={becomeAnonymous}
