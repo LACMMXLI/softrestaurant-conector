@@ -335,7 +335,11 @@ END $$;
 -- desde una sesión de usuario. Ver central-api/ConnectorInstallationRegistry.cs.
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'connectors') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'connectors')
+       AND NOT EXISTS (
+           SELECT 1 FROM information_schema.tables
+           WHERE table_schema = 'public' AND table_name = 'connector_installations'
+       ) THEN
         ALTER TABLE connectors RENAME TO connector_installations;
     END IF;
 END $$;
