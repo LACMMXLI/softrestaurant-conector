@@ -74,7 +74,7 @@ public sealed class ControlApiClient(int port)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new JsonStringEnumConverter() }
+        Converters = { new JsonStringEnumConverter(), new FlexibleStringJsonConverter() }
     };
 
     private readonly HttpClient client = new()

@@ -89,7 +89,7 @@ public sealed class CentralApiClient : IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new JsonStringEnumConverter() }
+        Converters = { new JsonStringEnumConverter(), new FlexibleStringJsonConverter() }
     };
 
     private readonly HttpClient client;
