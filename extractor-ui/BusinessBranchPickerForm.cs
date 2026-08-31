@@ -48,7 +48,15 @@ public sealed class BusinessBranchPickerForm : Form
         branchList.SelectedIndexChanged += (_, _) => RefreshSelection();
         actionButton.Click += async (_, _) => await OnActionAsync();
 
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(16) };
+        var buttons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Bottom,
+            AutoSize = true,
+            Height = 56,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(16),
+            WrapContents = false
+        };
         buttons.Controls.Add(actionButton);
 
         Controls.Add(layout);
