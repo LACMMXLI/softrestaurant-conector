@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -302,6 +303,11 @@ internal sealed class ExtractorConfig
 
 internal static class ProtectedSettings
 {
+    private static readonly JsonSerializerOptions SettingsJsonOptions = new()
+    {
+        Converters = { new FlexibleStringDictionaryConverter() }
+    };
+
     private static readonly string DefaultPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
         "RestaurantAgentSyncAgent",
@@ -313,7 +319,7 @@ internal static class ProtectedSettings
             throw new PlatformNotSupportedException("DPAPI requiere Windows.");
 
         var settings = JsonSerializer.Deserialize<Dictionary<string, string>>(
-            File.ReadAllText(inputPath, Encoding.UTF8))
+            File.ReadAllText(inputPath, Encoding.UTF8), SettingsJsonOptions)
             ?? throw new ArgumentException("El archivo de configuración está vacío.");
 
         // El instalador ya NO recoge ninguna credencial de dispositivo (ni clave de
@@ -378,7 +384,7 @@ internal static class ProtectedSettings
             File.ReadAllBytes(path), null, DataProtectionScope.LocalMachine);
         try
         {
-            return JsonSerializer.Deserialize<Dictionary<string, string>>(plaintext)
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(plaintext, SettingsJsonOptions)
                 ?? throw new JsonException("La configuración protegida está vacía.");
         }
         finally
@@ -418,7 +424,7 @@ internal static class ProtectedSettings
             var plaintext = ProtectedData.Unprotect(protectedBytes, null, DataProtectionScope.LocalMachine);
             try
             {
-                settings = JsonSerializer.Deserialize<Dictionary<string, string>>(plaintext);
+                settings = JsonSerializer.Deserialize<Dictionary<string, string>>(plaintext, SettingsJsonOptions);
             }
             finally
             {
@@ -455,4 +461,42 @@ internal static class ProtectedSettings
 
     private static string GetPath() =>
         Environment.GetEnvironmentVariable("SRX_PROTECTED_CONFIG") ?? DefaultPath;
+}
+
+/// <summary>
+/// Acepta configuraciones antiguas donde algunos valores escalares fueron guardados como
+/// números o booleanos, aunque el modelo interno los trate como texto.
+/// </summary>
+internal sealed class FlexibleStringDictionaryConverter : JsonConverter<Dictionary<string, string>>
+{
+    public override Dictionary<string, string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        using var document = JsonDocument.ParseValue(ref reader);
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
+            throw new JsonException("La configuración debe ser un objeto JSON.");
+
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var property in document.RootElement.EnumerateObject())
+        {
+            result[property.Name] = property.Value.ValueKind switch
+            {
+                JsonValueKind.String => property.Value.GetString() ?? string.Empty,
+                JsonValueKind.Number => property.Value.GetRawText(),
+                JsonValueKind.True => "true",
+                JsonValueKind.False => "false",
+                JsonValueKind.Null => string.Empty,
+                _ => throw new JsonException($"El valor de '{property.Name}' debe ser escalar.")
+            };
+        }
+
+        return result;
+    }
+
+    public override void Write(Utf8JsonWriter writer, Dictionary<string, string> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        foreach (var pair in value)
+            writer.WriteString(pair.Key, pair.Value);
+        writer.WriteEndObject();
+    }
 }
