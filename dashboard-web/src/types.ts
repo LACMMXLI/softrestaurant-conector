@@ -2,7 +2,50 @@ export type DashboardUser = {
   id: string
   email: string
   displayName: string
+  // Rol de PLATAFORMA (no de negocio): solo distingue operador (SUPERADMIN, panel admin) de
+  // cuenta normal. El permiso real por negocio (OWNER/MANAGER/VIEWER) vive en BusinessMembership.
+  role: 'SUPERADMIN' | 'USER'
+}
+
+export type BusinessMembership = {
+  id: string
+  name: string
+  slug: string
+  active: boolean
+  createdAt: string
   role: 'OWNER' | 'MANAGER' | 'VIEWER'
+}
+
+export type BusinessBranch = {
+  id: string
+  businessId: string
+  code: string
+  name: string
+  active: boolean
+}
+
+export type ConnectorInstallation = {
+  id: string
+  branchCode: string
+  machineName: string
+  active: boolean
+  agentVersion: string | null
+  linkedAt: string | null
+  lastHeartbeatAt: string | null
+  lastSuccessAt: string | null
+  lastStatus: string | null
+  lastError: string | null
+  revokedAt: string | null
+}
+
+export type BranchWithConnector = {
+  branch: BusinessBranch
+  connector: ConnectorInstallation | null
+}
+
+export type AgentLatest = {
+  version: string | null
+  downloadUrl: string | null
 }
 
 export type DashboardBranch = {

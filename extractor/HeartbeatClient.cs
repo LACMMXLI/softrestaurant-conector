@@ -17,11 +17,11 @@ internal sealed record HeartbeatResponse(DateTime? SyncRequestedAt, DateTime Ser
 
 /// <summary>
 /// Envía el latido independiente del agente hacia <c>POST /api/agents/heartbeat</c> en la API
-/// central. Reutiliza el mismo esquema de autenticación por conector que <see cref="AgentApiClient"/>
+/// central. Reutiliza el mismo esquema de autenticación por dispositivo que <see cref="AgentApiClient"/>
 /// (<see cref="AgentApiClient.ApplyAuthentication"/>), pero es un cliente propio porque el
 /// latido es un flujo independiente del envío de lotes.
 /// </summary>
-internal sealed class HeartbeatClient(string apiUrl, string token, string? connectorId)
+internal sealed class HeartbeatClient(string apiUrl, string token, string installationId)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -38,9 +38,15 @@ internal sealed class HeartbeatClient(string apiUrl, string token, string? conne
         {
             Content = JsonContent.Create(request, options: JsonOptions)
         };
-        AgentApiClient.ApplyAuthentication(httpRequest, token, connectorId);
+        AgentApiClient.ApplyAuthentication(httpRequest, token, installationId);
         using var response = await client.SendAsync(httpRequest, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(ct);
+            throw new AgentApiException(
+                response.StatusCode,
+                $"API respondió {(int)response.StatusCode} {response.ReasonPhrase}: {body[..Math.Min(body.Length, 500)]}");
+        }
         return await response.Content.ReadFromJsonAsync<HeartbeatResponse>(JsonOptions, ct)
             ?? new HeartbeatResponse(null, DateTime.UtcNow);
     }

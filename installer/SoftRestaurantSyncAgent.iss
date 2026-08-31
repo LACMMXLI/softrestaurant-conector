@@ -68,7 +68,6 @@ const
 var
   DatabasePage: TInputQueryWizardPage;
   CredentialsPage: TInputQueryWizardPage;
-  ActivationPage: TInputQueryWizardPage;
   DetectedIniPath: string;
   DataRootPath: string;
   ProtectedConfigPath: string;
@@ -218,24 +217,16 @@ begin
     'El agente ejecuta únicamente consultas SELECT. La contraseña no se mostrará en el resumen.');
   CredentialsPage.Add('Usuario SQL:', False);
   CredentialsPage.Add('Contraseña SQL:', True);
-
-  ActivationPage := CreateInputQueryPage(
-    CredentialsPage.ID,
-    'Activación del conector',
-    'Identifica esta instalación de forma independiente',
-    'Pega la clave de activación de un solo uso generada por el backend.');
-  ActivationPage.Add('Clave de activación:', True);
-  ActivationPage.Add('Nombre de este equipo:', False);
-  ActivationPage.Values[1] := GetComputerNameString;
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   { Actualización sobre un equipo ya configurado: no volver a pedir servidor, base,
-    usuario, contraseña ni clave de activación. La configuración protegida existente
-    se conserva intacta (ver ConfigureAndStartService). }
+    usuario ni contraseña. La configuración protegida existente se conserva intacta
+    (ver ConfigureAndStartService) — esto incluye cualquier vínculo de dispositivo ya
+    hecho desde la GUI, que el instalador nunca toca ni pide de nuevo. }
   Result := ExistingConfigValid and
-    ((PageID = DatabasePage.ID) or (PageID = CredentialsPage.ID) or (PageID = ActivationPage.ID));
+    ((PageID = DatabasePage.ID) or (PageID = CredentialsPage.ID));
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -278,23 +269,6 @@ begin
     if CredentialsPage.Values[1] = '' then
     begin
       MsgBox('Indica la contraseña SQL de SoftRestaurant.', mbError, MB_OK);
-      Result := False;
-      Exit;
-    end;
-  end;
-
-
-  if CurPageID = ActivationPage.ID then
-  begin
-    if Trim(ActivationPage.Values[0]) = '' then
-    begin
-      MsgBox('Indica la clave de activación generada para este conector.', mbError, MB_OK);
-      Result := False;
-      Exit;
-    end;
-    if Trim(ActivationPage.Values[1]) = '' then
-    begin
-      MsgBox('Indica el nombre o identificador de este equipo.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
@@ -360,11 +334,13 @@ var
 begin
   TempPath := DataRoot + '\agent-settings.tmp.json';
   ProtectedPath := DataRoot + '\agent-settings.dpapi';
+  { Ya no se pide ninguna credencial de dispositivo en el instalador (ni clave de
+    activación, ni token): el equipo se vincula DESPUÉS de instalar, desde la GUI, con la
+    sesión del usuario del SaaS. El nombre de máquina se toma automáticamente. }
   SettingsJson :=
     '{' +
     '"SRX_API_URL":"' + JsonEscape(AgentApiUrl) + '",' +
-    '"SRX_ACTIVATION_KEY":"' + JsonEscape(Trim(ActivationPage.Values[0])) + '",' +
-    '"SRX_MACHINE_NAME":"' + JsonEscape(Trim(ActivationPage.Values[1])) + '",' +
+    '"SRX_MACHINE_NAME":"' + JsonEscape(GetComputerNameString) + '",' +
     '"SRX_SQL_SERVER":"' + JsonEscape(Trim(DatabasePage.Values[0])) + '",' +
     '"SRX_SQL_DATABASE":"' + JsonEscape(Trim(DatabasePage.Values[1])) + '",' +
     '"SRX_SQL_USER":"' + JsonEscape(Trim(CredentialsPage.Values[0])) + '",' +
@@ -515,8 +491,9 @@ begin
       '  ' + ExpandConstant('{app}') + NewLine + NewLine +
       'Conector:' + NewLine +
       '  Se detectó una configuración existente en este equipo (' + ProtectedConfigPath + ').' + NewLine +
-      '  Se conservará tal cual: activación, servidor, base, usuario, contraseña,' + NewLine +
-      '  token del backend y la cola local de sincronización NO se modifican.' + NewLine + NewLine +
+      '  Se conservará tal cual: servidor, base, usuario, contraseña, el vínculo del' + NewLine +
+      '  equipo (si ya lo hiciste desde el panel) y la cola local de sincronización NO' + NewLine +
+      '  se modifican.' + NewLine + NewLine +
       'Backend:' + NewLine +
       '  ' + AgentApiUrl + NewLine + NewLine +
       'Se actualizará el servicio "SoftRestaurant Sync Agent" a esta versión sin pedir' + NewLine +
@@ -533,8 +510,9 @@ begin
     'Instalación:' + NewLine +
     '  ' + ExpandConstant('{app}') + NewLine + NewLine +
     'Conector:' + NewLine +
-    '  Equipo: ' + ActivationPage.Values[1] + NewLine +
-    '  Se activará en la primera conexión' + NewLine + NewLine +
+    '  Equipo: ' + GetComputerNameString + NewLine +
+    '  Sin vincular todavía — abre el panel del agente después de instalar para' + NewLine +
+    '  iniciar sesión y vincularlo a tu sucursal.' + NewLine + NewLine +
     'Backend:' + NewLine +
     '  ' + AgentApiUrl + NewLine + NewLine +
     'SoftRestaurant:' + NewLine +

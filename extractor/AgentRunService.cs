@@ -9,12 +9,14 @@ internal sealed class AgentRunService(ExtractorConfig config, AgentLog? log = nu
         SyncOutbox? outbox = null;
         AgentApiClient? client = null;
 
-        if (config.SendEnabled)
+        // Ya no hay auto-activación por clave: si el equipo aún no está vinculado (ver
+        // ExtractorConfig.Linked), este ciclo extrae y concilia igual, pero no intenta enviar
+        // nada — se queda en cola local hasta que la GUI vincule el equipo.
+        if (config.SendEnabled && config.Linked)
         {
-            await AgentRegistrationClient.EnsureActivatedAsync(config, ct);
             outbox = new SyncOutbox(config.QueuePath);
             await outbox.InitializeAsync(ct);
-            client = new AgentApiClient(config.ApiUrl!, config.AgentToken!, config.ConnectorId);
+            client = new AgentApiClient(config.ApiUrl!, config.DeviceToken!, config.InstallationId!);
             await FlushAsync(outbox, client, ct);
         }
 
@@ -52,7 +54,16 @@ internal sealed class AgentRunService(ExtractorConfig config, AgentLog? log = nu
                 Console.WriteLine($"Lote {pending.Id} confirmado por la API.");
                 log?.Info($"Lote {pending.Id} confirmado por la API.");
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            catch (AgentApiException ex) when (ex.IsUnauthorized)
+            {
+                // Credencial revocada o rechazada: no tiene sentido seguir reintentando este
+                // lote (ni los siguientes) hasta que alguien vincule el equipo de nuevo desde la
+                // GUI. Se deja en cola (no se pierde) y se propaga para que SyncCoordinator
+                // marque el estado como Revoked en vez de un simple error transitorio.
+                await outbox.MarkFailedAsync(pending, ex.Message, ct);
+                throw;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or AgentApiException)
             {
                 await outbox.MarkFailedAsync(pending, ex.Message, ct);
                 Console.Error.WriteLine($"API no disponible; el lote queda en cola: {ex.Message}");

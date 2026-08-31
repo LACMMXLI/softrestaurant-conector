@@ -5,13 +5,15 @@ internal sealed record ApiOptions(
     string ConnectorAdminKey,
     string? BootstrapBranchCode,
     string? BootstrapBranchName,
-    string? LegacyBootstrapAgentToken,
+    string? BootstrapBusinessName,
     string? DashboardOwnerEmail,
     string? DashboardOwnerPassword,
     string? DashboardAdminEmail,
     string? DashboardAdminPassword,
     int DashboardSessionHours,
-    int DashboardStaleMinutes)
+    int DashboardStaleMinutes,
+    string? InstallerDownloadUrl,
+    string? InstallerVersion)
 {
     public static ApiOptions FromConfiguration(IConfiguration configuration)
     {
@@ -48,13 +50,15 @@ internal sealed record ApiOptions(
             adminKey,
             configuration["BOOTSTRAP_BRANCH_CODE"],
             configuration["BOOTSTRAP_BRANCH_NAME"],
-            configuration["LEGACY_BOOTSTRAP_AGENT_TOKEN"] ?? configuration["BOOTSTRAP_AGENT_TOKEN"],
+            configuration["BOOTSTRAP_BUSINESS_NAME"],
             ownerEmail,
             ownerPassword,
             adminEmail,
             adminPassword,
             sessionHours,
-            staleMinutes);
+            staleMinutes,
+            configuration["INSTALLER_DOWNLOAD_URL"],
+            configuration["INSTALLER_VERSION"]);
     }
 
     private static int ReadPositiveInt(string? value, int fallback, int minimum, int maximum) =>

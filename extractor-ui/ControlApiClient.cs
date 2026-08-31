@@ -11,6 +11,7 @@ public sealed class AgentStatusDto
     public string MachineName { get; set; } = "";
     public string AgentVersion { get; set; } = "";
     public bool SendEnabled { get; set; }
+    public bool Linked { get; set; }
     public DateTime? LastHeartbeatAt { get; set; }
     public bool? ApiConnected { get; set; }
     public DateTime? LastCycleAt { get; set; }
@@ -42,6 +43,25 @@ public sealed class SyncNowResultDto
     public bool? ReconciliationOk { get; set; }
     public int? PendingBatches { get; set; }
     public string? Error { get; set; }
+}
+
+public sealed class AgentControlConfigDto
+{
+    public string? ApiUrl { get; set; }
+    public bool Linked { get; set; }
+    public string BranchCode { get; set; } = "";
+    public string? BusinessId { get; set; }
+    public string? InstallationId { get; set; }
+    public string MachineName { get; set; } = "";
+}
+
+public sealed class LinkDeviceCredentialDto
+{
+    public string InstallationId { get; set; } = "";
+    public string BranchCode { get; set; } = "";
+    public string BusinessId { get; set; } = "";
+    public string Token { get; set; } = "";
+    public string? ApiUrl { get; set; }
 }
 
 /// <summary>
@@ -80,5 +100,15 @@ public sealed class ControlApiClient(int port)
         using var response = await client.PostAsync("/sync-now", content: null, ct);
         var result = await response.Content.ReadFromJsonAsync<SyncNowResultDto>(JsonOptions, ct);
         return result ?? new SyncNowResultDto { Started = false, Error = "Respuesta vacía del agente." };
+    }
+
+    public Task<AgentControlConfigDto?> GetConfigAsync(CancellationToken ct) =>
+        client.GetFromJsonAsync<AgentControlConfigDto>("/config", JsonOptions, ct);
+
+    /// <summary>Entrega al servicio la credencial de dispositivo obtenida de central-api para que la persista vía DPAPI (ver AgentControlServer.POST /link).</summary>
+    public async Task<bool> LinkAsync(LinkDeviceCredentialDto credential, CancellationToken ct)
+    {
+        using var response = await client.PostAsJsonAsync("/link", credential, JsonOptions, ct);
+        return response.IsSuccessStatusCode;
     }
 }

@@ -23,28 +23,17 @@ public sealed class ConnectorAuthenticationTests
     }
 
     [Fact]
-    public void New_connector_requests_identify_connector_and_use_bearer_token()
+    public void Device_requests_always_identify_installation_and_use_bearer_token()
     {
-        var connectorId = Guid.NewGuid().ToString();
+        var installationId = Guid.NewGuid().ToString();
         using var request = new HttpRequestMessage();
 
-        AgentApiClient.ApplyAuthentication(request, "sra_conn_test-token", connectorId);
+        AgentApiClient.ApplyAuthentication(request, "sra_conn_test-token", installationId);
 
-        Assert.Equal(connectorId, request.Headers.GetValues("X-Connector-Id").Single());
+        Assert.Equal(installationId, request.Headers.GetValues("X-Connector-Id").Single());
         Assert.Equal(new AuthenticationHeaderValue("Bearer", "sra_conn_test-token"), request.Headers.Authorization);
+        // Ya no existe el modo legacy de token compartido por sucursal.
         Assert.False(request.Headers.Contains("X-Agent-Token"));
-    }
-
-    [Fact]
-    public void Legacy_header_is_used_only_without_connector_identity()
-    {
-        using var request = new HttpRequestMessage();
-
-        AgentApiClient.ApplyAuthentication(request, "legacy-test", connectorId: null);
-
-        Assert.Equal("legacy-test", request.Headers.GetValues("X-Agent-Token").Single());
-        Assert.False(request.Headers.Contains("X-Connector-Id"));
-        Assert.Null(request.Headers.Authorization);
     }
 
     [Fact]
@@ -60,8 +49,11 @@ public sealed class ConnectorAuthenticationTests
     }
 
     [Fact]
-    public void Dpapi_replaces_one_time_key_with_connector_credential()
+    public void Installer_protects_sql_config_without_requiring_any_device_credential()
     {
+        // Desde el modelo SaaS, el instalador nunca recoge credencial de dispositivo — solo
+        // conexión SQL + URL de API. La identidad de dispositivo llega después, vía POST /link
+        // (ver AgentControlServer), no en el momento de proteger el archivo.
         if (!OperatingSystem.IsWindows()) return;
 
         var directory = Path.Combine(Path.GetTempPath(), "srx-auth-test-" + Guid.NewGuid().ToString("N"));
@@ -74,8 +66,6 @@ public sealed class ConnectorAuthenticationTests
             File.WriteAllText(input, """
                 {
                   "SRX_API_URL":"https://api.example.test",
-                  "SRX_ACTIVATION_KEY":"sra_act_one-time-test",
-                  "SRX_MACHINE_NAME":"CAJA-TEST",
                   "SRX_SQL_SERVER":"localhost",
                   "SRX_SQL_DATABASE":"softrestaurant-test",
                   "SRX_SQL_USER":"test",
@@ -85,14 +75,20 @@ public sealed class ConnectorAuthenticationTests
             ProtectedSettings.ProtectFile(input, protectedPath);
             Environment.SetEnvironmentVariable("SRX_PROTECTED_CONFIG", protectedPath);
 
-            ProtectedSettings.CompleteActivation(
-                "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "sucursal-test", "sra_conn_permanent-test");
-            var loaded = ProtectedSettings.Load();
+            var loadedBeforeLink = ProtectedSettings.Load();
+            Assert.False(loadedBeforeLink.ContainsKey("SRX_DEVICE_TOKEN"));
+            Assert.True(ProtectedSettings.TryLoadValid(protectedPath, out _));
 
-            Assert.False(loaded.ContainsKey("SRX_ACTIVATION_KEY"));
-            Assert.Equal("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", loaded["SRX_CONNECTOR_ID"]);
-            Assert.Equal("sucursal-test", loaded["SRX_BRANCH_CODE"]);
-            Assert.Equal("sra_conn_permanent-test", loaded["SRX_AGENT_TOKEN"]);
+            ProtectedSettings.ApplyLink(
+                "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "sucursal-test", "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+                "sra_conn_permanent-test", apiUrl: null);
+            var loadedAfterLink = ProtectedSettings.Load();
+
+            Assert.Equal("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", loadedAfterLink["SRX_INSTALLATION_ID"]);
+            Assert.Equal("sucursal-test", loadedAfterLink["SRX_BRANCH_CODE"]);
+            Assert.Equal("sra_conn_permanent-test", loadedAfterLink["SRX_DEVICE_TOKEN"]);
+            // La conexión SQL protegida antes de vincular sobrevive intacta.
+            Assert.Equal("localhost", loadedAfterLink["SRX_SQL_SERVER"]);
             Assert.DoesNotContain("sra_conn_permanent-test", Encoding.UTF8.GetString(File.ReadAllBytes(protectedPath)));
         }
         finally

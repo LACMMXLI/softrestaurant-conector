@@ -2,10 +2,11 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Plus, Store, X } from 'lucide-react'
 import { api, ApiError } from '../api'
-import type { Branch } from '../types'
+import type { Branch, Business } from '../types'
 
 type BranchesScreenProps = {
   branches: Branch[]
+  businesses: Business[]
   loading: boolean
   error: string | null
   onOpenBranch: (code: string) => void
@@ -15,6 +16,7 @@ type BranchesScreenProps = {
 
 export function BranchesScreen({
   branches,
+  businesses,
   loading,
   error,
   onOpenBranch,
@@ -22,6 +24,7 @@ export function BranchesScreen({
   onUnauthorized,
 }: BranchesScreenProps) {
   const [formOpen, setFormOpen] = useState(false)
+  const [businessId, setBusinessId] = useState('')
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [timezone, setTimezone] = useState('America/Tijuana')
@@ -30,12 +33,17 @@ export function BranchesScreen({
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!businessId) {
+      setFormError('Selecciona el negocio dueño de la sucursal.')
+      return
+    }
     setBusy(true)
     setFormError(null)
     try {
-      const branch = await api.createBranch(code.trim(), name.trim(), timezone.trim())
+      const branch = await api.createBranch(businessId, code.trim(), name.trim(), timezone.trim())
       onBranchCreated(branch)
       setFormOpen(false)
+      setBusinessId('')
       setCode('')
       setName('')
       setTimezone('America/Tijuana')
@@ -64,6 +72,15 @@ export function BranchesScreen({
 
         {formOpen ? (
           <form className="inline-form" onSubmit={handleCreate}>
+            <label>
+              Negocio
+              <select value={businessId} onChange={(event) => setBusinessId(event.target.value)} required>
+                <option value="">Selecciona…</option>
+                {businesses.map((business) => (
+                  <option key={business.id} value={business.id}>{business.name}</option>
+                ))}
+              </select>
+            </label>
             <label>
               Código
               <input

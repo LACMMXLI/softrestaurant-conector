@@ -1,8 +1,12 @@
 import type {
+  AgentLatest,
+  BranchWithConnector,
+  BusinessMembership,
   DashboardBranch,
   DashboardHome,
   DashboardUser,
   CashMovementsPage,
+  ConnectorInstallation,
   SalesPage,
   TicketDetail,
 } from './types'
@@ -50,7 +54,30 @@ export const api = {
     }),
   logout: () => request<void>('/api/web/auth/logout', { method: 'POST' }),
   me: () => request<{ user: DashboardUser }>('/api/web/auth/me'),
+  register: (email: string, password: string, displayName: string) =>
+    request<{ user: DashboardUser; expiresAt: string }>('/api/web/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, displayName }),
+    }),
   branches: () => request<DashboardBranch[]>('/api/web/branches'),
+  businesses: () => request<BusinessMembership[]>('/api/web/businesses'),
+  createBusiness: (name: string) =>
+    request<BusinessMembership>('/api/web/businesses', { method: 'POST', body: JSON.stringify({ name }) }),
+  businessBranches: (businessId: string) =>
+    request<BranchWithConnector[]>(`/api/web/businesses/${encodeURIComponent(businessId)}/branches`),
+  createBranch: (businessId: string, code: string, name: string) =>
+    request<BranchWithConnector['branch']>(`/api/web/businesses/${encodeURIComponent(businessId)}/branches`, {
+      method: 'POST',
+      body: JSON.stringify({ code, name }),
+    }),
+  connectorInstallations: (branchCode: string) =>
+    request<ConnectorInstallation[]>(`/api/web/branches/${encodeURIComponent(branchCode)}/connector-installations`),
+  revokeConnector: (branchCode: string, installationId: string) =>
+    request<{ installationId: string; active: boolean }>(
+      `/api/web/connector-installations/${encodeURIComponent(installationId)}/revoke?branchCode=${encodeURIComponent(branchCode)}`,
+      { method: 'POST' },
+    ),
+  agentLatest: () => request<AgentLatest>('/api/web/agent/latest'),
   requestSync: (branchCode: string) =>
     request<{ branchCode: string; syncRequestedAt: string }>(
       `/api/web/branches/${encodeURIComponent(branchCode)}/request-sync`,

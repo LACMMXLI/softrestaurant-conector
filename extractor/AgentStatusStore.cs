@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace SoftRestaurant.Extractor;
 
-internal enum AgentOperationalState { Idle, Syncing, Error }
+internal enum AgentOperationalState { Idle, Syncing, Error, Revoked }
 
 /// <summary>
 /// Foto del estado del agente que consume la API de control local (<see cref="AgentControlServer"/>)
@@ -20,6 +20,9 @@ internal sealed record AgentStatus
     public string MachineName { get; init; } = "";
     public string AgentVersion { get; init; } = "";
     public bool SendEnabled { get; init; }
+
+    /// <summary>Hay identidad de dispositivo (ver ExtractorConfig.Linked). Falso justo tras instalar; la GUI debe ofrecer vincular en ese caso.</summary>
+    public bool Linked { get; init; }
 
     /// <summary>Último latido enviado con éxito al backend. Independiente del ciclo de sync.</summary>
     public DateTime? LastHeartbeatAt { get; init; }
@@ -61,7 +64,8 @@ internal sealed class AgentStatusStore
             BranchCode = config.BranchCode,
             MachineName = config.MachineName,
             AgentVersion = typeof(AgentStatusStore).Assembly.GetName().Version?.ToString() ?? "1.0.0",
-            SendEnabled = config.SendEnabled
+            SendEnabled = config.SendEnabled,
+            Linked = config.Linked
         };
 
         var directory = Path.GetDirectoryName(Path.GetFullPath(config.QueuePath));
@@ -95,7 +99,9 @@ internal sealed class AgentStatusStore
             {
                 // Al reiniciar, el estado operativo siempre vuelve a Idle: una corrida "Syncing"
                 // guardada en disco quedó interrumpida por el reinicio, no sigue en curso.
-                lock (gate) current = loaded with { State = AgentOperationalState.Idle };
+                // Linked se recalcula del DPAPI actual (fuente de verdad), no del snapshot en
+                // disco: puede haber cambiado entre reinicios (vinculado, revocado, reemplazado).
+                lock (gate) current = loaded with { State = AgentOperationalState.Idle, Linked = current.Linked };
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)

@@ -28,17 +28,29 @@ public sealed class UserValidationTests
 
     [Theory]
     [InlineData("SUPERADMIN")]
-    [InlineData("OWNER")]
-    [InlineData("MANAGER")]
-    [InlineData("VIEWER")]
-    public void Valid_roles_are_accepted(string role) => Assert.True(UserValidation.IsValidRole(role));
+    [InlineData("USER")]
+    public void Valid_account_roles_are_accepted(string role) => Assert.True(UserValidation.IsValidAccountRole(role));
 
     [Theory]
     [InlineData("")]
     [InlineData("ADMIN")]
+    [InlineData("OWNER")]
+    [InlineData("user")]
+    [InlineData(null)]
+    public void Invalid_account_roles_are_rejected(string? role) => Assert.False(UserValidation.IsValidAccountRole(role));
+
+    [Theory]
+    [InlineData("OWNER")]
+    [InlineData("MANAGER")]
+    [InlineData("VIEWER")]
+    public void Valid_business_roles_are_accepted(string role) => Assert.True(UserValidation.IsValidBusinessRole(role));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("SUPERADMIN")]
     [InlineData("owner")]
     [InlineData(null)]
-    public void Invalid_roles_are_rejected(string? role) => Assert.False(UserValidation.IsValidRole(role));
+    public void Invalid_business_roles_are_rejected(string? role) => Assert.False(UserValidation.IsValidBusinessRole(role));
 
     [Fact]
     public void Password_shorter_than_twelve_characters_is_rejected() =>

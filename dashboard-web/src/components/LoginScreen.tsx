@@ -24,6 +24,7 @@ type LoginScreenProps = {
   error: string | null
   busy: boolean
   onLogin: (email: string, password: string) => Promise<void>
+  onRegister: (email: string, password: string, displayName: string) => Promise<void>
 }
 
 const capabilities = [
@@ -78,15 +79,18 @@ function DashboardPreview() {
   )
 }
 
-export function LoginScreen({ error, busy, onLogin }: LoginScreenProps) {
+export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenProps) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    await onLogin(email, password)
+    if (mode === 'register') await onRegister(email, password, displayName)
+    else await onLogin(email, password)
   }
 
   function closeMenu() {
@@ -172,16 +176,38 @@ export function LoginScreen({ error, busy, onLogin }: LoginScreenProps) {
       <section className="access-section" id="acceso">
         <div className="landing-container access-layout">
           <div className="access-copy"><p className="section-kicker">Acceso para clientes</p><h2>Consulta tu operación.</h2><p>Inicia sesión con la cuenta y las sucursales que tu administrador te asignó.</p><div className="access-proof"><ShieldCheck size={20} /><span>Sesión protegida y permisos por sucursal</span></div></div>
-          <section className="login-card" aria-label="Iniciar sesión">
-            <div><p className="utility-label">Panel de control</p><h2>Iniciar sesión</h2><p className="login-card-copy">Accede a tu información operativa.</p></div>
+          <section className="login-card" aria-label={mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión'}>
+            <div>
+              <p className="utility-label">Panel de control</p>
+              <h2>{mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión'}</h2>
+              <p className="login-card-copy">
+                {mode === 'register' ? 'Registra tu cuenta para crear tu negocio.' : 'Accede a tu información operativa.'}
+              </p>
+            </div>
             <form onSubmit={handleSubmit}>
+              {mode === 'register' ? (
+                <>
+                  <label className="field-label" htmlFor="displayName">Nombre</label>
+                  <input id="displayName" name="displayName" type="text" autoComplete="name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
+                </>
+              ) : null}
               <label className="field-label" htmlFor="email">Correo electrónico</label>
               <input id="email" name="email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required />
               <label className="field-label" htmlFor="password">Contraseña</label>
-              <div className="password-field"><input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="icon-button password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
+              <div className="password-field"><input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete={mode === 'register' ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="icon-button password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
               {error ? <p className="form-error" role="alert">{error}</p> : null}
-              <button className="primary-button" type="submit" disabled={busy}><span>{busy ? 'Verificando…' : 'Entrar'}</span><ArrowRight size={19} aria-hidden="true" /></button>
+              <button className="primary-button" type="submit" disabled={busy}>
+                <span>{busy ? 'Verificando…' : mode === 'register' ? 'Crear cuenta' : 'Entrar'}</span>
+                <ArrowRight size={19} aria-hidden="true" />
+              </button>
             </form>
+            <button
+              type="button"
+              className="landing-button landing-button--ghost"
+              onClick={() => setMode((current) => (current === 'login' ? 'register' : 'login'))}
+            >
+              {mode === 'register' ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Créala aquí'}
+            </button>
           </section>
         </div>
       </section>

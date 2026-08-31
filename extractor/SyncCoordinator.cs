@@ -59,6 +59,17 @@ internal sealed class SyncCoordinator(ExtractorConfig config, AgentStatusStore s
             log.Info($"Sincronización terminada (origen={trigger}): conciliaciónOk={result.ReconciliationOk}, pendientes={result.PendingBatches}.");
             return new SyncRunOutcome(true, result.ReconciliationOk, result.PendingBatches, null);
         }
+        catch (AgentApiException ex) when (ex.IsUnauthorized)
+        {
+            statusStore.Update(s => s with
+            {
+                State = AgentOperationalState.Revoked,
+                LastCycleAt = DateTime.UtcNow,
+                LastError = "La credencial de este equipo fue revocada. Vuelve a vincularlo desde el panel del agente."
+            });
+            log.Error($"Sincronización rechazada (origen={trigger}): credencial revocada.");
+            return new SyncRunOutcome(true, false, statusStore.Current.PendingBatches, "Credencial revocada.");
+        }
         catch (Exception ex)
         {
             statusStore.Update(s => s with

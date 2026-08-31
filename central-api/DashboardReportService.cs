@@ -148,16 +148,16 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 LIMIT 1
             ) sb ON true
             WHERE b.active = true
-              -- Regla de acceso (ver BranchAccess.CanAccessBranch / BranchAccessTests):
-              -- SUPERADMIN ve todo sin necesitar filas en app_user_branches; cualquier otro
-              -- rol (incluido OWNER) solo ve las sucursales que tenga asignadas ahí.
-              AND ($1 OR EXISTS (
-                  SELECT 1 FROM app_user_branches ub
-                  WHERE ub.user_id = $2 AND ub.branch_id = b.id
-              ))
+              -- Regla de acceso (ver BusinessAccess.CanAccessBusiness / BusinessAccessTests):
+              -- /api/web/* nunca usa el atajo de SUPERADMIN — incluso un operador de plataforma
+              -- solo ve las sucursales de negocios de los que es miembro explícito ahí. El
+              -- acceso incondicional queda reservado a /api/admin/* (AdminAuthenticator).
+              AND EXISTS (
+                  SELECT 1 FROM business_members bm
+                  WHERE bm.user_id = $1 AND bm.business_id = b.business_id
+              )
             ORDER BY b.name, b.code;
             """);
-        command.Parameters.AddWithValue(user.IsSuperAdmin);
         command.Parameters.AddWithValue(user.Id);
         await using var reader = await command.ExecuteReaderAsync(ct);
         var branches = new List<DashboardBranch>();
@@ -189,17 +189,16 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
     {
         await using var command = dataSource.CreateCommand("""
             UPDATE branches b
-            SET sync_requested_at = now(), sync_requested_by = $4, updated_at = now()
+            SET sync_requested_at = now(), sync_requested_by = $3, updated_at = now()
             WHERE b.active = true AND b.code = $1
-              -- Misma regla que GetBranchesAsync: ver BranchAccess.CanAccessBranch.
-              AND ($2 OR EXISTS (
-                  SELECT 1 FROM app_user_branches ub
-                  WHERE ub.user_id = $3 AND ub.branch_id = b.id
-              ))
+              -- Misma regla que GetBranchesAsync: ver BusinessAccess.CanAccessBusiness.
+              AND EXISTS (
+                  SELECT 1 FROM business_members bm
+                  WHERE bm.user_id = $2 AND bm.business_id = b.business_id
+              )
             RETURNING sync_requested_at;
             """);
         command.Parameters.AddWithValue(branchCode);
-        command.Parameters.AddWithValue(user.IsSuperAdmin);
         command.Parameters.AddWithValue(user.Id);
         command.Parameters.AddWithValue(user.Id);
         return await command.ExecuteScalarAsync(ct) as DateTime?;
@@ -389,21 +388,20 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 SELECT id, range_start, range_end, reconciliation_ok
                 FROM sync_batches
                 WHERE branch_id = b.id
-                  AND range_start < $5
-                  AND range_end > $4
+                  AND range_start < $4
+                  AND range_end > $3
                 ORDER BY received_at DESC
                 LIMIT 1
             ) sb ON true
             WHERE b.active = true
               AND b.code = $1
-              -- Misma regla que GetBranchesAsync: ver BranchAccess.CanAccessBranch.
-              AND ($2 OR EXISTS (
-                  SELECT 1 FROM app_user_branches ub
-                  WHERE ub.user_id = $3 AND ub.branch_id = b.id
-              ));
+              -- Misma regla que GetBranchesAsync: ver BusinessAccess.CanAccessBusiness.
+              AND EXISTS (
+                  SELECT 1 FROM business_members bm
+                  WHERE bm.user_id = $2 AND bm.business_id = b.business_id
+              );
             """);
         command.Parameters.AddWithValue(branchCode);
-        command.Parameters.AddWithValue(user.IsSuperAdmin);
         command.Parameters.AddWithValue(user.Id);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(end);
@@ -441,14 +439,13 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             SELECT b.id, b.timezone
             FROM branches b
             WHERE b.active = true AND b.code = $1
-              -- Misma regla que GetBranchesAsync: ver BranchAccess.CanAccessBranch.
-              AND ($2 OR EXISTS (
-                  SELECT 1 FROM app_user_branches ub
-                  WHERE ub.user_id = $3 AND ub.branch_id = b.id
-              ));
+              -- Misma regla que GetBranchesAsync: ver BusinessAccess.CanAccessBusiness.
+              AND EXISTS (
+                  SELECT 1 FROM business_members bm
+                  WHERE bm.user_id = $2 AND bm.business_id = b.business_id
+              );
             """);
         command.Parameters.AddWithValue(branchCode);
-        command.Parameters.AddWithValue(user.IsSuperAdmin);
         command.Parameters.AddWithValue(user.Id);
         await using var reader = await command.ExecuteReaderAsync(ct);
         return await reader.ReadAsync(ct)

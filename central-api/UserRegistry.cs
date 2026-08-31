@@ -10,9 +10,9 @@ internal sealed record UserView(
     bool Active,
     DateTime? LastLoginAt,
     DateTime CreatedAt,
-    int BranchCount);
+    int BusinessCount);
 
-internal sealed record UserBranchView(string Code, string Name, bool Active);
+internal sealed record UserBusinessView(Guid BusinessId, string Name, string Slug, bool Active, string Role);
 
 internal sealed record UserDetailView(
     Guid Id,
@@ -22,7 +22,7 @@ internal sealed record UserDetailView(
     bool Active,
     DateTime? LastLoginAt,
     DateTime CreatedAt,
-    IReadOnlyList<UserBranchView> Branches);
+    IReadOnlyList<UserBusinessView> Businesses);
 
 internal enum UserMutationStatus { Ok, NotFound, BlockedLastSuperAdmin }
 
@@ -33,18 +33,19 @@ internal sealed record UserMutationResult(UserMutationStatus Status, UserDetailV
     public static UserMutationResult Ok(UserDetailView user) => new(UserMutationStatus.Ok, user);
 }
 
-internal sealed record UserCreateRequest(
-    string Email, string DisplayName, string Password, string Role, IReadOnlyList<string>? BranchCodes);
+internal sealed record UserCreateRequest(string Email, string DisplayName, string Password, string Role);
 internal sealed record UserUpdateRequest(string DisplayName, string Role);
 internal sealed record UserStatusRequest(bool Active);
 internal sealed record UserPasswordResetRequest(string Password);
-internal sealed record UserBranchAssignRequest(IReadOnlyList<string> BranchCodes);
+internal sealed record UserBusinessAssignRequest(IReadOnlyList<Guid> BusinessIds, string Role);
 
 /// <summary>
-/// CRUD de cuentas (app_users) y de su relación con sucursales (app_user_branches), para
-/// los endpoints /api/admin/users/*. Ninguna operación borra una fila de app_users: el
-/// historial y la auditoría (audit_log, last_login_at) se conservan siempre; "eliminar" una
-/// cuenta es desactivarla (<see cref="SetUserActiveAsync"/>).
+/// CRUD de cuentas (app_users) y de su membresía de negocio (business_members), para los
+/// endpoints /api/admin/users/*. Ninguna operación borra una fila de app_users: el historial y
+/// la auditoría (audit_log, last_login_at) se conservan siempre; "eliminar" una cuenta es
+/// desactivarla (<see cref="SetUserActiveAsync"/>). El rol de cuenta (SUPERADMIN/USER) y el rol
+/// de negocio (OWNER/MANAGER/VIEWER, en business_members) son conceptos separados desde el
+/// modelo SaaS — ver central-api/schema.sql.
 /// </summary>
 internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService authService)
 {
@@ -52,9 +53,9 @@ internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService a
     {
         await using var command = dataSource.CreateCommand("""
             SELECT u.id, u.email, u.display_name, u.role, u.active, u.last_login_at, u.created_at,
-                   COUNT(ub.branch_id)
+                   COUNT(bm.business_id)
             FROM app_users u
-            LEFT JOIN app_user_branches ub ON ub.user_id = u.id
+            LEFT JOIN business_members bm ON bm.user_id = u.id
             GROUP BY u.id
             ORDER BY u.display_name, u.email;
             """);
@@ -72,7 +73,7 @@ internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService a
 
     public async Task<UserDetailView?> GetUserAsync(Guid id, CancellationToken ct)
     {
-        UserDetailView? user = null;
+        UserDetailView? user;
         await using (var command = dataSource.CreateCommand("""
             SELECT id, email, display_name, role, active, last_login_at, created_at
             FROM app_users
@@ -88,66 +89,47 @@ internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService a
                 reader.GetDateTime(6), []);
         }
 
-        var branches = new List<UserBranchView>();
+        var businesses = new List<UserBusinessView>();
         await using (var command = dataSource.CreateCommand("""
-            SELECT b.code, b.name, b.active
-            FROM app_user_branches ub
-            JOIN branches b ON b.id = ub.branch_id
-            WHERE ub.user_id = $1
+            SELECT b.id, b.name, b.slug, b.active, bm.role
+            FROM business_members bm
+            JOIN businesses b ON b.id = bm.business_id
+            WHERE bm.user_id = $1
             ORDER BY b.name;
             """))
         {
             command.Parameters.AddWithValue(id);
             await using var reader = await command.ExecuteReaderAsync(ct);
             while (await reader.ReadAsync(ct))
-                branches.Add(new UserBranchView(reader.GetString(0), reader.GetString(1), reader.GetBoolean(2)));
+                businesses.Add(new UserBusinessView(
+                    reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetBoolean(3), reader.GetString(4)));
         }
 
-        return user with { Branches = branches };
+        return user with { Businesses = businesses };
     }
 
-    /// <summary>
-    /// Crea la cuenta y, si se dan códigos de sucursal, las asigna en la misma transacción.
-    /// Devuelve null si el correo ya existe (índice único ux_app_users_email_lower).
-    /// </summary>
+    /// <summary>Crea la cuenta (sin membresía de negocio inicial). Devuelve null si el correo ya existe.</summary>
     public async Task<UserDetailView?> CreateUserAsync(
-        string email, string displayName, string password, string role,
-        IReadOnlyList<string>? branchCodes, CancellationToken ct)
+        string email, string displayName, string password, string role, CancellationToken ct)
     {
         var normalizedEmail = WebAuthService.NormalizeEmail(email);
         var passwordHash = authService.HashPassword(
             new DashboardUser(Guid.Empty, normalizedEmail, displayName, role), password);
 
-        await using var connection = await dataSource.OpenConnectionAsync(ct);
-        await using var transaction = await connection.BeginTransactionAsync(ct);
-
-        Guid userId;
-        await using (var insert = new NpgsqlCommand("""
+        await using var command = dataSource.CreateCommand("""
             INSERT INTO app_users (email, display_name, password_hash, role)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT DO NOTHING
             RETURNING id;
-            """, connection, transaction))
-        {
-            insert.Parameters.AddWithValue(normalizedEmail);
-            insert.Parameters.AddWithValue(displayName);
-            insert.Parameters.AddWithValue(passwordHash);
-            insert.Parameters.AddWithValue(role);
-            if (await insert.ExecuteScalarAsync(ct) is not Guid id)
-            {
-                await transaction.RollbackAsync(ct);
-                return null;
-            }
-            userId = id;
-        }
-
-        await AssignBranchesWithinTransactionAsync(userId, branchCodes, connection, transaction, ct);
-
-        await transaction.CommitAsync(ct);
-        return await GetUserAsync(userId, ct);
+            """);
+        command.Parameters.AddWithValue(normalizedEmail);
+        command.Parameters.AddWithValue(displayName);
+        command.Parameters.AddWithValue(passwordHash);
+        command.Parameters.AddWithValue(role);
+        return await command.ExecuteScalarAsync(ct) is Guid id ? await GetUserAsync(id, ct) : null;
     }
 
-    /// <summary>Edita nombre y rol. Bloqueado si dejaría al sistema sin SUPERADMIN activo.</summary>
+    /// <summary>Edita nombre y rol de cuenta. Bloqueado si dejaría al sistema sin SUPERADMIN activo.</summary>
     public async Task<UserMutationResult> UpdateUserAsync(
         Guid id, string displayName, string role, CancellationToken ct)
     {
@@ -242,64 +224,20 @@ internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService a
         return existing;
     }
 
-    /// <summary>Agrega sucursales (sin duplicar filas gracias a ON CONFLICT DO NOTHING). Null si el usuario no existe.</summary>
-    public async Task<UserDetailView?> AssignBranchesAsync(
-        Guid id, IReadOnlyList<string> branchCodes, CancellationToken ct)
+    /// <summary>Otorga/actualiza membresía en uno o más negocios (mismo rol para todos). Null si el usuario no existe.</summary>
+    public async Task<UserDetailView?> AssignBusinessesAsync(
+        Guid id, IReadOnlyList<Guid> businessIds, string role, BusinessRegistry businesses, CancellationToken ct)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(ct);
-        await using var transaction = await connection.BeginTransactionAsync(ct);
+        await using var exists = dataSource.CreateCommand("SELECT 1 FROM app_users WHERE id = $1;");
+        exists.Parameters.AddWithValue(id);
+        if (await exists.ExecuteScalarAsync(ct) is null) return null;
 
-        await using (var exists = new NpgsqlCommand(
-            "SELECT 1 FROM app_users WHERE id = $1;", connection, transaction))
-        {
-            exists.Parameters.AddWithValue(id);
-            if (await exists.ExecuteScalarAsync(ct) is null)
-            {
-                await transaction.RollbackAsync(ct);
-                return null;
-            }
-        }
-
-        await AssignBranchesWithinTransactionAsync(id, branchCodes, connection, transaction, ct);
-        await transaction.CommitAsync(ct);
+        await businesses.AssignMembershipsAsync(id, businessIds, role, ct);
         return await GetUserAsync(id, ct);
     }
 
-    public async Task<bool> RemoveBranchAsync(Guid id, string branchCode, CancellationToken ct)
-    {
-        await using var command = dataSource.CreateCommand("""
-            DELETE FROM app_user_branches
-            USING branches b
-            WHERE app_user_branches.branch_id = b.id
-              AND app_user_branches.user_id = $1
-              AND b.code = $2;
-            """);
-        command.Parameters.AddWithValue(id);
-        command.Parameters.AddWithValue(branchCode);
-        return await command.ExecuteNonQueryAsync(ct) == 1;
-    }
-
-    private static async Task AssignBranchesWithinTransactionAsync(
-        Guid userId,
-        IReadOnlyList<string>? branchCodes,
-        NpgsqlConnection connection,
-        NpgsqlTransaction transaction,
-        CancellationToken ct)
-    {
-        if (branchCodes is not { Count: > 0 }) return;
-
-        // Set-based e idempotente: códigos que no correspondan a ninguna sucursal no
-        // producen fila (no hace falta validarlos antes) y ON CONFLICT evita duplicados
-        // en app_user_branches sin importar cuántas veces se repita un código.
-        await using var assign = new NpgsqlCommand("""
-            INSERT INTO app_user_branches (user_id, branch_id)
-            SELECT $1, b.id FROM branches b WHERE b.code = ANY($2::text[])
-            ON CONFLICT (user_id, branch_id) DO NOTHING;
-            """, connection, transaction);
-        assign.Parameters.AddWithValue(userId);
-        assign.Parameters.AddWithValue(branchCodes.ToArray());
-        await assign.ExecuteNonQueryAsync(ct);
-    }
+    public async Task<bool> RemoveBusinessAsync(Guid id, Guid businessId, BusinessRegistry businesses, CancellationToken ct) =>
+        await businesses.RemoveMembershipAsync(id, businessId, ct);
 
     private static async Task<(string Role, bool Active)?> LockUserAsync(
         Guid id, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken ct)

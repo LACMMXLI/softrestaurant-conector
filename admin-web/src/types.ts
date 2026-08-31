@@ -1,9 +1,19 @@
-export type Role = 'SUPERADMIN' | 'OWNER' | 'MANAGER' | 'VIEWER'
+// Rol de cuenta (app_users.role): solo distingue operador de plataforma de cuenta normal. El
+// permiso real por negocio (OWNER/MANAGER/VIEWER) vive en BusinessRole/business_members.
+export type Role = 'SUPERADMIN' | 'USER'
 
-export const ROLES: Role[] = ['SUPERADMIN', 'OWNER', 'MANAGER', 'VIEWER']
+export const ROLES: Role[] = ['SUPERADMIN', 'USER']
 
 export const ROLE_LABELS: Record<Role, string> = {
   SUPERADMIN: 'Super administrador',
+  USER: 'Cuenta normal',
+}
+
+export type BusinessRole = 'OWNER' | 'MANAGER' | 'VIEWER'
+
+export const BUSINESS_ROLES: BusinessRole[] = ['OWNER', 'MANAGER', 'VIEWER']
+
+export const BUSINESS_ROLE_LABELS: Record<BusinessRole, string> = {
   OWNER: 'Propietario',
   MANAGER: 'Gerente',
   VIEWER: 'Solo lectura',
@@ -24,13 +34,15 @@ export type UserSummary = {
   active: boolean
   lastLoginAt: string | null
   createdAt: string
-  branchCount: number
+  businessCount: number
 }
 
-export type UserBranch = {
-  code: string
+export type UserBusiness = {
+  businessId: string
   name: string
+  slug: string
   active: boolean
+  role: BusinessRole
 }
 
 export type UserDetail = {
@@ -41,7 +53,7 @@ export type UserDetail = {
   active: boolean
   lastLoginAt: string | null
   createdAt: string
-  branches: UserBranch[]
+  businesses: UserBusiness[]
 }
 
 export type UserMutationResponse = {
@@ -49,45 +61,51 @@ export type UserMutationResponse = {
   selfAffected: boolean
 }
 
+export type Business = {
+  id: string
+  name: string
+  slug: string
+  active: boolean
+  createdAt: string
+}
+
 export type Branch = {
   id: string
+  businessId: string
   code: string
   name: string
   timezone: string
   active: boolean
-  legacyAuthEnabled: boolean
   lastSyncAt: string | null
   createdAt: string
   syncRequestedAt: string | null
 }
 
-export type ActivationKeyResult = {
-  id: string
-  activationKey: string
-  expiresAt: string
-}
-
-export type Connector = {
+export type ConnectorInstallation = {
   id: string
   branchCode: string
   machineName: string
   active: boolean
   agentVersion: string | null
   createdAt: string
+  linkedAt: string | null
+  linkedByUserId: string | null
   lastSeenAt: string | null
   lastIp: string | null
   lastUserAgent: string | null
   revokedAt: string | null
-  tokenRotatedAt: string | null
   lastStatus: string | null
   lastError: string | null
   pendingBatches: number | null
   lastHeartbeatAt: string | null
+  lastSuccessAt: string | null
   lastSyncRequestHandledAt: string | null
 }
 
-export type RotatedCredential = {
-  connectorId: string
+export type DeviceCredential = {
+  installationId: string
   branchCode: string
+  businessId: string
   token: string
+  apiUrl: string | null
 }

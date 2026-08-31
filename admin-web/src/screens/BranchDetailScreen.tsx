@@ -149,7 +149,7 @@ export function BranchDetailScreen({ branch, onBack, onBranchUpdated, onUnauthor
         </div>
       </section>
 
-      <ConnectorsScreen branch={branch} onUnauthorized={onUnauthorized} onBranchUpdated={onBranchUpdated} />
+      <ConnectorsScreen branch={branch} onUnauthorized={onUnauthorized} />
     </div>
   )
 }

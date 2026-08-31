@@ -243,3 +243,134 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS ix_audit_log_user_date ON audit_log(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS ix_audit_log_branch_date ON audit_log(branch_id, created_at DESC);
+
+-- ── Modelo SaaS: Business por encima de Branch, identidad de dispositivo propia ────────────
+-- Reemplaza la activación por código (connector_activation_keys) y el token compartido legacy
+-- por sucursal por un flujo de vinculación desde una sesión de usuario autenticada. Ver
+-- central-api/BusinessRegistry.cs, central-api/ConnectorInstallationRegistry.cs.
+
+CREATE TABLE IF NOT EXISTS businesses (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL,
+    slug text NOT NULL UNIQUE,
+    active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE branches ADD COLUMN IF NOT EXISTS business_id uuid NULL REFERENCES businesses(id);
+CREATE INDEX IF NOT EXISTS ix_branches_business ON branches(business_id);
+
+-- Membresía a nivel negocio: reemplaza app_user_branches (que era por sucursal individual).
+-- Un negocio puede tener varias sucursales; un miembro con acceso al negocio ve todas.
+CREATE TABLE IF NOT EXISTS business_members (
+    business_id uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    role text NOT NULL CHECK (role IN ('OWNER','MANAGER','VIEWER')),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (business_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS ix_business_members_user ON business_members(user_id);
+
+-- app_users.role ahora solo distingue operador de plataforma (SUPERADMIN, panel admin) de
+-- cuenta normal (USER); el permiso real de negocio vive en business_members.role.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'app_users_role_check') THEN
+        ALTER TABLE app_users DROP CONSTRAINT app_users_role_check;
+    END IF;
+    ALTER TABLE app_users ADD CONSTRAINT app_users_role_check CHECK (role IN ('SUPERADMIN','USER'));
+END $$;
+
+-- Backfill: si hay sucursales sin negocio (base existente antes de este cambio), un único
+-- negocio bootstrap se queda con todas y hereda los accesos que ya existían en
+-- app_user_branches, para no perder datos ni dejar a nadie sin acceso.
+DO $$
+DECLARE bootstrap_business_id uuid;
+BEGIN
+    IF EXISTS (SELECT 1 FROM branches WHERE business_id IS NULL)
+       AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_user_branches') THEN
+        INSERT INTO businesses (name, slug) VALUES ('Negocio principal', 'negocio-principal')
+        ON CONFLICT (slug) DO NOTHING;
+        SELECT id INTO bootstrap_business_id FROM businesses WHERE slug = 'negocio-principal';
+
+        UPDATE branches SET business_id = bootstrap_business_id WHERE business_id IS NULL;
+
+        INSERT INTO business_members (business_id, user_id, role)
+        SELECT DISTINCT bootstrap_business_id, ub.user_id, u.role
+        FROM app_user_branches ub
+        JOIN app_users u ON u.id = ub.user_id
+        WHERE u.role IN ('OWNER','MANAGER','VIEWER')
+        ON CONFLICT DO NOTHING;
+    END IF;
+END $$;
+
+UPDATE app_users SET role = 'USER' WHERE role IN ('OWNER','MANAGER','VIEWER');
+ALTER TABLE app_users ALTER COLUMN role SET DEFAULT 'USER';
+
+-- Solo se exige NOT NULL una vez que el backfill de arriba garantiza que toda sucursal tiene
+-- negocio (en una base nueva, sin filas en branches, esto no bloquea nada).
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM branches WHERE business_id IS NULL) THEN
+        ALTER TABLE branches ALTER COLUMN business_id SET NOT NULL;
+    END IF;
+END $$;
+
+-- connectors → connector_installations: mismo concepto (un dispositivo/agente vinculado a una
+-- sucursal), renombrado para reflejar que ya no se crea por activación sino por vinculación
+-- desde una sesión de usuario. Ver central-api/ConnectorInstallationRegistry.cs.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'connectors') THEN
+        ALTER TABLE connectors RENAME TO connector_installations;
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS connector_installations (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    branch_id uuid NOT NULL REFERENCES branches(id),
+    machine_name text NOT NULL,
+    token_hash text NOT NULL,
+    active boolean NOT NULL DEFAULT true,
+    agent_version text NULL,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    last_seen_at timestamptz NULL,
+    last_ip text NULL,
+    last_user_agent text NULL,
+    linked_at timestamptz NOT NULL DEFAULT now(),
+    revoked_at timestamptz NULL,
+    token_rotated_at timestamptz NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_connector_installations_branch ON connector_installations(branch_id, active);
+DROP INDEX IF EXISTS ix_connectors_branch;
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'connector_installations' AND column_name = 'activated_at'
+    ) THEN
+        ALTER TABLE connector_installations RENAME COLUMN activated_at TO linked_at;
+    END IF;
+END $$;
+ALTER TABLE connector_installations ADD COLUMN IF NOT EXISTS linked_by_user_id uuid NULL REFERENCES app_users(id);
+ALTER TABLE connector_installations ADD COLUMN IF NOT EXISTS last_success_at timestamptz NULL;
+ALTER TABLE connector_installations ADD COLUMN IF NOT EXISTS last_status text NULL;
+ALTER TABLE connector_installations ADD COLUMN IF NOT EXISTS last_error text NULL;
+ALTER TABLE connector_installations ADD COLUMN IF NOT EXISTS pending_batches integer NULL;
+ALTER TABLE connector_installations ADD COLUMN IF NOT EXISTS last_heartbeat_at timestamptz NULL;
+ALTER TABLE connector_installations ADD COLUMN IF NOT EXISTS last_sync_request_handled_at timestamptz NULL;
+
+-- Solo un conector ACTIVO por sucursal a la vez: garantía real a nivel de base de datos de
+-- "no crear silenciosamente un segundo extractor activo" (el 409 de la API es solo UX).
+CREATE UNIQUE INDEX IF NOT EXISTS ux_connector_installations_branch_active
+    ON connector_installations(branch_id) WHERE active = true;
+
+-- ── Elimina activación por código y token legacy por completo (sin compatibilidad) ────────
+DROP TABLE IF EXISTS connector_activation_keys;
+ALTER TABLE branches DROP COLUMN IF EXISTS token_hash;
+ALTER TABLE branches DROP COLUMN IF EXISTS legacy_auth_enabled;
+DROP TABLE IF EXISTS app_user_branches;

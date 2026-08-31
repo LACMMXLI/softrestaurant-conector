@@ -5,7 +5,6 @@ namespace SoftRestaurant.CentralApi;
 
 internal sealed record DashboardUser(Guid Id, string Email, string DisplayName, string Role)
 {
-    public bool IsOwner => string.Equals(Role, "OWNER", StringComparison.Ordinal);
     public bool IsSuperAdmin => string.Equals(Role, "SUPERADMIN", StringComparison.Ordinal);
 }
 
@@ -13,6 +12,13 @@ internal sealed record DashboardLoginResult(
     string Token,
     DashboardUser User,
     DateTime ExpiresAtUtc);
+
+internal enum RegisterStatus { Ok, EmailTaken }
+internal sealed record RegisterResult(RegisterStatus Status, DashboardLoginResult? Login)
+{
+    public static RegisterResult Ok(DashboardLoginResult login) => new(RegisterStatus.Ok, login);
+    public static readonly RegisterResult EmailTaken = new(RegisterStatus.EmailTaken, null);
+}
 
 internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions options)
 {
@@ -43,14 +49,28 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
 
     public async Task EnsureBootstrapOwnerAsync(CancellationToken ct)
     {
-        await EnsureBootstrapUserAsync(options.DashboardOwnerEmail, options.DashboardOwnerPassword, "OWNER", ct);
+        // "OWNER" ya no es un rol de cuenta (app_users.role solo admite SUPERADMIN/USER — el
+        // permiso real vive en business_members). La cuenta bootstrap se crea como USER y, si
+        // existe el negocio bootstrap (ver DbInitializer, creado solo cuando hay
+        // BOOTSTRAP_BRANCH_CODE), se le otorga membresía OWNER ahí para no romper el flujo de
+        // instalaciones piloto existentes.
+        var ownerId = await EnsureBootstrapUserAsync(options.DashboardOwnerEmail, options.DashboardOwnerPassword, "USER", ct);
         await EnsureBootstrapUserAsync(options.DashboardAdminEmail, options.DashboardAdminPassword, "SUPERADMIN", ct);
+
+        if (ownerId is not { } id) return;
+        await using var membership = dataSource.CreateCommand("""
+            INSERT INTO business_members (business_id, user_id, role)
+            SELECT id, $1, 'OWNER' FROM businesses WHERE slug = 'negocio-principal'
+            ON CONFLICT (business_id, user_id) DO NOTHING;
+            """);
+        membership.Parameters.AddWithValue(id);
+        await membership.ExecuteNonQueryAsync(ct);
     }
 
-    private async Task EnsureBootstrapUserAsync(
+    private async Task<Guid?> EnsureBootstrapUserAsync(
         string? email, string? password, string role, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return;
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return null;
 
         var normalizedEmail = NormalizeEmail(email);
         var candidate = new DashboardUser(Guid.Empty, normalizedEmail, normalizedEmail, role);
@@ -59,12 +79,58 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
         await using var command = dataSource.CreateCommand("""
             INSERT INTO app_users (email, display_name, password_hash, role)
             VALUES ($1, $1, $2, $3)
-            ON CONFLICT DO NOTHING;
+            ON CONFLICT DO NOTHING
+            RETURNING id;
             """);
         command.Parameters.AddWithValue(normalizedEmail);
         command.Parameters.AddWithValue(passwordHash);
         command.Parameters.AddWithValue(role);
-        await command.ExecuteNonQueryAsync(ct);
+        var result = await command.ExecuteScalarAsync(ct);
+        if (result is Guid id) return id;
+
+        await using var lookup = dataSource.CreateCommand(
+            "SELECT id FROM app_users WHERE lower(email) = $1;");
+        lookup.Parameters.AddWithValue(normalizedEmail);
+        return await lookup.ExecuteScalarAsync(ct) as Guid?;
+    }
+
+    /// <summary>
+    /// Autorregistro público: crea la cuenta con rol USER (nunca SUPERADMIN) y abre sesión de
+    /// inmediato, igual que login. No crea ningún negocio — el usuario crea el primero desde el
+    /// dashboard con <c>POST /api/web/businesses</c>.
+    /// </summary>
+    public async Task<RegisterResult> RegisterAsync(
+        string email, string password, string displayName, string? ip, string? userAgent, CancellationToken ct)
+    {
+        var normalizedEmail = NormalizeEmail(email);
+        var candidate = new DashboardUser(Guid.Empty, normalizedEmail, displayName, "USER");
+        var passwordHash = passwordHasher.HashPassword(candidate, password);
+
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+
+        DashboardUser user;
+        await using (var insert = new NpgsqlCommand("""
+            INSERT INTO app_users (email, display_name, password_hash, role)
+            VALUES ($1, $2, $3, 'USER')
+            ON CONFLICT DO NOTHING
+            RETURNING id;
+            """, connection, transaction))
+        {
+            insert.Parameters.AddWithValue(normalizedEmail);
+            insert.Parameters.AddWithValue(displayName);
+            insert.Parameters.AddWithValue(passwordHash);
+            if (await insert.ExecuteScalarAsync(ct) is not Guid id)
+            {
+                await transaction.RollbackAsync(ct);
+                return RegisterResult.EmailTaken;
+            }
+            user = new DashboardUser(id, normalizedEmail, displayName, "USER");
+        }
+
+        var login = await CreateSessionAsync(connection, transaction, user, ip, userAgent, "REGISTER", ct);
+        await transaction.CommitAsync(ct);
+        return RegisterResult.Ok(login);
     }
 
     public async Task<DashboardLoginResult?> LoginAsync(
@@ -100,8 +166,6 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
         var verification = passwordHasher.VerifyHashedPassword(user, passwordHash, password);
         if (verification == PasswordVerificationResult.Failed) return null;
 
-        var token = TokenHasher.Generate("srd_session_");
-        var expiresAt = DateTime.UtcNow.AddHours(options.DashboardSessionHours);
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var transaction = await connection.BeginTransactionAsync(ct);
 
@@ -114,6 +178,23 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
             rehash.Parameters.AddWithValue(user.Id);
             await rehash.ExecuteNonQueryAsync(ct);
         }
+
+        var login = await CreateSessionAsync(connection, transaction, user, ip, userAgent, "LOGIN", ct);
+        await transaction.CommitAsync(ct);
+        return login;
+    }
+
+    /// <summary>
+    /// Núcleo compartido de login y registro: limpia sesiones vencidas, inserta la sesión nueva,
+    /// actualiza <c>last_login_at</c> y deja constancia en <c>audit_log</c>. Antes duplicado
+    /// entre LoginAsync y (el ahora existente) RegisterAsync.
+    /// </summary>
+    private async Task<DashboardLoginResult> CreateSessionAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, DashboardUser user,
+        string? ip, string? userAgent, string auditEventType, CancellationToken ct)
+    {
+        var token = TokenHasher.Generate("srd_session_");
+        var expiresAt = DateTime.UtcNow.AddHours(options.DashboardSessionHours);
 
         await using (var cleanup = new NpgsqlCommand(
             "DELETE FROM app_sessions WHERE expires_at <= now();", connection, transaction))
@@ -142,16 +223,15 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
             await updateUser.ExecuteNonQueryAsync(ct);
         }
 
-        await using (var audit = new NpgsqlCommand("""
-            INSERT INTO audit_log (user_id, event_type, ip) VALUES ($1, 'LOGIN', $2);
-            """, connection, transaction))
+        await using (var audit = new NpgsqlCommand(
+            "INSERT INTO audit_log (user_id, event_type, ip) VALUES ($1, $2, $3);", connection, transaction))
         {
             audit.Parameters.AddWithValue(user.Id);
+            audit.Parameters.AddWithValue(auditEventType);
             audit.Parameters.AddWithValue((object?)Limit(ip, 200) ?? DBNull.Value);
             await audit.ExecuteNonQueryAsync(ct);
         }
 
-        await transaction.CommitAsync(ct);
         return new DashboardLoginResult(token, user, expiresAt);
     }
 

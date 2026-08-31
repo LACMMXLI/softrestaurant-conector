@@ -13,23 +13,36 @@ internal static class DbInitializer
             await command.ExecuteNonQueryAsync(ct);
         }
 
-        if (string.IsNullOrWhiteSpace(options.BootstrapBranchCode) ||
-            string.IsNullOrWhiteSpace(options.LegacyBootstrapAgentToken))
+        if (string.IsNullOrWhiteSpace(options.BootstrapBranchCode)) return;
+
+        // El negocio bootstrap usa el mismo slug 'negocio-principal' que el backfill de
+        // schema.sql, para que una base ya migrada (con el negocio creado por el backfill) y una
+        // base nueva (creada aquí) terminen en el mismo lugar sin duplicar negocios.
+        Guid businessId;
+        await using (var business = dataSource.CreateCommand("""
+            INSERT INTO businesses (name, slug)
+            VALUES ($1, 'negocio-principal')
+            ON CONFLICT (slug) DO UPDATE SET updated_at = now()
+            RETURNING id;
+            """))
         {
-            return;
+            business.Parameters.AddWithValue(options.BootstrapBusinessName ?? "Negocio principal");
+            businessId = (Guid)(await business.ExecuteScalarAsync(ct)
+                ?? throw new InvalidOperationException("No se pudo crear el negocio bootstrap."));
         }
 
         await using var bootstrap = dataSource.CreateCommand("""
-            INSERT INTO branches (code, name, token_hash, legacy_auth_enabled)
-            VALUES ($1, $2, $3, true)
+            INSERT INTO branches (business_id, code, name)
+            VALUES ($1, $2, $3)
             ON CONFLICT (code) DO UPDATE
-            SET name = excluded.name,
+            SET business_id = excluded.business_id,
+                name = excluded.name,
                 active = true,
                 updated_at = now();
             """);
+        bootstrap.Parameters.AddWithValue(businessId);
         bootstrap.Parameters.AddWithValue(options.BootstrapBranchCode);
         bootstrap.Parameters.AddWithValue(options.BootstrapBranchName ?? options.BootstrapBranchCode);
-        bootstrap.Parameters.AddWithValue(TokenHasher.Hash(options.LegacyBootstrapAgentToken));
         await bootstrap.ExecuteNonQueryAsync(ct);
     }
 }

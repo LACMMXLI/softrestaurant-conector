@@ -2,12 +2,12 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowLeft, Ban, CheckCircle2, KeyRound, Plus, Save, Trash2 } from 'lucide-react'
 import { api, ApiError } from '../api'
-import { ROLE_LABELS, ROLES } from '../types'
-import type { Role, UserDetail } from '../types'
+import { BUSINESS_ROLE_LABELS, BUSINESS_ROLES, ROLE_LABELS, ROLES } from '../types'
+import type { Business, BusinessRole, Role, UserDetail } from '../types'
 
 type UserDetailScreenProps = {
   user: UserDetail
-  allBranches: { code: string; name: string }[]
+  allBusinesses: Business[]
   onBack: () => void
   onUserUpdated: (user: UserDetail) => void
   onSelfSessionInvalidated: (message: string) => void
@@ -16,7 +16,7 @@ type UserDetailScreenProps = {
 
 export function UserDetailScreen({
   user,
-  allBranches,
+  allBusinesses,
   onBack,
   onUserUpdated,
   onSelfSessionInvalidated,
@@ -32,11 +32,12 @@ export function UserDetailScreen({
   const [resettingPassword, setResettingPassword] = useState(false)
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null)
 
-  const [branchToAdd, setBranchToAdd] = useState('')
-  const [branchBusy, setBranchBusy] = useState<string | null>(null)
+  const [businessToAdd, setBusinessToAdd] = useState('')
+  const [businessRoleToAdd, setBusinessRoleToAdd] = useState<BusinessRole>('VIEWER')
+  const [businessBusy, setBusinessBusy] = useState<string | null>(null)
 
-  const unassignedBranches = allBranches.filter(
-    (branch) => !user.branches.some((assigned) => assigned.code === branch.code),
+  const unassignedBusinesses = allBusinesses.filter(
+    (business) => !user.businesses.some((assigned) => assigned.businessId === business.id),
   )
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
@@ -104,34 +105,34 @@ export function UserDetailScreen({
     }
   }
 
-  async function handleAddBranch(event: FormEvent<HTMLFormElement>) {
+  async function handleAddBusiness(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!branchToAdd) return
-    setBranchBusy(branchToAdd)
+    if (!businessToAdd) return
+    setBusinessBusy(businessToAdd)
     setError(null)
     try {
-      const updated = await api.assignUserBranches(user.id, [branchToAdd])
+      const updated = await api.assignUserBusinesses(user.id, [businessToAdd], businessRoleToAdd)
       onUserUpdated(updated)
-      setBranchToAdd('')
+      setBusinessToAdd('')
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
-      setError(reason instanceof Error ? reason.message : 'No fue posible asignar la sucursal.')
+      setError(reason instanceof Error ? reason.message : 'No fue posible asignar el negocio.')
     } finally {
-      setBranchBusy(null)
+      setBusinessBusy(null)
     }
   }
 
-  async function handleRemoveBranch(code: string) {
-    setBranchBusy(code)
+  async function handleRemoveBusiness(businessId: string) {
+    setBusinessBusy(businessId)
     setError(null)
     try {
-      await api.removeUserBranch(user.id, code)
-      onUserUpdated({ ...user, branches: user.branches.filter((b) => b.code !== code) })
+      await api.removeUserBusiness(user.id, businessId)
+      onUserUpdated({ ...user, businesses: user.businesses.filter((b) => b.businessId !== businessId) })
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
-      setError(reason instanceof Error ? reason.message : 'No fue posible quitar la sucursal.')
+      setError(reason instanceof Error ? reason.message : 'No fue posible quitar el negocio.')
     } finally {
-      setBranchBusy(null)
+      setBusinessBusy(null)
     }
   }
 
@@ -164,7 +165,7 @@ export function UserDetailScreen({
             />
           </label>
           <label>
-            Rol
+            Rol de plataforma
             <select value={role} onChange={(event) => setRole(event.target.value as Role)}>
               {ROLES.map((r) => (
                 <option key={r} value={r}>{ROLE_LABELS[r]}</option>
@@ -219,60 +220,64 @@ export function UserDetailScreen({
         {passwordNotice ? <p className="panel-hint form-notice-ok">{passwordNotice}</p> : null}
       </section>
 
-      <section className="panel-card" aria-labelledby="user-branches-title">
-        <h2 id="user-branches-title">Sucursales asignadas</h2>
+      <section className="panel-card" aria-labelledby="user-businesses-title">
+        <h2 id="user-businesses-title">Negocios asignados</h2>
+        <p className="panel-hint">
+          {user.role === 'SUPERADMIN'
+            ? 'Un SUPERADMIN también administra el panel de operador (X-Admin-Key/sesión), pero para ver el dashboard de un negocio necesita, igual que cualquier cuenta, ser miembro explícito aquí.'
+            : 'El acceso de esta cuenta a cada negocio (y por tanto a sus sucursales) se controla aquí.'}
+        </p>
 
-        {user.role === 'SUPERADMIN' ? (
-          <p className="panel-hint">
-            <strong>Acceso global.</strong> Un SUPERADMIN ve todas las sucursales; no necesita
-            asignaciones individuales.
-          </p>
+        {user.businesses.length === 0 ? (
+          <p className="panel-hint">Esta cuenta no tiene negocios asignados todavía: no verá ninguno en el dashboard.</p>
         ) : (
-          <>
-            {user.branches.length === 0 ? (
-              <p className="panel-hint">Esta cuenta no tiene sucursales asignadas todavía: no verá ninguna en el dashboard.</p>
-            ) : (
-              <ul className="assigned-branch-list">
-                {user.branches.map((branch) => (
-                  <li key={branch.code}>
-                    <span>
-                      {branch.name}
-                      {!branch.active ? <span className="panel-hint"> (sucursal inactiva)</span> : null}
-                    </span>
-                    <button
-                      type="button"
-                      className="icon-button icon-button-danger"
-                      title="Quitar sucursal"
-                      aria-label={`Quitar ${branch.name}`}
-                      disabled={branchBusy === branch.code}
-                      onClick={() => void handleRemoveBranch(branch.code)}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {unassignedBranches.length > 0 ? (
-              <form className="inline-form" onSubmit={handleAddBranch}>
-                <label>
-                  Agregar sucursal
-                  <select value={branchToAdd} onChange={(event) => setBranchToAdd(event.target.value)}>
-                    <option value="">Selecciona…</option>
-                    {unassignedBranches.map((branch) => (
-                      <option key={branch.code} value={branch.code}>{branch.name}</option>
-                    ))}
-                  </select>
-                </label>
-                <button className="secondary-button" type="submit" disabled={!branchToAdd || branchBusy !== null}>
-                  <Plus size={16} aria-hidden="true" />
-                  <span>Agregar</span>
+          <ul className="assigned-branch-list">
+            {user.businesses.map((business) => (
+              <li key={business.businessId}>
+                <span>
+                  {business.name} — {BUSINESS_ROLE_LABELS[business.role]}
+                  {!business.active ? <span className="panel-hint"> (negocio inactivo)</span> : null}
+                </span>
+                <button
+                  type="button"
+                  className="icon-button icon-button-danger"
+                  title="Quitar negocio"
+                  aria-label={`Quitar ${business.name}`}
+                  disabled={businessBusy === business.businessId}
+                  onClick={() => void handleRemoveBusiness(business.businessId)}
+                >
+                  <Trash2 size={15} />
                 </button>
-              </form>
-            ) : null}
-          </>
+              </li>
+            ))}
+          </ul>
         )}
+
+        {unassignedBusinesses.length > 0 ? (
+          <form className="inline-form" onSubmit={handleAddBusiness}>
+            <label>
+              Agregar negocio
+              <select value={businessToAdd} onChange={(event) => setBusinessToAdd(event.target.value)}>
+                <option value="">Selecciona…</option>
+                {unassignedBusinesses.map((business) => (
+                  <option key={business.id} value={business.id}>{business.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Rol
+              <select value={businessRoleToAdd} onChange={(event) => setBusinessRoleToAdd(event.target.value as BusinessRole)}>
+                {BUSINESS_ROLES.map((r) => (
+                  <option key={r} value={r}>{BUSINESS_ROLE_LABELS[r]}</option>
+                ))}
+              </select>
+            </label>
+            <button className="secondary-button" type="submit" disabled={!businessToAdd || businessBusy !== null}>
+              <Plus size={16} aria-hidden="true" />
+              <span>Agregar</span>
+            </button>
+          </form>
+        ) : null}
       </section>
     </div>
   )

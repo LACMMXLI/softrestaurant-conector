@@ -1,7 +1,6 @@
 param(
     [Parameter(Mandatory = $true)] [string] $ExecutablePath,
     [Parameter(Mandatory = $true)] [string] $ApiUrl,
-    [Parameter(Mandatory = $true)] [string] $ActivationKey,
     [string] $MachineName = $env:COMPUTERNAME,
     [string] $SqlServer = '.\SQLEXPRESS',
     [string] $SqlDatabase = 'softrestaurant11',
@@ -24,9 +23,11 @@ if ($LASTEXITCODE -ne 0) { throw 'No se pudieron proteger los permisos de Progra
 
 $plainPath = Join-Path $dataRoot 'agent-settings.tmp.json'
 $protectedPath = Join-Path $dataRoot 'agent-settings.dpapi'
+# Ya no se recoge ninguna credencial de dispositivo aquí (ni clave de activación, ni token):
+# el equipo se vincula DESPUÉS de instalar, desde la GUI (extractor-ui), con la sesión de una
+# cuenta del SaaS. El servicio arranca en estado "no vinculado" hasta entonces.
 $settings = @{
     SRX_API_URL = $ApiUrl
-    SRX_ACTIVATION_KEY = $ActivationKey
     SRX_MACHINE_NAME = $MachineName
     SRX_SQL_SERVER = $SqlServer
     SRX_SQL_DATABASE = $SqlDatabase

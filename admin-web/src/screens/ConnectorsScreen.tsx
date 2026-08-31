@@ -1,67 +1,52 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Check, Copy, KeyRound, RefreshCw, ShieldOff, Trash2 } from 'lucide-react'
+import { Check, Copy, Laptop, RefreshCw, Trash2 } from 'lucide-react'
 import { api, ApiError } from '../api'
-import type { Branch, Connector } from '../types'
+import type { Branch, ConnectorInstallation } from '../types'
 
 type ConnectorsScreenProps = {
   branch: Branch
   onUnauthorized: () => void
-  onBranchUpdated: (branch: Branch) => void
 }
 
-export function ConnectorsScreen({ branch, onUnauthorized, onBranchUpdated }: ConnectorsScreenProps) {
-  const [connectors, setConnectors] = useState<Connector[]>([])
+/// Reemplaza al antiguo generador de claves de activación: ahora el vínculo lo hace el usuario
+/// desde la GUI del agente con su propia sesión (ver extractor-ui/BusinessBranchPickerForm.cs).
+/// Esta pantalla es historial + herramientas de soporte para un operador (SUPERADMIN): ver quién
+/// está vinculado, revocar, o reemplazar el equipo en nombre de un tenant que no puede hacerlo
+/// por sí mismo.
+export function ConnectorsScreen({ branch, onUnauthorized }: ConnectorsScreenProps) {
+  const [installations, setInstallations] = useState<ConnectorInstallation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [minutes, setMinutes] = useState(30)
-  const [note, setNote] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [generatedKey, setGeneratedKey] = useState<{ key: string; expiresAt: string } | null>(null)
-  const [rotatedToken, setRotatedToken] = useState<{ connectorId: string; token: string } | null>(null)
   const [busyAction, setBusyAction] = useState<string | null>(null)
-  const [copied, setCopied] = useState<string | null>(null)
+  const [replaceMachineName, setReplaceMachineName] = useState('')
+  const [replacing, setReplacing] = useState(false)
+  const [newCredential, setNewCredential] = useState<{ token: string; installationId: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  async function loadConnectors(branchCode: string) {
+  async function loadInstallations(branchCode: string) {
     setLoading(true)
     setError(null)
     try {
-      setConnectors(await api.connectors(branchCode))
+      setInstallations(await api.connectorInstallations(branchCode))
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
-      setError(reason instanceof Error ? reason.message : 'No fue posible cargar los conectores.')
+      setError(reason instanceof Error ? reason.message : 'No fue posible cargar el historial de conectores.')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    setGeneratedKey(null)
-    setRotatedToken(null)
-    void loadConnectors(branch.code)
+    setNewCredential(null)
+    void loadInstallations(branch.code)
   }, [branch.code])
 
-  async function handleCreateKey(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setCreating(true)
-    setError(null)
+  async function handleRevoke(installationId: string) {
+    setBusyAction(installationId)
     try {
-      const result = await api.createActivationKey(branch.code, minutes, note)
-      setGeneratedKey({ key: result.activationKey, expiresAt: result.expiresAt })
-      setNote('')
-    } catch (reason) {
-      if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
-      setError(reason instanceof Error ? reason.message : 'No fue posible generar la llave.')
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  async function handleRevoke(connectorId: string) {
-    setBusyAction(connectorId)
-    try {
-      await api.revokeConnector(connectorId)
-      await loadConnectors(branch.code)
+      await api.revokeConnectorInstallation(installationId)
+      await loadInstallations(branch.code)
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
       setError(reason instanceof Error ? reason.message : 'No fue posible revocar el conector.')
@@ -70,147 +55,95 @@ export function ConnectorsScreen({ branch, onUnauthorized, onBranchUpdated }: Co
     }
   }
 
-  async function handleRotate(connectorId: string) {
-    setBusyAction(connectorId)
+  async function handleReplace(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!replaceMachineName.trim()) return
+    setReplacing(true)
+    setError(null)
     try {
-      const credential = await api.rotateToken(connectorId)
-      setRotatedToken({ connectorId, token: credential.token })
-      await loadConnectors(branch.code)
+      const credential = await api.replaceDevice(branch.code, replaceMachineName.trim())
+      setNewCredential({ token: credential.token, installationId: credential.installationId })
+      setReplaceMachineName('')
+      await loadInstallations(branch.code)
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
-      setError(reason instanceof Error ? reason.message : 'No fue posible rotar el token.')
+      setError(reason instanceof Error ? reason.message : 'No fue posible reemplazar el equipo.')
     } finally {
-      setBusyAction(null)
+      setReplacing(false)
     }
   }
 
-  async function handleDisableLegacy() {
-    setBusyAction('legacy')
+  async function copyToken() {
+    if (!newCredential) return
     try {
-      await api.disableLegacyAuth(branch.code)
-      onBranchUpdated({ ...branch, legacyAuthEnabled: false })
-    } catch (reason) {
-      if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
-      setError(reason instanceof Error ? reason.message : 'No fue posible desactivar la autenticación legacy.')
-    } finally {
-      setBusyAction(null)
-    }
-  }
-
-  async function copyToClipboard(value: string, key: string) {
-    try {
-      await navigator.clipboard.writeText(value)
-      setCopied(key)
-      setTimeout(() => setCopied((current) => (current === key ? null : current)), 2000)
+      await navigator.clipboard.writeText(newCredential.token)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     } catch {
       // Portapapeles no disponible; el valor sigue visible en pantalla.
     }
   }
 
+  const active = installations.find((i) => i.active) ?? null
+
   return (
     <div className="panel-stack">
-      <section className="panel-card" aria-labelledby="activation-title">
-        <h2 id="activation-title">Nueva llave de activación</h2>
+      <section className="panel-card" aria-labelledby="replace-title">
+        <h2 id="replace-title">Reemplazar equipo (soporte)</h2>
         <p className="panel-hint">
-          Se usa una sola vez desde el instalador del conector para la sucursal <strong>{branch.name}</strong>.
+          El vínculo normal lo hace el propietario/gerente del negocio desde el panel del agente
+          (inicia sesión ahí y elige "Vincular este equipo"). Usa esto solo cuando el tenant no
+          puede hacerlo por sí mismo: emite una credencial nueva y revoca la anterior de inmediato.
         </p>
-        <form className="inline-form" onSubmit={handleCreateKey}>
+        <form className="inline-form" onSubmit={handleReplace}>
           <label>
-            Expira en (minutos)
+            Nombre del nuevo equipo
             <input
-              type="number"
-              min={1}
-              max={10080}
-              value={minutes}
-              onChange={(event) => setMinutes(Number(event.target.value))}
+              type="text"
+              maxLength={200}
+              value={replaceMachineName}
+              onChange={(event) => setReplaceMachineName(event.target.value)}
+              placeholder="Ej. CAJA-2"
               required
             />
           </label>
-          <label>
-            Nota (opcional)
-            <input
-              type="text"
-              maxLength={500}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Ej. caja 2, instalación 2026-08-29"
-            />
-          </label>
-          <button className="primary-button" type="submit" disabled={creating}>
-            <KeyRound size={17} aria-hidden="true" />
-            <span>{creating ? 'Generando…' : 'Generar llave'}</span>
+          <button className="primary-button" type="submit" disabled={replacing}>
+            <Laptop size={17} aria-hidden="true" />
+            <span>{replacing ? 'Reemplazando…' : 'Reemplazar equipo'}</span>
           </button>
         </form>
 
-        {generatedKey ? (
+        {newCredential ? (
           <div className="secret-box" role="status">
-            <p>Llave de activación (solo se muestra una vez):</p>
+            <p>Token del nuevo dispositivo (solo se muestra una vez — pégalo con <code>--import-connector-credential</code> si necesitas configurarlo manualmente):</p>
             <div className="secret-value">
-              <code>{generatedKey.key}</code>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => void copyToClipboard(generatedKey.key, 'activation-key')}
-                aria-label="Copiar llave"
-              >
-                {copied === 'activation-key' ? <Check size={17} /> : <Copy size={17} />}
+              <code>{newCredential.token}</code>
+              <button type="button" className="icon-button" onClick={() => void copyToken()} aria-label="Copiar token">
+                {copied ? <Check size={17} /> : <Copy size={17} />}
               </button>
             </div>
-            <p className="panel-hint">Expira: {new Date(generatedKey.expiresAt).toLocaleString('es-MX')}</p>
           </div>
         ) : null}
       </section>
 
-      {branch.legacyAuthEnabled ? (
-        <section className="panel-card panel-card-warning" aria-labelledby="legacy-title">
-          <h2 id="legacy-title">Autenticación legacy activa</h2>
-          <p className="panel-hint">
-            Esta sucursal todavía acepta el token compartido antiguo. Desactívalo una vez que todos sus
-            conectores usen credenciales individuales.
-          </p>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() => void handleDisableLegacy()}
-            disabled={busyAction === 'legacy'}
-          >
-            <ShieldOff size={17} aria-hidden="true" />
-            <span>Desactivar auth legacy</span>
-          </button>
-        </section>
-      ) : null}
-
-      <section className="panel-card" aria-labelledby="connectors-title">
+      <section className="panel-card" aria-labelledby="installations-title">
         <div className="panel-card-header">
-          <h2 id="connectors-title">Conectores</h2>
-          <button className="icon-button" type="button" onClick={() => void loadConnectors(branch.code)} aria-label="Actualizar">
+          <h2 id="installations-title">Historial de instalaciones</h2>
+          <button className="icon-button" type="button" onClick={() => void loadInstallations(branch.code)} aria-label="Actualizar">
             <RefreshCw size={17} className={loading ? 'spinning' : ''} />
           </button>
         </div>
 
         {error ? <p className="form-error" role="alert">{error}</p> : null}
 
-        {rotatedToken ? (
-          <div className="secret-box" role="status">
-            <p>Nuevo token del conector (solo se muestra una vez):</p>
-            <div className="secret-value">
-              <code>{rotatedToken.token}</code>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => void copyToClipboard(rotatedToken.token, 'rotated-token')}
-                aria-label="Copiar token"
-              >
-                {copied === 'rotated-token' ? <Check size={17} /> : <Copy size={17} />}
-              </button>
-            </div>
-          </div>
+        {!active && !loading ? (
+          <p className="panel-hint">Esta sucursal no tiene ningún conector activo en este momento.</p>
         ) : null}
 
         {loading ? (
-          <p className="panel-hint">Cargando conectores…</p>
-        ) : connectors.length === 0 ? (
-          <p className="panel-hint">Todavía no hay conectores activados para esta sucursal.</p>
+          <p className="panel-hint">Cargando…</p>
+        ) : installations.length === 0 ? (
+          <p className="panel-hint">Todavía no hay ningún equipo vinculado a esta sucursal.</p>
         ) : (
           <div className="table-scroll">
             <table>
@@ -219,49 +152,39 @@ export function ConnectorsScreen({ branch, onUnauthorized, onBranchUpdated }: Co
                   <th>Equipo</th>
                   <th>Estado</th>
                   <th>En línea</th>
-                  <th>Última sincronización</th>
-                  <th>Pendientes</th>
+                  <th>Última sincronización correcta</th>
                   <th>Último error</th>
                   <th>Versión</th>
+                  <th>Vinculado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {connectors.map((connector) => (
-                  <tr key={connector.id}>
-                    <td>{connector.machineName}</td>
+                {installations.map((installation) => (
+                  <tr key={installation.id}>
+                    <td>{installation.machineName}</td>
                     <td>
-                      <span className={connector.active ? 'status-pill status-ok' : 'status-pill status-off'}>
-                        {connector.active ? 'Activo' : 'Revocado'}
+                      <span className={installation.active ? 'status-pill status-ok' : 'status-pill status-off'}>
+                        {installation.active ? 'Activo' : 'Revocado'}
                       </span>
                     </td>
                     <td>
-                      <span className={isOnline(connector.lastHeartbeatAt) ? 'status-pill status-ok' : 'status-pill status-off'}>
-                        {isOnline(connector.lastHeartbeatAt) ? 'En línea' : 'Sin latido'}
+                      <span className={isOnline(installation.lastHeartbeatAt) ? 'status-pill status-ok' : 'status-pill status-off'}>
+                        {isOnline(installation.lastHeartbeatAt) ? 'En línea' : 'Sin latido'}
                       </span>
                     </td>
-                    <td>{connector.lastSeenAt ? new Date(connector.lastSeenAt).toLocaleString('es-MX') : 'Nunca'}</td>
-                    <td>{connector.pendingBatches ?? '—'}</td>
-                    <td className={connector.lastError ? 'form-error' : undefined}>{connector.lastError ?? '—'}</td>
-                    <td>{connector.agentVersion ?? '—'}</td>
+                    <td>{installation.lastSuccessAt ? new Date(installation.lastSuccessAt).toLocaleString('es-MX') : 'Nunca'}</td>
+                    <td className={installation.lastError ? 'form-error' : undefined}>{installation.lastError ?? '—'}</td>
+                    <td>{installation.agentVersion ?? '—'}</td>
+                    <td>{installation.linkedAt ? new Date(installation.linkedAt).toLocaleString('es-MX') : '—'}</td>
                     <td className="table-actions">
                       <button
                         type="button"
-                        className="icon-button"
-                        title="Rotar token"
-                        aria-label="Rotar token"
-                        disabled={!connector.active || busyAction === connector.id}
-                        onClick={() => void handleRotate(connector.id)}
-                      >
-                        <RefreshCw size={16} />
-                      </button>
-                      <button
-                        type="button"
                         className="icon-button icon-button-danger"
-                        title="Revocar conector"
+                        title="Revocar"
                         aria-label="Revocar conector"
-                        disabled={!connector.active || busyAction === connector.id}
-                        onClick={() => void handleRevoke(connector.id)}
+                        disabled={!installation.active || busyAction === installation.id}
+                        onClick={() => void handleRevoke(installation.id)}
                       >
                         <Trash2 size={16} />
                       </button>

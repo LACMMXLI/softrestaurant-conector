@@ -7,7 +7,6 @@ import type { Role, UserDetail, UserSummary } from '../types'
 
 type UsersScreenProps = {
   users: UserSummary[]
-  branches: { code: string; name: string }[]
   loading: boolean
   error: string | null
   onOpenUser: (id: string) => void
@@ -17,7 +16,6 @@ type UsersScreenProps = {
 
 export function UsersScreen({
   users,
-  branches,
   loading,
   error,
   onOpenUser,
@@ -28,8 +26,7 @@ export function UsersScreen({
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<Role>('OWNER')
-  const [branchCodes, setBranchCodes] = useState<string[]>([])
+  const [role, setRole] = useState<Role>('USER')
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -37,14 +34,7 @@ export function UsersScreen({
     setEmail('')
     setDisplayName('')
     setPassword('')
-    setRole('OWNER')
-    setBranchCodes([])
-  }
-
-  function toggleBranch(code: string) {
-    setBranchCodes((current) =>
-      current.includes(code) ? current.filter((c) => c !== code) : [...current, code],
-    )
+    setRole('USER')
   }
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
@@ -52,13 +42,7 @@ export function UsersScreen({
     setBusy(true)
     setFormError(null)
     try {
-      const user = await api.createUser(
-        email.trim(),
-        displayName.trim(),
-        password,
-        role,
-        role === 'SUPERADMIN' ? [] : branchCodes,
-      )
+      const user = await api.createUser(email.trim(), displayName.trim(), password, role)
       onUserCreated(user)
       setFormOpen(false)
       resetForm()
@@ -114,37 +98,18 @@ export function UsersScreen({
               />
             </label>
             <label>
-              Rol
+              Rol de plataforma
               <select value={role} onChange={(event) => setRole(event.target.value as Role)}>
                 {ROLES.map((r) => (
                   <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                 ))}
               </select>
             </label>
-
-            {role === 'SUPERADMIN' ? (
-              <p className="panel-hint form-full-row">
-                SUPERADMIN tiene acceso global: no necesita sucursales asignadas.
-              </p>
-            ) : (
-              <fieldset className="branch-checklist form-full-row">
-                <legend>Sucursales</legend>
-                {branches.length === 0 ? (
-                  <p className="panel-hint">No hay sucursales dadas de alta todavía.</p>
-                ) : (
-                  branches.map((branch) => (
-                    <label key={branch.code} className="branch-checklist-item">
-                      <input
-                        type="checkbox"
-                        checked={branchCodes.includes(branch.code)}
-                        onChange={() => toggleBranch(branch.code)}
-                      />
-                      <span>{branch.name}</span>
-                    </label>
-                  ))
-                )}
-              </fieldset>
-            )}
+            <p className="panel-hint form-full-row">
+              El rol aquí solo distingue operador de plataforma (SUPERADMIN) de cuenta normal
+              (USER). El acceso a negocios/sucursales se asigna después, desde el detalle de la
+              cuenta.
+            </p>
 
             <button className="primary-button" type="submit" disabled={busy}>
               <span>{busy ? 'Creando…' : 'Crear usuario'}</span>
@@ -167,7 +132,7 @@ export function UsersScreen({
                   <th>Usuario</th>
                   <th>Rol</th>
                   <th>Estado</th>
-                  <th>Sucursales</th>
+                  <th>Negocios</th>
                 </tr>
               </thead>
               <tbody>
@@ -183,7 +148,7 @@ export function UsersScreen({
                         {user.active ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td>{user.role === 'SUPERADMIN' ? 'Acceso global' : user.branchCount}</td>
+                    <td>{user.businessCount}</td>
                   </tr>
                 ))}
               </tbody>

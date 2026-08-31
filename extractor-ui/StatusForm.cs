@@ -94,8 +94,8 @@ public sealed class StatusForm : Form
             var status = await client.GetStatusAsync(cts.Token);
             if (status is null) { ShowServiceUnavailable(); return; }
 
-            serviceLabel.Text = $"En ejecución ({status.State})";
-            serviceLabel.ForeColor = status.State == "Error" ? Color.DarkRed : Color.DarkGreen;
+            serviceLabel.Text = status.Linked ? $"En ejecución ({status.State})" : "En ejecución — equipo NO vinculado";
+            serviceLabel.ForeColor = status.State is "Error" or "Revoked" || !status.Linked ? Color.DarkRed : Color.DarkGreen;
 
             sqlLabel.Text = FormatConnectivity(status.SqlConnected);
             apiLabel.Text = status.SendEnabled ? FormatConnectivity(status.ApiConnected) : "No configurado (modo local)";

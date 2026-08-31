@@ -2,8 +2,14 @@ using Npgsql;
 
 namespace SoftRestaurant.CentralApi;
 
-internal sealed record AgentIdentity(Guid BranchId, Guid? ConnectorId, string BranchCode, bool Legacy);
+internal sealed record AgentIdentity(Guid BranchId, Guid ConnectorInstallationId, string BranchCode);
 
+/// <summary>
+/// Autentica llamadas agente → API usando exclusivamente la identidad de dispositivo emitida al
+/// vincular (ver ConnectorInstallationRegistry). No existe compatibilidad con el token
+/// compartido legacy por sucursal: cada llamada debe traer <c>X-Connector-Id</c> +
+/// <c>Authorization: Bearer</c> de un ConnectorInstallation activo.
+/// </summary>
 internal static class AgentAuthenticator
 {
     public static async Task<AgentIdentity?> AuthenticateAsync(
@@ -12,64 +18,44 @@ internal static class AgentAuthenticator
         string branchCode,
         CancellationToken ct)
     {
-        var hasConnectorId = context.Request.Headers.TryGetValue("X-Connector-Id", out var connectorHeader);
-        var hasAuthorization = context.Request.Headers.TryGetValue("Authorization", out var authorization);
-        if (hasConnectorId || hasAuthorization)
+        if (!context.Request.Headers.TryGetValue("X-Connector-Id", out var connectorHeader) ||
+            !context.Request.Headers.TryGetValue("Authorization", out var authorization))
         {
-            if (!Guid.TryParse(connectorHeader.ToString(), out var connectorId) ||
-                !authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            var token = authorization.ToString()["Bearer ".Length..].Trim();
-            if (token.Length < 32) return null;
-
-            await using var command = dataSource.CreateCommand("""
-                UPDATE connectors c
-                SET last_seen_at = now(),
-                    last_ip = $4,
-                    last_user_agent = $5,
-                    updated_at = now()
-                FROM branches b
-                WHERE c.id = $1
-                  AND c.token_hash = $2
-                  AND c.active = true
-                  AND c.branch_id = b.id
-                  AND b.code = $3
-                  AND b.active = true
-                RETURNING c.branch_id;
-                """);
-            command.Parameters.AddWithValue(connectorId);
-            command.Parameters.AddWithValue(TokenHasher.Hash(token));
-            command.Parameters.AddWithValue(branchCode);
-            command.Parameters.AddWithValue(context.Connection.RemoteIpAddress?.ToString() ?? string.Empty);
-            var userAgent = context.Request.Headers.UserAgent.ToString();
-            command.Parameters.AddWithValue(userAgent[..Math.Min(userAgent.Length, 500)]);
-            var result = await command.ExecuteScalarAsync(ct);
-            return result is Guid branchId
-                ? new AgentIdentity(branchId, connectorId, branchCode, Legacy: false)
-                : null;
+            return null;
         }
 
-        // LEGACY: token compartido por sucursal. Retirar después de migrar todas las instalaciones.
-        if (!context.Request.Headers.TryGetValue("X-Agent-Token", out var legacyHeader) ||
-            string.IsNullOrWhiteSpace(legacyHeader))
+        if (!Guid.TryParse(connectorHeader.ToString(), out var installationId) ||
+            !authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             return null;
 
-        await using var legacyCommand = dataSource.CreateCommand("""
-            SELECT id
-            FROM branches
-            WHERE code = $1
-              AND token_hash = $2
-              AND active = true
-              AND legacy_auth_enabled = true;
-            """);
-        legacyCommand.Parameters.AddWithValue(branchCode);
-        legacyCommand.Parameters.AddWithValue(TokenHasher.Hash(legacyHeader.ToString()));
-        var legacyResult = await legacyCommand.ExecuteScalarAsync(ct);
-        if (legacyResult is not Guid legacyBranchId) return null;
+        var token = authorization.ToString()["Bearer ".Length..].Trim();
+        if (token.Length < 32) return null;
 
-        context.Response.Headers["X-Agent-Auth-Mode"] = "legacy";
-        return new AgentIdentity(legacyBranchId, null, branchCode, Legacy: true);
+        await using var command = dataSource.CreateCommand("""
+            UPDATE connector_installations c
+            SET last_seen_at = now(),
+                last_ip = $4,
+                last_user_agent = $5,
+                updated_at = now()
+            FROM branches b
+            WHERE c.id = $1
+              AND c.token_hash = $2
+              AND c.active = true
+              AND c.branch_id = b.id
+              AND b.code = $3
+              AND b.active = true
+            RETURNING c.branch_id;
+            """);
+        command.Parameters.AddWithValue(installationId);
+        command.Parameters.AddWithValue(TokenHasher.Hash(token));
+        command.Parameters.AddWithValue(branchCode);
+        command.Parameters.AddWithValue(context.Connection.RemoteIpAddress?.ToString() ?? string.Empty);
+        var userAgent = context.Request.Headers.UserAgent.ToString();
+        command.Parameters.AddWithValue(userAgent[..Math.Min(userAgent.Length, 500)]);
+        var result = await command.ExecuteScalarAsync(ct);
+        return result is Guid branchId
+            ? new AgentIdentity(branchId, installationId, branchCode)
+            : null;
     }
 }
 

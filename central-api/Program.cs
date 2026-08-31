@@ -13,12 +13,17 @@ var apiOptions = ApiOptions.FromConfiguration(builder.Configuration);
 builder.Services.AddSingleton(apiOptions);
 builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(apiOptions.ConnectionString));
 builder.Services.AddSingleton<BatchIngestor>();
-builder.Services.AddSingleton<ConnectorRegistry>();
+builder.Services.AddSingleton<BranchRegistry>();
+builder.Services.AddSingleton<BusinessRegistry>();
+builder.Services.AddSingleton<ConnectorInstallationRegistry>();
 builder.Services.AddSingleton<WebAuthService>();
 builder.Services.AddSingleton<UserRegistry>();
 builder.Services.AddSingleton<DashboardReportService>();
 builder.Services.AddRateLimiter(options =>
 {
+    // Misma política para login, autorregistro y emisión de credenciales de dispositivo
+    // (link-device/replace-device): todas producen un token utilizable, así que todas merecen
+    // el mismo límite de fuerza bruta por IP.
     options.AddPolicy("dashboard-login", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -65,9 +70,23 @@ app.MapGet("/api/health/ready", async (CancellationToken ct) =>
     return Results.Ok(new { status = "ok", database = "up" });
 });
 
+// ── /api/admin/businesses — operador (SUPERADMIN / X-Admin-Key) ─────────────────────────────
+
+app.MapGet("/api/admin/businesses", async (
+    HttpContext context,
+    BusinessRegistry businesses,
+    WebAuthService webAuth,
+    CancellationToken ct) =>
+{
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    return Results.Ok(await businesses.GetAllBusinessesAsync(ct));
+});
+
+// ── /api/admin/branches — operador ───────────────────────────────────────────────────────────
+
 app.MapGet("/api/admin/branches", async (
     HttpContext context,
-    ConnectorRegistry registry,
+    BranchRegistry registry,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
@@ -78,7 +97,7 @@ app.MapGet("/api/admin/branches", async (
 app.MapGet("/api/admin/branches/{branchCode}", async (
     HttpContext context,
     string branchCode,
-    ConnectorRegistry registry,
+    BranchRegistry registry,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
@@ -93,11 +112,13 @@ app.MapGet("/api/admin/branches/{branchCode}", async (
 app.MapPost("/api/admin/branches", async (
     HttpContext context,
     BranchCreateRequest request,
-    ConnectorRegistry registry,
+    BranchRegistry registry,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    if (request.BusinessId == Guid.Empty)
+        return Results.BadRequest(new { error = "businessId es obligatorio" });
     var code = request.Code?.Trim() ?? string.Empty;
     if (!BranchValidation.IsValidCode(code))
         return Results.BadRequest(new { error = "code es obligatorio: minúsculas, dígitos y guiones, 2 a 63 caracteres" });
@@ -107,7 +128,7 @@ app.MapPost("/api/admin/branches", async (
     if (!BranchValidation.IsValidTimezone(timezone))
         return Results.BadRequest(new { error = "timezone inválida: debe ser un identificador IANA reconocido" });
 
-    var created = await registry.CreateBranchAsync(code, request.Name.Trim(), timezone, ct);
+    var created = await registry.CreateBranchAsync(request.BusinessId, code, request.Name.Trim(), timezone, ct);
     return created is null
         ? Results.Conflict(new { error = "Ya existe una sucursal con ese código" })
         : Results.Created($"/api/admin/branches/{created.Code}", created);
@@ -117,7 +138,7 @@ app.MapPut("/api/admin/branches/{branchCode}", async (
     HttpContext context,
     string branchCode,
     BranchUpdateRequest request,
-    ConnectorRegistry registry,
+    BranchRegistry registry,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
@@ -138,7 +159,7 @@ app.MapPost("/api/admin/branches/{branchCode}/status", async (
     HttpContext context,
     string branchCode,
     BranchStatusRequest request,
-    ConnectorRegistry registry,
+    BranchRegistry registry,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
@@ -151,6 +172,8 @@ app.MapPost("/api/admin/branches/{branchCode}/status", async (
     var updated = await registry.SetBranchActiveAsync(branchCode, request.Active, ct);
     return updated is null ? Results.NotFound() : Results.Ok(updated);
 });
+
+// ── /api/admin/users — operador ──────────────────────────────────────────────────────────────
 
 app.MapGet("/api/admin/users", async (
     HttpContext context,
@@ -189,13 +212,10 @@ app.MapPost("/api/admin/users", async (
         return Results.BadRequest(new { error = $"displayName es obligatorio y admite máximo {UserValidation.MaxDisplayNameLength} caracteres" });
     if (!UserValidation.IsValidPassword(request.Password))
         return Results.BadRequest(new { error = $"password debe tener al menos {UserValidation.MinPasswordLength} caracteres" });
-    if (!UserValidation.IsValidRole(request.Role))
-        return Results.BadRequest(new { error = "role inválido: use SUPERADMIN, OWNER, MANAGER o VIEWER" });
-    if (request.BranchCodes is { Count: > 0 } createCodes && createCodes.Any(c => !BranchValidation.IsValidCode(c)))
-        return Results.BadRequest(new { error = "branchCodes contiene un código de sucursal inválido" });
+    if (!UserValidation.IsValidAccountRole(request.Role))
+        return Results.BadRequest(new { error = "role inválido: use SUPERADMIN o USER" });
 
-    var created = await users.CreateUserAsync(
-        email, request.DisplayName.Trim(), request.Password, request.Role, request.BranchCodes, ct);
+    var created = await users.CreateUserAsync(email, request.DisplayName.Trim(), request.Password, request.Role, ct);
     return created is null
         ? Results.Conflict(new { error = "Ya existe una cuenta con ese correo" })
         : Results.Created($"/api/admin/users/{created.Id}", created);
@@ -213,8 +233,8 @@ app.MapPut("/api/admin/users/{id:guid}", async (
     if (principal is null) return Results.Unauthorized();
     if (!UserValidation.IsValidDisplayName(request.DisplayName))
         return Results.BadRequest(new { error = $"displayName es obligatorio y admite máximo {UserValidation.MaxDisplayNameLength} caracteres" });
-    if (!UserValidation.IsValidRole(request.Role))
-        return Results.BadRequest(new { error = "role inválido: use SUPERADMIN, OWNER, MANAGER o VIEWER" });
+    if (!UserValidation.IsValidAccountRole(request.Role))
+        return Results.BadRequest(new { error = "role inválido: use SUPERADMIN o USER" });
 
     var result = await users.UpdateUserAsync(id, request.DisplayName.Trim(), request.Role, ct);
     return result.Status switch
@@ -275,133 +295,92 @@ app.MapPost("/api/admin/users/{id:guid}/password", async (
         : Results.Ok(new { user = updated, selfAffected = principal.User?.Id == id });
 });
 
-app.MapPost("/api/admin/users/{id:guid}/branches", async (
+app.MapPost("/api/admin/users/{id:guid}/businesses", async (
     HttpContext context,
     Guid id,
-    UserBranchAssignRequest request,
+    UserBusinessAssignRequest request,
     UserRegistry users,
+    BusinessRegistry businesses,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
-    if (request.BranchCodes.Any(c => !BranchValidation.IsValidCode(c)))
-        return Results.BadRequest(new { error = "branchCodes contiene un código de sucursal inválido" });
+    if (request.BusinessIds.Count == 0)
+        return Results.BadRequest(new { error = "businessIds no puede estar vacío" });
+    if (!UserValidation.IsValidBusinessRole(request.Role))
+        return Results.BadRequest(new { error = "role inválido: use OWNER, MANAGER o VIEWER" });
 
-    var updated = await users.AssignBranchesAsync(id, request.BranchCodes, ct);
+    var updated = await users.AssignBusinessesAsync(id, request.BusinessIds, request.Role, businesses, ct);
     return updated is null ? Results.NotFound() : Results.Ok(updated);
 });
 
-app.MapDelete("/api/admin/users/{id:guid}/branches/{branchCode}", async (
+app.MapDelete("/api/admin/users/{id:guid}/businesses/{businessId:guid}", async (
     HttpContext context,
     Guid id,
-    string branchCode,
+    Guid businessId,
     UserRegistry users,
+    BusinessRegistry businesses,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
-    return await users.RemoveBranchAsync(id, branchCode, ct)
-        ? Results.Ok(new { id, branchCode, removed = true })
+    return await users.RemoveBusinessAsync(id, businessId, businesses, ct)
+        ? Results.Ok(new { id, businessId, removed = true })
         : Results.NotFound();
 });
 
-app.MapPost("/api/admin/branches/{branchCode}/activation-keys", async (
+// ── /api/admin/branches/{branchCode}/connector-installations — operador ────────────────────
+
+app.MapGet("/api/admin/branches/{branchCode}/connector-installations", async (
     HttpContext context,
     string branchCode,
-    ActivationKeyRequest request,
-    ConnectorRegistry registry,
+    ConnectorInstallationRegistry registry,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
-    var minutes = request.ExpiresInMinutes ?? 30;
-    if (minutes is < 1 or > 10080)
-        return Results.BadRequest(new { error = "expiresInMinutes debe estar entre 1 y 10080" });
-    if (request.Note?.Length > 500)
-        return Results.BadRequest(new { error = "note admite máximo 500 caracteres" });
-
-    var created = await registry.CreateActivationKeyAsync(branchCode, minutes, request.Note, ct);
-    return created is null
-        ? Results.NotFound(new { error = "Sucursal inexistente o inactiva" })
-        : Results.Created($"/api/admin/activation-keys/{created.Id}", created);
+    var installations = await registry.GetInstallationsAsync(branchCode, ct);
+    return installations is null ? Results.NotFound() : Results.Ok(installations);
 });
 
-app.MapPost("/api/connectors/activate", async (
+app.MapPost("/api/admin/connector-installations/{installationId:guid}/revoke", async (
     HttpContext context,
-    ActivateConnectorRequest request,
-    ConnectorRegistry registry,
+    Guid installationId,
+    ConnectorInstallationRegistry registry,
+    WebAuthService webAuth,
     CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(request.ActivationKey) || request.ActivationKey.Length > 200)
-        return Results.BadRequest(new { error = "activationKey inválida" });
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    return await registry.RevokeAsync(installationId, ct)
+        ? Results.Ok(new { installationId, active = false })
+        : Results.NotFound();
+});
+
+app.MapPost("/api/admin/branches/{branchCode}/replace-device", async (
+    HttpContext context,
+    string branchCode,
+    LinkDeviceRequest request,
+    BranchRegistry branchRegistry,
+    ConnectorInstallationRegistry registry,
+    WebAuthService webAuth,
+    CancellationToken ct) =>
+{
+    // Soporte: un SUPERADMIN puede reemplazar el equipo de una sucursal en nombre de un tenant
+    // que no puede llegar a la GUI del agente (perdió acceso, sin nadie en sitio, etc.).
+    var principal = await AdminAuthenticator.AuthorizeAsync(context, apiOptions, webAuth, ct);
+    if (principal is null) return Results.Unauthorized();
     if (string.IsNullOrWhiteSpace(request.MachineName) || request.MachineName.Length > 200)
         return Results.BadRequest(new { error = "machineName es obligatorio y admite máximo 200 caracteres" });
-    if (request.AgentVersion?.Length > 100)
-        return Results.BadRequest(new { error = "agentVersion demasiado largo" });
-    if ((request.Metadata?.GetRawText().Length ?? 0) > 8192)
-        return Results.BadRequest(new { error = "metadata admite máximo 8 KB" });
 
-    var activation = await registry.ActivateAsync(request with
-    {
-        ActivationKey = request.ActivationKey.Trim(),
-        MachineName = request.MachineName.Trim()
-    }, context, ct);
-    return activation is null
-        ? Results.Unauthorized()
-        : Results.Ok(activation);
+    var branch = await branchRegistry.GetBranchAsync(branchCode, ct);
+    if (branch is null) return Results.NotFound();
+
+    var credential = await registry.ReplaceDeviceAsync(
+        branch.Id, principal.User?.Id ?? Guid.Empty, request, apiUrl: null, context, ct);
+    return Results.Ok(credential);
 });
 
-app.MapGet("/api/admin/branches/{branchCode}/connectors", async (
-    HttpContext context,
-    string branchCode,
-    ConnectorRegistry registry,
-    WebAuthService webAuth,
-    CancellationToken ct) =>
-{
-    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
-    var connectors = await registry.GetConnectorsAsync(branchCode, ct);
-    return connectors is null ? Results.NotFound() : Results.Ok(connectors);
-});
-
-app.MapPost("/api/admin/connectors/{connectorId:guid}/revoke", async (
-    HttpContext context,
-    Guid connectorId,
-    ConnectorRegistry registry,
-    WebAuthService webAuth,
-    CancellationToken ct) =>
-{
-    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
-    return await registry.RevokeAsync(connectorId, ct)
-        ? Results.Ok(new { connectorId, active = false })
-        : Results.NotFound();
-});
-
-app.MapPost("/api/admin/connectors/{connectorId:guid}/rotate-token", async (
-    HttpContext context,
-    Guid connectorId,
-    ConnectorRegistry registry,
-    WebAuthService webAuth,
-    CancellationToken ct) =>
-{
-    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
-    var credential = await registry.RotateTokenAsync(connectorId, ct);
-    return credential is null
-        ? Results.NotFound()
-        : Results.Ok(credential);
-});
-
-app.MapPost("/api/admin/branches/{branchCode}/legacy-auth/disable", async (
-    HttpContext context,
-    string branchCode,
-    ConnectorRegistry registry,
-    WebAuthService webAuth,
-    CancellationToken ct) =>
-{
-    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
-    return await registry.DisableLegacyAsync(branchCode, ct)
-        ? Results.Ok(new { branchCode, legacyAuthEnabled = false })
-        : Results.NotFound();
-});
+// ── /api/ingestion, /api/dashboard, /api/agents, /api/branches — agente (identidad de dispositivo) ──
 
 app.MapPost("/api/ingestion/batches", async (
     HttpContext context,
@@ -419,7 +398,7 @@ app.MapPost("/api/ingestion/batches", async (
     var identity = await AgentAuthenticator.AuthenticateAsync(context, dataSource, batch.BranchCode, ct);
     if (identity is null) return Results.Unauthorized();
 
-    await ingestor.IngestAsync(identity.BranchId, batch, ct);
+    await ingestor.IngestAsync(identity.BranchId, identity.ConnectorInstallationId, batch, ct);
     return Results.Ok(new
     {
         accepted = true,
@@ -490,7 +469,7 @@ app.MapGet("/api/dashboard/today", async (
 app.MapPost("/api/agents/heartbeat", async (
     HttpContext context,
     HeartbeatRequest request,
-    ConnectorRegistry registry,
+    ConnectorInstallationRegistry registry,
     CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(request.BranchCode) || !BranchValidation.IsValidCode(request.BranchCode))
@@ -503,29 +482,17 @@ app.MapPost("/api/agents/heartbeat", async (
     var identity = await AgentAuthenticator.AuthenticateAsync(context, dataSource, request.BranchCode, ct);
     if (identity is null) return Results.Unauthorized();
 
-    // El detalle por conector (estado, error, pendientes) solo existe para conectores
-    // individuales; en modo legacy (token compartido por sucursal) solo se informa la
-    // solicitud de sync pendiente, sin persistir el resto.
-    DateTime? syncRequestedAt;
-    if (identity.ConnectorId is { } connectorId)
-    {
-        var result = await registry.RecordHeartbeatAsync(
-            connectorId, identity.BranchId, request.State ?? "Idle", request.LastError,
-            Math.Max(0, request.PendingBatches), request.LastSyncRequestHandledAt, ct);
-        syncRequestedAt = result.SyncRequestedAt;
-    }
-    else
-    {
-        syncRequestedAt = await registry.GetSyncRequestedAtAsync(request.BranchCode, ct);
-    }
+    var result = await registry.RecordHeartbeatAsync(
+        identity.ConnectorInstallationId, identity.BranchId, request.State ?? "Idle", request.LastError,
+        Math.Max(0, request.PendingBatches), request.LastSyncRequestHandledAt, ct);
 
-    return Results.Ok(new { syncRequestedAt, serverTimeUtc = DateTime.UtcNow });
+    return Results.Ok(new { syncRequestedAt = result.SyncRequestedAt, serverTimeUtc = DateTime.UtcNow });
 });
 
 app.MapPost("/api/admin/branches/{branchCode}/request-sync", async (
     HttpContext context,
     string branchCode,
-    ConnectorRegistry registry,
+    BranchRegistry registry,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {

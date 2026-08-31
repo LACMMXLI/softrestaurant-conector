@@ -1,10 +1,11 @@
 import type {
-  ActivationKeyResult,
   AdminUser,
   Branch,
-  Connector,
+  Business,
+  BusinessRole,
+  ConnectorInstallation,
+  DeviceCredential,
   Role,
-  RotatedCredential,
   UserDetail,
   UserMutationResponse,
   UserSummary,
@@ -54,12 +55,14 @@ export const api = {
   logout: () => request<void>('/api/web/auth/logout', { method: 'POST' }),
   me: () => request<{ user: AdminUser }>('/api/web/auth/me'),
 
+  businesses: () => request<Business[]>('/api/admin/businesses'),
+
   branches: () => request<Branch[]>('/api/admin/branches'),
   branch: (code: string) => request<Branch>(`/api/admin/branches/${encodeURIComponent(code)}`),
-  createBranch: (code: string, name: string, timezone: string) =>
+  createBranch: (businessId: string, code: string, name: string, timezone: string) =>
     request<Branch>('/api/admin/branches', {
       method: 'POST',
-      body: JSON.stringify({ code, name, timezone }),
+      body: JSON.stringify({ businessId, code, name, timezone }),
     }),
   updateBranch: (code: string, name: string, timezone: string) =>
     request<Branch>(`/api/admin/branches/${encodeURIComponent(code)}`, {
@@ -76,33 +79,24 @@ export const api = {
       method: 'POST',
     }),
 
-  connectors: (branchCode: string) =>
-    request<Connector[]>(`/api/admin/branches/${encodeURIComponent(branchCode)}/connectors`),
-  createActivationKey: (branchCode: string, expiresInMinutes: number, note: string) =>
-    request<ActivationKeyResult>(`/api/admin/branches/${encodeURIComponent(branchCode)}/activation-keys`, {
-      method: 'POST',
-      body: JSON.stringify({ expiresInMinutes, note: note.trim() || null }),
-    }),
-  revokeConnector: (connectorId: string) =>
-    request<{ connectorId: string; active: boolean }>(`/api/admin/connectors/${connectorId}/revoke`, {
+  connectorInstallations: (branchCode: string) =>
+    request<ConnectorInstallation[]>(`/api/admin/branches/${encodeURIComponent(branchCode)}/connector-installations`),
+  revokeConnectorInstallation: (installationId: string) =>
+    request<{ installationId: string; active: boolean }>(`/api/admin/connector-installations/${installationId}/revoke`, {
       method: 'POST',
     }),
-  rotateToken: (connectorId: string) =>
-    request<RotatedCredential>(`/api/admin/connectors/${connectorId}/rotate-token`, {
+  replaceDevice: (branchCode: string, machineName: string) =>
+    request<DeviceCredential>(`/api/admin/branches/${encodeURIComponent(branchCode)}/replace-device`, {
       method: 'POST',
+      body: JSON.stringify({ machineName }),
     }),
-  disableLegacyAuth: (branchCode: string) =>
-    request<{ branchCode: string; legacyAuthEnabled: boolean }>(
-      `/api/admin/branches/${encodeURIComponent(branchCode)}/legacy-auth/disable`,
-      { method: 'POST' },
-    ),
 
   users: () => request<UserSummary[]>('/api/admin/users'),
   user: (id: string) => request<UserDetail>(`/api/admin/users/${id}`),
-  createUser: (email: string, displayName: string, password: string, role: Role, branchCodes: string[]) =>
+  createUser: (email: string, displayName: string, password: string, role: Role) =>
     request<UserDetail>('/api/admin/users', {
       method: 'POST',
-      body: JSON.stringify({ email, displayName, password, role, branchCodes }),
+      body: JSON.stringify({ email, displayName, password, role }),
     }),
   updateUser: (id: string, displayName: string, role: Role) =>
     request<UserMutationResponse>(`/api/admin/users/${id}`, {
@@ -119,13 +113,13 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ password }),
     }),
-  assignUserBranches: (id: string, branchCodes: string[]) =>
-    request<UserDetail>(`/api/admin/users/${id}/branches`, {
+  assignUserBusinesses: (id: string, businessIds: string[], role: BusinessRole) =>
+    request<UserDetail>(`/api/admin/users/${id}/businesses`, {
       method: 'POST',
-      body: JSON.stringify({ branchCodes }),
+      body: JSON.stringify({ businessIds, role }),
     }),
-  removeUserBranch: (id: string, branchCode: string) =>
-    request<{ removed: boolean }>(`/api/admin/users/${id}/branches/${encodeURIComponent(branchCode)}`, {
+  removeUserBusiness: (id: string, businessId: string) =>
+    request<{ removed: boolean }>(`/api/admin/users/${id}/businesses/${encodeURIComponent(businessId)}`, {
       method: 'DELETE',
     }),
 }

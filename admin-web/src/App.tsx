@@ -6,7 +6,7 @@ import { BranchDetailScreen } from './screens/BranchDetailScreen'
 import { BranchesScreen } from './screens/BranchesScreen'
 import { UserDetailScreen } from './screens/UserDetailScreen'
 import { UsersScreen } from './screens/UsersScreen'
-import type { AdminUser, Branch, UserDetail, UserSummary } from './types'
+import type { AdminUser, Branch, Business, UserDetail, UserSummary } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
 type View =
@@ -21,6 +21,7 @@ export function App() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [branchesLoading, setBranchesLoading] = useState(false)
   const [branchesError, setBranchesError] = useState<string | null>(null)
+  const [businesses, setBusinesses] = useState<Business[]>([])
   const [users, setUsers] = useState<UserSummary[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersError, setUsersError] = useState<string | null>(null)
@@ -32,6 +33,7 @@ export function App() {
     setSessionState('anonymous')
     setUser(null)
     setBranches([])
+    setBusinesses([])
     setUsers([])
     setView({ name: 'branches' })
     if (message) setLoginError(message)
@@ -41,7 +43,9 @@ export function App() {
     setBranchesLoading(true)
     setBranchesError(null)
     try {
-      setBranches(await api.branches())
+      const [branchList, businessList] = await Promise.all([api.branches(), api.businesses()])
+      setBranches(branchList)
+      setBusinesses(businessList)
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return becomeAnonymous()
       setBranchesError(reason instanceof Error ? reason.message : 'No fue posible cargar las sucursales.')
@@ -131,7 +135,7 @@ export function App() {
         active: next.active,
         lastLoginAt: next.lastLoginAt,
         createdAt: next.createdAt,
-        branchCount: next.branches.length,
+        businessCount: next.businesses.length,
       }
       const exists = current.some((u) => u.id === next.id)
       const updated = exists ? current.map((u) => (u.id === next.id ? summary : u)) : [...current, summary]
@@ -201,6 +205,7 @@ export function App() {
         {view.name === 'branches' || (view.name === 'branch-detail' && !detailBranch) ? (
           <BranchesScreen
             branches={branches}
+            businesses={businesses}
             loading={branchesLoading}
             error={branchesError}
             onOpenBranch={(code) => setView({ name: 'branch-detail', code })}
@@ -212,7 +217,7 @@ export function App() {
         {view.name === 'user-detail' && detailUserSummary ? (
           <UserDetailFetcher
             id={detailUserSummary.id}
-            allBranches={branches}
+            allBusinesses={businesses}
             onBack={() => setView({ name: 'users' })}
             onUserUpdated={upsertUserInList}
             onSelfSessionInvalidated={becomeAnonymous}
@@ -223,7 +228,6 @@ export function App() {
         {view.name === 'users' || (view.name === 'user-detail' && !detailUserSummary) ? (
           <UsersScreen
             users={users}
-            branches={branches}
             loading={usersLoading}
             error={usersError}
             onOpenUser={(id) => setView({ name: 'user-detail', id })}
@@ -243,14 +247,14 @@ export function App() {
 /// lista: lo carga aquí y muestra un estado breve de espera mientras llega.
 function UserDetailFetcher({
   id,
-  allBranches,
+  allBusinesses,
   onBack,
   onUserUpdated,
   onSelfSessionInvalidated,
   onUnauthorized,
 }: {
   id: string
-  allBranches: Branch[]
+  allBusinesses: Business[]
   onBack: () => void
   onUserUpdated: (user: UserDetail) => void
   onSelfSessionInvalidated: (message: string) => void
@@ -284,7 +288,7 @@ function UserDetailFetcher({
   return (
     <UserDetailScreen
       user={detail}
-      allBranches={allBranches}
+      allBusinesses={allBusinesses}
       onBack={onBack}
       onUserUpdated={handleUpdated}
       onSelfSessionInvalidated={onSelfSessionInvalidated}

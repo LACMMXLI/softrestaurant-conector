@@ -7,6 +7,12 @@ namespace SoftRestaurant.Extractor;
 /// <summary>
 /// Configuración de conexión y extracción, resuelta con esta prioridad:
 /// argumentos de línea de comandos > variables de entorno > archivo protegido DPAPI > appsettings.json > valores por defecto.
+///
+/// La identidad de dispositivo (InstallationId/DeviceToken/BusinessId) es distinta del resto:
+/// no se resuelve una sola vez al arrancar, puede llegar DESPUÉS de que el servicio ya esté
+/// corriendo (vía <see cref="ApplyLink"/>, llamado por AgentControlServer cuando la GUI
+/// vincula el equipo) — por eso vive en propiedades mutables (set privado), no en el patrón
+/// `required`/`init` del resto de la configuración. Ver extractor/AgentControlServer.cs::/link.
 /// </summary>
 internal sealed class ExtractorConfig
 {
@@ -21,11 +27,11 @@ internal sealed class ExtractorConfig
 
     public string OutputDirectory { get; init; } = "./out";
     public string QueuePath { get; init; } = "./data/sync-queue.db";
-    public string BranchCode { get; private set; } = "sucursal-piloto";
-    public string? ApiUrl { get; init; }
-    public string? AgentToken { get; private set; }
-    public string? ConnectorId { get; private set; }
-    public string? ActivationKey { get; init; }
+    public string BranchCode { get; private set; } = "";
+    public string? ApiUrl { get; private set; }
+    public string? DeviceToken { get; private set; }
+    public string? InstallationId { get; private set; }
+    public string? BusinessId { get; private set; }
     public string MachineName { get; init; } = Environment.MachineName;
     public bool SendEnabled { get; init; }
     public bool Watch { get; init; }
@@ -36,6 +42,12 @@ internal sealed class ExtractorConfig
     public bool HasExplicitRange { get; init; }
     public DateTime Desde { get; init; }
     public DateTime Hasta { get; init; } // exclusivo (rango semiabierto), ya con +1 día aplicado si se pasó una fecha simple
+
+    /// <summary>Hay una identidad de dispositivo utilizable. Falso justo después de instalar, hasta que la GUI vincula el equipo.</summary>
+    public bool Linked =>
+        !string.IsNullOrWhiteSpace(DeviceToken) &&
+        !string.IsNullOrWhiteSpace(InstallationId) &&
+        !string.IsNullOrWhiteSpace(BranchCode);
 
     public string BuildConnectionString()
     {
@@ -62,11 +74,20 @@ internal sealed class ExtractorConfig
         return builder.ConnectionString;
     }
 
-    public void CompleteActivation(string connectorId, string branchCode, string token)
+    /// <summary>
+    /// Aplica una identidad de dispositivo nueva EN VIVO (sin reiniciar el servicio) y la
+    /// persiste en el archivo DPAPI. Llamado por AgentControlServer al recibir la credencial
+    /// que la GUI obtuvo de central-api tras "Vincular este equipo" — nunca por el propio
+    /// agente contactando a la API con una clave de activación (ese flujo ya no existe).
+    /// </summary>
+    public void ApplyLink(string installationId, string branchCode, string businessId, string token, string? apiUrl)
     {
-        ConnectorId = connectorId;
+        ProtectedSettings.ApplyLink(installationId, branchCode, businessId, token, apiUrl);
+        InstallationId = installationId;
         BranchCode = branchCode;
-        AgentToken = token;
+        BusinessId = businessId;
+        DeviceToken = token;
+        if (!string.IsNullOrWhiteSpace(apiUrl)) ApiUrl = apiUrl.TrimEnd('/');
     }
 
     public static ExtractorConfig Resolve(string[] args)
@@ -82,11 +103,11 @@ internal sealed class ExtractorConfig
         int connectTimeout = 15;
         string outDir = "./out";
         string queuePath = "./data/sync-queue.db";
-        string branchCode = "sucursal-piloto";
+        string branchCode = "";
         string? apiUrl = null;
-        string? agentToken = null;
-        string? connectorId = null;
-        string? activationKey = null;
+        string? deviceToken = null;
+        string? installationId = null;
+        string? businessId = null;
         string machineName = Environment.MachineName;
         int syncIntervalSeconds = 60;
         int heartbeatIntervalSeconds = 45;
@@ -122,18 +143,18 @@ internal sealed class ExtractorConfig
             }
         }
 
-        // 2) configuración cifrada por máquina (instalador de Windows)
+        // 2) configuración cifrada por máquina (instalador de Windows + vinculación en vivo)
         var protectedSettings = ProtectedSettings.Load();
         server = GetProtectedRequired("SRX_SQL_SERVER", server);
         database = GetProtectedRequired("SRX_SQL_DATABASE", database);
         user = GetProtectedOptional("SRX_SQL_USER", user);
         password = GetProtectedOptional("SRX_SQL_PASSWORD", password);
         apiUrl = GetProtectedOptional("SRX_API_URL", apiUrl);
-        agentToken = GetProtectedOptional("SRX_AGENT_TOKEN", agentToken);
-        connectorId = GetProtectedOptional("SRX_CONNECTOR_ID", connectorId);
-        activationKey = GetProtectedOptional("SRX_ACTIVATION_KEY", activationKey);
+        deviceToken = GetProtectedOptional("SRX_DEVICE_TOKEN", deviceToken);
+        installationId = GetProtectedOptional("SRX_INSTALLATION_ID", installationId);
+        businessId = GetProtectedOptional("SRX_BUSINESS_ID", businessId);
         machineName = GetProtectedRequired("SRX_MACHINE_NAME", machineName);
-        branchCode = GetProtectedRequired("SRX_BRANCH_CODE", branchCode);
+        branchCode = GetProtectedOptional("SRX_BRANCH_CODE", branchCode) ?? branchCode;
         queuePath = GetProtectedRequired("SRX_QUEUE_PATH", queuePath);
         outDir = GetProtectedRequired("SRX_OUTPUT_PATH", outDir);
         if (!string.IsNullOrWhiteSpace(user)) trusted = false;
@@ -144,9 +165,9 @@ internal sealed class ExtractorConfig
         user = Environment.GetEnvironmentVariable("SRX_SQL_USER") ?? user;
         password = Environment.GetEnvironmentVariable("SRX_SQL_PASSWORD") ?? password;
         apiUrl = Environment.GetEnvironmentVariable("SRX_API_URL") ?? apiUrl;
-        agentToken = Environment.GetEnvironmentVariable("SRX_AGENT_TOKEN") ?? agentToken;
-        connectorId = Environment.GetEnvironmentVariable("SRX_CONNECTOR_ID") ?? connectorId;
-        activationKey = Environment.GetEnvironmentVariable("SRX_ACTIVATION_KEY") ?? activationKey;
+        deviceToken = Environment.GetEnvironmentVariable("SRX_DEVICE_TOKEN") ?? deviceToken;
+        installationId = Environment.GetEnvironmentVariable("SRX_INSTALLATION_ID") ?? installationId;
+        businessId = Environment.GetEnvironmentVariable("SRX_BUSINESS_ID") ?? businessId;
         machineName = Environment.GetEnvironmentVariable("SRX_MACHINE_NAME") ?? machineName;
         branchCode = Environment.GetEnvironmentVariable("SRX_BRANCH_CODE") ?? branchCode;
         queuePath = Environment.GetEnvironmentVariable("SRX_QUEUE_PATH") ?? queuePath;
@@ -176,9 +197,8 @@ internal sealed class ExtractorConfig
                 case "--send": sendEnabled = true; break;
                 case "--watch": watch = true; sendEnabled = true; break;
                 case "--api-url" when i + 1 < args.Length: apiUrl = args[++i]; break;
-                case "--token" when i + 1 < args.Length: agentToken = args[++i]; break;
-                case "--connector-id" when i + 1 < args.Length: connectorId = args[++i]; break;
-                case "--activation-key" when i + 1 < args.Length: activationKey = args[++i]; break;
+                case "--device-token" when i + 1 < args.Length: deviceToken = args[++i]; break;
+                case "--installation-id" when i + 1 < args.Length: installationId = args[++i]; break;
                 case "--machine-name" when i + 1 < args.Length: machineName = args[++i]; break;
                 case "--branch" when i + 1 < args.Length: branchCode = args[++i]; break;
                 case "--queue" when i + 1 < args.Length: queuePath = args[++i]; break;
@@ -193,14 +213,17 @@ internal sealed class ExtractorConfig
             hastaArg = null;
         }
 
-        if (sendEnabled && (string.IsNullOrWhiteSpace(apiUrl) ||
-            (string.IsNullOrWhiteSpace(agentToken) && string.IsNullOrWhiteSpace(activationKey))))
+        // A diferencia del esquema anterior (activación por clave), un servicio recién
+        // instalado arranca legítimamente SIN identidad de dispositivo — se vincula después,
+        // desde la GUI. Por eso "--send"/"--watch" solo exigen una URL de API configurada, no
+        // una credencial: SyncWorker/HeartbeatWorker esperan en estado "no vinculado" (ver
+        // ExtractorConfig.Linked) hasta que AgentControlServer reciba POST /link.
+        if (sendEnabled && string.IsNullOrWhiteSpace(apiUrl))
         {
-            throw new ArgumentException(
-                "Para enviar se requieren SRX_API_URL y una credencial o clave de activación.");
+            throw new ArgumentException("Para enviar se requiere SRX_API_URL.");
         }
-        if (!string.IsNullOrWhiteSpace(connectorId) && !Guid.TryParse(connectorId, out _))
-            throw new ArgumentException("SRX_CONNECTOR_ID no es un UUID válido.");
+        if (!string.IsNullOrWhiteSpace(installationId) && !Guid.TryParse(installationId, out _))
+            throw new ArgumentException("SRX_INSTALLATION_ID no es un UUID válido.");
         if (string.IsNullOrWhiteSpace(machineName) || machineName.Length > 200)
             throw new ArgumentException("SRX_MACHINE_NAME debe tener entre 1 y 200 caracteres.");
 
@@ -214,7 +237,7 @@ internal sealed class ExtractorConfig
         var desde = (desdeArg ?? hoy.AddDays(-1)).Date;
         var hasta = (hastaArg ?? hoy).Date.AddDays(1); // +1 para hacerlo exclusivo si el usuario dio una fecha "hasta" inclusiva
 
-        return new ExtractorConfig
+        var resolved = new ExtractorConfig
         {
             Server = server,
             Database = database,
@@ -226,11 +249,6 @@ internal sealed class ExtractorConfig
             ConnectTimeoutSeconds = connectTimeout,
             OutputDirectory = outDir,
             QueuePath = queuePath,
-            BranchCode = branchCode,
-            ApiUrl = apiUrl?.TrimEnd('/'),
-            AgentToken = agentToken,
-            ConnectorId = connectorId,
-            ActivationKey = activationKey,
             MachineName = machineName,
             SendEnabled = sendEnabled,
             Watch = watch,
@@ -242,6 +260,12 @@ internal sealed class ExtractorConfig
             Desde = desde,
             Hasta = hasta
         };
+        resolved.BranchCode = branchCode;
+        resolved.ApiUrl = apiUrl?.TrimEnd('/');
+        resolved.DeviceToken = deviceToken;
+        resolved.InstallationId = installationId;
+        resolved.BusinessId = businessId;
+        return resolved;
 
         string GetProtectedRequired(string key, string current) =>
             protectedSettings.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
@@ -292,6 +316,9 @@ internal static class ProtectedSettings
             File.ReadAllText(inputPath, Encoding.UTF8))
             ?? throw new ArgumentException("El archivo de configuración está vacío.");
 
+        // El instalador ya NO recoge ninguna credencial de dispositivo (ni clave de
+        // activación, ni token): eso ocurre después, cuando la GUI vincula el equipo desde una
+        // sesión de usuario. Aquí solo se protegen los datos de conexión SQL + la URL de la API.
         string[] required =
         [
             "SRX_API_URL",
@@ -299,24 +326,23 @@ internal static class ProtectedSettings
         ];
         if (required.Any(key => !settings.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value)))
             throw new ArgumentException("Faltan valores requeridos en la configuración.");
-        if ((!settings.TryGetValue("SRX_AGENT_TOKEN", out var token) || string.IsNullOrWhiteSpace(token)) &&
-            (!settings.TryGetValue("SRX_ACTIVATION_KEY", out var activationKey) || string.IsNullOrWhiteSpace(activationKey)))
-            throw new ArgumentException("Falta la credencial o clave de activación del conector.");
 
         WriteProtected(outputPath, settings);
     }
 
-    public static void CompleteActivation(string connectorId, string branchCode, string token)
+    /// <summary>Persiste la identidad de dispositivo emitida por central-api, agregándola al archivo protegido existente (no lo reemplaza: preserva SQL y API URL).</summary>
+    public static void ApplyLink(string installationId, string branchCode, string businessId, string token, string? apiUrl)
     {
         var path = GetPath();
         if (!File.Exists(path))
             throw new InvalidOperationException("No existe el archivo protegido donde guardar la credencial.");
 
         var settings = Load().ToDictionary(x => x.Key, x => x.Value);
-        settings.Remove("SRX_ACTIVATION_KEY");
-        settings["SRX_CONNECTOR_ID"] = connectorId;
+        settings["SRX_INSTALLATION_ID"] = installationId;
         settings["SRX_BRANCH_CODE"] = branchCode;
-        settings["SRX_AGENT_TOKEN"] = token;
+        settings["SRX_BUSINESS_ID"] = businessId;
+        settings["SRX_DEVICE_TOKEN"] = token;
+        if (!string.IsNullOrWhiteSpace(apiUrl)) settings["SRX_API_URL"] = apiUrl;
         WriteProtected(path, settings);
     }
 
@@ -362,10 +388,12 @@ internal static class ProtectedSettings
     }
 
     /// <summary>
-    /// Comprueba, sin lanzar excepciones, si ya existe en este equipo una configuración
-    /// protegida completa (conexión SQL + credencial/activación). La usa el instalador
-    /// para decidir si una actualización puede reutilizar la configuración existente en
-    /// lugar de pedirla de nuevo.
+    /// Comprueba, sin lanzar excepciones, si ya existe en este equipo una configuración SQL
+    /// protegida completa. La usa el instalador para decidir, en una actualización, si puede
+    /// saltarse las páginas de conexión SQL. Deliberadamente NO exige identidad de dispositivo:
+    /// vincular el equipo es un paso posterior a la instalación, no algo que el instalador deba
+    /// verificar — un vínculo existente sobrevive a una actualización sin que el instalador
+    /// necesite saber de él (nunca escribe esas claves).
     /// </summary>
     public static bool TryLoadValid(string? path, out string reason)
     {
@@ -419,11 +447,6 @@ internal static class ProtectedSettings
         if (!Has("SRX_SQL_SERVER") || !Has("SRX_SQL_DATABASE"))
         {
             reason = "faltan datos de conexión SQL";
-            return false;
-        }
-        if (!Has("SRX_AGENT_TOKEN") && !Has("SRX_ACTIVATION_KEY"))
-        {
-            reason = "falta la credencial o la clave de activación del conector";
             return false;
         }
 

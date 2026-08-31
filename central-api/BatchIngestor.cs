@@ -8,7 +8,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task IngestAsync(Guid branchId, SyncBatch batch, CancellationToken ct)
+    public async Task IngestAsync(Guid branchId, Guid connectorInstallationId, SyncBatch batch, CancellationToken ct)
     {
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var transaction = await connection.BeginTransactionAsync(ct);
@@ -77,6 +77,8 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
             heartbeat.Parameters.AddWithValue(branchId);
             await heartbeat.ExecuteNonQueryAsync(ct);
         }
+
+        await ConnectorInstallationRegistry.RecordSuccessAsync(connection, transaction, connectorInstallationId, ct);
 
         await transaction.CommitAsync(ct);
     }

@@ -63,18 +63,23 @@ if (args.Length > 0 && args[0] == "--import-connector-credential")
             new JsonSerializerOptions(JsonSerializerDefaults.Web))
             ?? throw new JsonException("El archivo de credencial está vacío.");
 
-        if (!Guid.TryParse(credential.ConnectorId, out _))
-            throw new ArgumentException("connectorId no es un UUID válido.");
+        if (!Guid.TryParse(credential.InstallationId, out _))
+            throw new ArgumentException("installationId no es un UUID válido.");
         if (string.IsNullOrWhiteSpace(credential.BranchCode))
             throw new ArgumentException("Falta branchCode.");
-        if (string.IsNullOrWhiteSpace(credential.Token) || credential.Token.Length < 32)
-            throw new ArgumentException("El token del conector no es válido.");
+        if (string.IsNullOrWhiteSpace(credential.DeviceToken) || credential.DeviceToken.Length < 32)
+            throw new ArgumentException("El token del dispositivo no es válido.");
 
-        ProtectedSettings.CompleteActivation(
-            credential.ConnectorId,
+        // Vía de emergencia/soporte: mismo mecanismo que POST /link en AgentControlServer,
+        // pero invocado manualmente (requiere correr como la cuenta del servicio, dueña del
+        // ACL sobre el archivo DPAPI) en vez de recibir la credencial de la GUI.
+        ProtectedSettings.ApplyLink(
+            credential.InstallationId,
             credential.BranchCode,
-            credential.Token);
-        Console.WriteLine("Credencial del conector importada y protegida con DPAPI.");
+            credential.BusinessId ?? "",
+            credential.DeviceToken,
+            credential.ApiUrl);
+        Console.WriteLine("Identidad de dispositivo importada y protegida con DPAPI.");
         return 0;
     }
     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or System.Security.Cryptography.CryptographicException or PlatformNotSupportedException)
@@ -155,4 +160,5 @@ catch (Exception ex)
     return 1;
 }
 
-internal sealed record ConnectorCredentialImport(string ConnectorId, string BranchCode, string Token);
+internal sealed record ConnectorCredentialImport(
+    string InstallationId, string BranchCode, string? BusinessId, string DeviceToken, string? ApiUrl);

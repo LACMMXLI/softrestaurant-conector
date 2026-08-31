@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
+import { BarChart3, Building2, CalendarDays, LayoutDashboard, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { LoginScreen } from './components/LoginScreen'
 import { TicketSheet } from './components/TicketSheet'
 import { dateInTimezone } from './format'
+import { BusinessesScreen } from './screens/BusinessesScreen'
 import { DashboardScreen } from './screens/DashboardScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { OperationsScreen } from './screens/OperationsScreen'
@@ -11,7 +12,7 @@ import { SalesScreen } from './screens/SalesScreen'
 import type { DashboardBranch, DashboardHome, DashboardUser } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
-type Tab = 'home' | 'sales' | 'operations' | 'more'
+type Tab = 'home' | 'sales' | 'operations' | 'businesses' | 'more'
 
 const storedBranchKey = 'sr-dashboard:v1:branch'
 
@@ -115,6 +116,23 @@ export function App() {
     }
   }
 
+  async function handleRegister(email: string, password: string, displayName: string) {
+    setLoginBusy(true)
+    setLoginError(null)
+    try {
+      const session = await api.register(email, password, displayName)
+      // Cuenta recién creada: sin negocios todavía, applyBranches([]) deja al usuario en la
+      // pantalla "sin sucursales" (que ahora ofrece directamente crear su primer negocio).
+      setUser(session.user)
+      applyBranches([])
+      setSessionState('authenticated')
+    } catch (reason) {
+      setLoginError(reason instanceof Error ? reason.message : 'No fue posible crear la cuenta.')
+    } finally {
+      setLoginBusy(false)
+    }
+  }
+
   async function handleLogout() {
     try {
       await api.logout()
@@ -142,17 +160,25 @@ export function App() {
   }
 
   if (sessionState === 'anonymous' || !user) {
-    return <LoginScreen error={loginError} busy={loginBusy} onLogin={handleLogin} />
+    return <LoginScreen error={loginError} busy={loginBusy} onLogin={handleLogin} onRegister={handleRegister} />
   }
 
   if (!currentBranch) {
+    // Cuenta válida pero sin ninguna sucursal accesible todavía — el caso normal para un
+    // usuario recién registrado, antes de crear su primer negocio/sucursal. En vez de un
+    // callejón sin salida, se ofrece directamente la pantalla de negocios.
     return (
-      <main className="startup-screen no-branches">
-        <Store size={28} />
-        <h1>Sin sucursales asignadas</h1>
-        <p>La cuenta es válida, pero todavía no tiene una sucursal disponible.</p>
-        <button className="secondary-button" type="button" onClick={() => void handleLogout()}>Cerrar sesión</button>
-      </main>
+      <div className="app-shell">
+        <div className="app-column">
+          <header className="app-header">
+            <div className="mobile-brand"><ReceiptText size={20} /><span>Pulso</span></div>
+          </header>
+          <main className="app-main">
+            <BusinessesScreen onUnauthorized={becomeAnonymous} />
+            <button className="logout-button" type="button" onClick={() => void handleLogout()}>Cerrar sesión</button>
+          </main>
+        </div>
+      </div>
     )
   }
 
@@ -210,6 +236,7 @@ export function App() {
               onUnauthorized={becomeAnonymous}
             />
           ) : null}
+          {tab === 'businesses' ? <BusinessesScreen onUnauthorized={becomeAnonymous} /> : null}
           {tab === 'more' ? (
             <MoreScreen
               user={user}
@@ -239,6 +266,7 @@ function Navigation({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void 
     { key: 'home', label: 'Inicio', icon: <LayoutDashboard size={20} /> },
     { key: 'sales', label: 'Ventas', icon: <BarChart3 size={20} /> },
     { key: 'operations', label: 'Operación', icon: <ReceiptText size={20} /> },
+    { key: 'businesses', label: 'Negocios', icon: <Building2 size={20} /> },
     { key: 'more', label: 'Más', icon: <Menu size={20} /> },
   ]
   return (

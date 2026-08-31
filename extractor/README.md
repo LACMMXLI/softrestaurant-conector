@@ -48,11 +48,10 @@ Sin argumentos, extrae por defecto el rango **[ayer, hoy]**.
 | `--send` | Encola y envía el lote después de conciliar | desactivado |
 | `--watch` | Modo periódico compatible con Servicio de Windows | desactivado |
 | `--api-url` / `SRX_API_URL` | URL HTTPS de la API central | — |
-| `--activation-key` / `SRX_ACTIVATION_KEY` | Clave de alta de un solo uso | — |
 | `--machine-name` / `SRX_MACHINE_NAME` | Identificador auditable del equipo | nombre de Windows |
-| `--connector-id` / `SRX_CONNECTOR_ID` | Identidad asignada después de activar | — |
-| `--token` / `SRX_AGENT_TOKEN` | Token permanente cifrado; uso manual/legacy | — |
-| `--branch` / `SRX_BRANCH_CODE` | Código recibido durante la activación | `sucursal-piloto` antes de activar |
+| `--installation-id` / `SRX_INSTALLATION_ID` | Identidad de dispositivo asignada al vincular | — |
+| `--device-token` / `SRX_DEVICE_TOKEN` | Token permanente cifrado del dispositivo | — |
+| `--branch` / `SRX_BRANCH_CODE` | Código recibido al vincular el equipo | — (vacío hasta vincular) |
 | `--queue` / `SRX_QUEUE_PATH` | Archivo SQLite de cola | `./data/sync-queue.db` |
 | `--interval` | Segundos entre ciclos (mínimo 15) | `60` |
 | `--rolling-days` | Días recientes que se releen (1–30) | `3` |
@@ -60,22 +59,30 @@ Sin argumentos, extrae por defecto el rango **[ayer, hoy]**.
 También se pueden fijar por variables de entorno `SRX_SQL_SERVER`, `SRX_SQL_DATABASE`,
 `SRX_SQL_USER`, `SRX_SQL_PASSWORD`, o editando `appsettings.json`.
 
-En Windows, el instalador guarda la clave de activación dentro del archivo DPAPI. En la
-primera conexión la reemplaza por `SRX_CONNECTOR_ID`, `SRX_BRANCH_CODE` y el token exclusivo
-del conector. `X-Agent-Token` sólo se envía cuando no existe `SRX_CONNECTOR_ID`, como
-compatibilidad temporal con instalaciones legacy.
+**Ya no hay activación por clave.** El instalador solo cifra con DPAPI la conexión SQL y la URL
+de la API — sin ninguna credencial de dispositivo. Un equipo recién instalado arranca en
+estado "no vinculado" (`ExtractorConfig.Linked = false`): `SyncWorker`/`HeartbeatWorker` esperan
+sin intentar enviar nada hasta que la GUI (`extractor-ui`) complete el flujo de vinculación
+(login con la cuenta del SaaS → elegir sucursal → "Vincular este equipo"), que entrega la
+credencial al servicio vía `POST http://127.0.0.1:<puerto>/link` en `AgentControlServer`. A
+partir de ahí el servicio persiste `SRX_INSTALLATION_ID`, `SRX_BRANCH_CODE`, `SRX_BUSINESS_ID` y
+`SRX_DEVICE_TOKEN` en el archivo DPAPI y los usa en cada llamada (`X-Connector-Id` +
+`Authorization: Bearer`) — no existe ningún modo legacy de token compartido.
 
-Para aplicar una rotación administrativa sin colocar el token en argumentos visibles:
+Para importar manualmente una credencial de dispositivo (soporte/recuperación) sin pasar por la
+GUI, ejecutando como la cuenta del servicio:
 
 ```powershell
 Stop-Service SoftRestaurantSyncAgent
 & 'C:\Program Files\Fatboy\SoftRestaurant Sync Agent\SoftRestaurant.Extractor.exe' `
-  --import-connector-credential .\credencial-rotada.json
+  --import-connector-credential .\credencial.json
 Start-Service SoftRestaurantSyncAgent
 ```
 
-El JSON debe contener `connectorId`, `branchCode` y `token` tal como los devuelve el endpoint
-de rotación. Tras protegerlos con DPAPI, el agente elimina automáticamente ese archivo.
+El JSON debe contener `installationId`, `branchCode`, `businessId` (opcional) y `deviceToken`
+tal como los devuelve `POST /api/web/branches/{branchCode}/link-device` (o `.../replace-device`,
+o el equivalente de soporte `POST /api/admin/branches/{branchCode}/replace-device`). Tras
+protegerlos con DPAPI, el agente elimina automáticamente ese archivo.
 
 **Producción actual:** el instalador permite usar el mismo login SQL configurado en
 SoftRestaurant. El agente conserva una lista fija de consultas `SELECT` y no ejecuta

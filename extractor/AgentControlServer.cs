@@ -10,6 +10,14 @@ namespace SoftRestaurant.Extractor;
 internal sealed record DiagnosticCheck(string Name, bool Ok, string Detail);
 internal sealed record DiagnosticsReport(bool Ok, IReadOnlyList<DiagnosticCheck> Checks);
 
+/// <summary>Credencial de dispositivo que la GUI obtuvo de central-api (POST /api/web/branches/{code}/link-device o .../replace-device) y entrega al servicio para que la persista.</summary>
+internal sealed record LinkDeviceCredential(
+    string InstallationId, string BranchCode, string BusinessId, string Token, string? ApiUrl);
+
+/// <summary>Lo que la GUI necesita saber antes de poder iniciar sesión y vincular: dónde está central-api y si este equipo ya tiene identidad.</summary>
+internal sealed record AgentControlConfig(
+    string? ApiUrl, bool Linked, string BranchCode, string? BusinessId, string? InstallationId, string MachineName);
+
 /// <summary>
 /// API HTTP de control local, alcanzable únicamente desde <c>127.0.0.1</c> (nunca desde la red):
 /// la consume la GUI de bandeja del mismo equipo. No requiere autenticación a propósito —el
@@ -55,6 +63,35 @@ internal sealed class AgentControlServer(
         });
 
         app.MapGet("/diagnostics", async (CancellationToken ct) => Results.Ok(await RunDiagnosticsAsync(ct)));
+
+        app.MapGet("/config", () => Results.Ok(new AgentControlConfig(
+            config.ApiUrl, config.Linked, config.BranchCode, config.BusinessId, config.InstallationId, config.MachineName)));
+
+        app.MapPost("/link", (LinkDeviceCredential credential) =>
+        {
+            if (!Guid.TryParse(credential.InstallationId, out _))
+                return Results.BadRequest(new { error = "installationId inválido." });
+            if (string.IsNullOrWhiteSpace(credential.BranchCode))
+                return Results.BadRequest(new { error = "Falta branchCode." });
+            if (string.IsNullOrWhiteSpace(credential.Token) || credential.Token.Length < 32)
+                return Results.BadRequest(new { error = "El token del dispositivo no es válido." });
+
+            // El servicio ya corre elevado (LocalSystem) y es dueño del ACL sobre el archivo
+            // DPAPI en ProgramData — por eso es él, no la GUI (proceso de usuario normal), quien
+            // persiste la credencial. La GUI solo la transporta desde central-api hasta aquí.
+            config.ApplyLink(
+                credential.InstallationId, credential.BranchCode, credential.BusinessId,
+                credential.Token, credential.ApiUrl);
+            statusStore.Update(s => s with
+            {
+                Linked = true,
+                BranchCode = credential.BranchCode,
+                State = AgentOperationalState.Idle,
+                LastError = null
+            });
+            log.Info($"Equipo vinculado a la sucursal {credential.BranchCode} (installationId={credential.InstallationId}).");
+            return Results.Ok(new { linked = true, credential.BranchCode, credential.InstallationId });
+        });
 
         try
         {

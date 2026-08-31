@@ -17,7 +17,6 @@ type MoreScreenProps = {
 export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated, onUnauthorized }: MoreScreenProps) {
   const [requestingSync, setRequestingSync] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
-  const canRequestSync = user.role !== 'VIEWER'
 
   async function handleRequestSync() {
     setRequestingSync(true)
@@ -26,6 +25,8 @@ export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated,
       const result = await api.requestSync(branch.code)
       onBranchUpdated({ ...branch, syncRequestedAt: result.syncRequestedAt })
     } catch (reason) {
+      // El rol de negocio (OWNER/MANAGER/VIEWER) ya no viaja en DashboardUser — central-api
+      // rechaza con 403 si el rol del usuario en ESE negocio es VIEWER; se muestra tal cual.
       if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
       setSyncError(reason instanceof Error ? reason.message : 'No fue posible solicitar la sincronización.')
     } finally {
@@ -65,20 +66,16 @@ export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated,
           <div><dt>Conciliación</dt><dd>{branch.reconciliationOk === null ? 'Sin lote' : branch.reconciliationOk ? 'Correcta' : 'Pendiente'}</dd></div>
         </dl>
 
-        {canRequestSync ? (
-          <>
-            <button className="secondary-button" type="button" onClick={() => void handleRequestSync()} disabled={requestingSync}>
-              <RefreshCw size={16} aria-hidden="true" />
-              <span>{requestingSync ? 'Solicitando…' : 'Sincronizar ahora'}</span>
-            </button>
-            <p className="panel-hint">
-              {branch.syncRequestedAt
-                ? `Última solicitud: ${new Date(branch.syncRequestedAt).toLocaleString('es-MX')}. El agente la recoge en su siguiente latido.`
-                : 'Pide al agente de esta sucursal que sincronice en cuanto pueda.'}
-            </p>
-            {syncError ? <p className="form-error" role="alert">{syncError}</p> : null}
-          </>
-        ) : null}
+        <button className="secondary-button" type="button" onClick={() => void handleRequestSync()} disabled={requestingSync}>
+          <RefreshCw size={16} aria-hidden="true" />
+          <span>{requestingSync ? 'Solicitando…' : 'Sincronizar ahora'}</span>
+        </button>
+        <p className="panel-hint">
+          {branch.syncRequestedAt
+            ? `Última solicitud: ${new Date(branch.syncRequestedAt).toLocaleString('es-MX')}. El agente la recoge en su siguiente latido.`
+            : 'Pide al agente de esta sucursal que sincronice en cuanto pueda.'}
+        </p>
+        {syncError ? <p className="form-error" role="alert">{syncError}</p> : null}
       </section>
 
       <button className="logout-button" type="button" onClick={() => void onLogout()}>
@@ -89,7 +86,5 @@ export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated,
 }
 
 function roleLabel(role: DashboardUser['role']) {
-  if (role === 'OWNER') return 'Propietario'
-  if (role === 'MANAGER') return 'Gerente'
-  return 'Consulta'
+  return role === 'SUPERADMIN' ? 'Administrador de plataforma' : 'Cuenta'
 }
