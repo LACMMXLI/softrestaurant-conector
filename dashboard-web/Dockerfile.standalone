@@ -8,7 +8,7 @@ COPY dashboard-web/ ./
 RUN npm run build
 
 FROM nginx:alpine AS runtime
-ENV DASHBOARD_API_ORIGIN=https://sqqbfzv19zq0zhoika57ctbl.fatboymexicali.com
+ENV DASHBOARD_API_ORIGIN=https://agente-restaurante.fatboymexicali.com
 ENV NGINX_ENVSUBST_FILTER=DASHBOARD_API_ORIGIN
 
 COPY dashboard-web/nginx.standalone.conf.template /etc/nginx/templates/default.conf.template

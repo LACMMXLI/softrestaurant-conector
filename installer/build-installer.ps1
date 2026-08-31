@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string] $Version = '1.2.0',
-    [string] $ApiUrl = 'https://sqqbfzv19zq0zhoika57ctbl.fatboymexicali.com',
+    [string] $ApiUrl = 'https://agente-restaurante.fatboymexicali.com',
     [switch] $TestBuild
 )
 
