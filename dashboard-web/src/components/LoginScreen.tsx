@@ -28,7 +28,7 @@ type LoginScreenProps = {
 }
 
 const capabilities = [
-  { icon: TrendingUp, title: 'Ventas en tiempo real', copy: 'Consulta el avance del día con la última sincronización disponible.' },
+  { icon: TrendingUp, title: 'Ventas en tiempo real', copy: 'Consulta el avance del turno con la última sincronización disponible.' },
   { icon: Building2, title: 'Sucursales', copy: 'Cambia de ubicación sin mezclar información ni permisos.' },
   { icon: Clock3, title: 'Turnos y cajas', copy: 'Revisa la actividad operativa con su contexto de fecha y sucursal.' },
   { icon: ReceiptText, title: 'Tickets', copy: 'Abre el detalle de cada venta desde un mismo lugar.' },
@@ -71,8 +71,8 @@ function DashboardPreview() {
         <p>Tu restaurante</p>
         <strong>Datos al momento</strong>
         <span className="phone-status">Cobertura visible</span>
-        <div className="phone-cards"><span>Sucursales<b>Según tu acceso</b></span><span>Cortes<b>Por periodo</b></span></div>
-        <div className="phone-total"><small>Resumen del día</small><b>Listo para consultar</b></div>
+        <div className="phone-cards"><span>Sucursales<b>Según tu acceso</b></span><span>Cortes<b>Por turno</b></span></div>
+        <div className="phone-total"><small>Resumen del turno</small><b>Listo para consultar</b></div>
         <div className="phone-nav"><span>⌂</span><span>▤</span><span>⌁</span><span>•••</span></div>
       </div>
     </div>

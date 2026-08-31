@@ -10,7 +10,7 @@ export function SalesChart({ points }: SalesChartProps) {
     return (
       <div className="chart-empty">
         <span className="chart-baseline" />
-        <p>No hay ventas registradas por hora para este día.</p>
+        <p>No hay ventas registradas por hora para este turno.</p>
       </div>
     )
   }
@@ -35,7 +35,7 @@ export function SalesChart({ points }: SalesChartProps) {
     <div className="sales-chart">
       <div className="chart-summary">
         <p>Ritmo por hora</p>
-        <span>{points.length} horas con venta · {formatAmount(total)} en el día</span>
+        <span>{points.length} horas con venta · {formatAmount(total)} en el turno</span>
       </div>
       <div className="chart-scroll">
         <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="hourly-chart-title hourly-chart-desc">

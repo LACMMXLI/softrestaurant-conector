@@ -77,14 +77,14 @@ export function DashboardScreen({
 
       {meta.canShowData && meta.coverage === 'partial' ? (
         <div className="coverage-note" role="status">
-          Este periodo solo está cubierto parcialmente. Los importes corresponden únicamente al rango conciliado recibido.
+          Este turno solo está cubierto parcialmente. Los importes corresponden únicamente a la parte conciliada recibida.
         </div>
       ) : null}
 
       {!meta.canShowData ? (
         <EmptyState
           title={meta.coverage === 'invalid' ? 'Lote sin conciliación válida' : 'Periodo sin cobertura'}
-          message="No se convierten datos ausentes en ceros. Espera una sincronización conciliada para este periodo."
+          message="No se convierten datos ausentes en ceros. Espera una sincronización conciliada para este turno."
         />
       ) : (
         <>
@@ -133,7 +133,7 @@ export function DashboardScreen({
               </>
             ) : (
               <div className="coverage-note" role="status">
-                El total de venta es válido, pero el catálogo de formas de pago aún no llegó en este periodo. No se estima la caja con información incompleta.
+                El total de venta es válido, pero el catálogo de formas de pago aún no llegó para este turno. No se estima la caja con información incompleta.
               </div>
             )}
           </section>
@@ -180,7 +180,7 @@ export function DashboardScreen({
                 ))}
               </div>
             ) : (
-              <p className="quiet-empty">No hay tickets registrados para esta fecha.</p>
+              <p className="quiet-empty">No hay tickets registrados para este turno.</p>
             )}
           </section>
         </>

@@ -82,12 +82,12 @@ export function SalesScreen({ branchCode, date, shiftId, onOpenTicket, onUnautho
       {result && !result.meta.canShowData ? (
         <EmptyState
           title={result.meta.coverage === 'invalid' ? 'Lote sin conciliación válida' : 'Periodo sin cobertura'}
-          message="No se presentan tickets ni ceros hasta recibir una sincronización conciliada para esta fecha."
+          message="No se presentan tickets ni ceros hasta recibir una sincronización conciliada para este turno."
         />
       ) : null}
       {result?.meta.canShowData && result.meta.coverage === 'partial' ? (
         <div className="coverage-note" role="status">
-          La lista corresponde únicamente a la parte conciliada de este periodo.
+          La lista corresponde únicamente a la parte conciliada de este turno.
         </div>
       ) : null}
       {!loading && result?.meta.canShowData && result.items.length === 0 ? (

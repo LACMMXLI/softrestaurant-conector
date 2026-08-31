@@ -68,7 +68,7 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
   return (
     <div className="screen-stack">
       <section className="screen-title">
-        <p className="utility-label">Eventos del día</p>
+        <p className="utility-label">Eventos del turno</p>
         <h1>Operación</h1>
         <p>Consulta todas las entradas, salidas y cancelaciones sincronizadas para el turno seleccionado.</p>
       </section>
@@ -143,7 +143,7 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
           <div><p className="utility-label">Productos retirados</p><h2>Cancelaciones recientes</h2></div>
           <span className="count-badge"><Ban size={15} /> {data.summary.cancelledLines ?? '—'}</span>
         </div>
-        {data.recentCancellations.length === 0 ? <p className="quiet-empty">No hay líneas canceladas registradas para esta fecha.</p> : (
+        {data.recentCancellations.length === 0 ? <p className="quiet-empty">No hay líneas canceladas registradas para este turno.</p> : (
           <div className="activity-list">
             {data.recentCancellations.map((item, index) => (
               <article className="activity-row cancellation" key={`${item.folio ?? 'sin-folio'}-${item.productId ?? 'sin-producto'}-${index}`}>
