@@ -1,2 +1,2 @@
 #include "build-config.iss"
-#include "RestaurantAgentSyncAgent.iss"
+#include "RestaurantAgent.iss"

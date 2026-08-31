@@ -262,7 +262,7 @@ Todos los endpoints tendrán:
 - metadatos de cobertura y frescura;
 - pruebas que impidan consultar una sucursal no asignada.
 
-La llave `CONNECTOR_ADMIN_KEY`, las claves de activación y los tokens de conectores no forman parte de esta API.
+Las claves de activación legacy no forman parte de esta API; la administración usa sesiones SUPERADMIN y los conectores usan su propia identidad de dispositivo.
 
 ## 10. Fórmulas de negocio iniciales
 

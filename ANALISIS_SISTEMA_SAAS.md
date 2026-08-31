@@ -148,7 +148,7 @@ autenticación distintos que nunca se mezclan**:
 | Grupo de endpoints | Quién puede llamarlos | Mecanismo |
 |---|---|---|
 | `/api/web/*` (autoservicio) | Cuenta humana con sesión | Cookie de sesión; nunca da acceso incondicional a SUPERADMIN — incluso un operador de plataforma solo ve los negocios de los que es miembro explícito |
-| `/api/admin/*` (operador) | Operador de plataforma | Header `X-Admin-Key` (llave estática, para scripts) o cookie de sesión con rol `SUPERADMIN` |
+| `/api/admin/*` (operador) | Operador de plataforma | Cookie de sesión con rol `SUPERADMIN` |
 | `/api/ingestion/*`, `/api/agents/*`, `/api/branches/*/sync-status` | El agente (dispositivo) | `X-Connector-Id` + `Authorization: Bearer` validado contra `connector_installations` |
 
 ---

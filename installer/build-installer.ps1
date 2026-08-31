@@ -68,7 +68,7 @@ $includeText = @"
 
 try {
     [IO.File]::WriteAllText($configInclude, $includeText, [Text.UTF8Encoding]::new($false))
-    & $iscc (Join-Path $installerRoot 'RestaurantAgentSyncAgent.build.iss')
+    & $iscc (Join-Path $installerRoot 'RestaurantAgent.build.iss')
     if ($LASTEXITCODE -ne 0) {
         throw 'Falló la compilación del instalador.'
     }

@@ -49,6 +49,45 @@ internal sealed record UserBusinessAssignRequest(IReadOnlyList<Guid> BusinessIds
 /// </summary>
 internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService authService)
 {
+    public async Task<bool> CreateFirstSuperAdminAsync(
+        string email, string displayName, string password, CancellationToken ct)
+    {
+        var normalizedEmail = WebAuthService.NormalizeEmail(email);
+        var candidate = new DashboardUser(Guid.Empty, normalizedEmail, displayName, "SUPERADMIN");
+        var passwordHash = authService.HashPassword(candidate, password);
+
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+        await using (var lockCommand = new NpgsqlCommand(
+            "SELECT pg_advisory_xact_lock(hashtextextended('restaurant-agent:first-superadmin', 0));",
+            connection, transaction))
+        {
+            await lockCommand.ExecuteScalarAsync(ct);
+        }
+
+        await using (var exists = new NpgsqlCommand(
+            "SELECT EXISTS (SELECT 1 FROM app_users WHERE role = 'SUPERADMIN');",
+            connection, transaction))
+        {
+            if ((bool)(await exists.ExecuteScalarAsync(ct) ?? false))
+            {
+                await transaction.RollbackAsync(ct);
+                return false;
+            }
+        }
+
+        await using var insert = new NpgsqlCommand("""
+            INSERT INTO app_users (email, display_name, password_hash, role)
+            VALUES ($1, $2, $3, 'SUPERADMIN');
+            """, connection, transaction);
+        insert.Parameters.AddWithValue(normalizedEmail);
+        insert.Parameters.AddWithValue(displayName);
+        insert.Parameters.AddWithValue(passwordHash);
+        await insert.ExecuteNonQueryAsync(ct);
+        await transaction.CommitAsync(ct);
+        return true;
+    }
+
     public async Task<IReadOnlyList<UserView>> GetAllUsersAsync(CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""

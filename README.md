@@ -40,8 +40,7 @@ Las cuentas se crean y administran desde la aplicación. Las contraseñas se alm
 
 1. Crear un recurso Docker Compose conectado a este repositorio y seleccionar
    `docker-compose.coolify.yml`.
-2. Dejar que Coolify genere `SERVICE_PASSWORD_64_POSTGRES` y
-   `SERVICE_PASSWORD_64_CONNECTOR_ADMIN`; no se configuran credenciales de usuarios.
+2. Dejar que Coolify genere `SERVICE_PASSWORD_64_POSTGRES`; no se configuran credenciales de usuarios.
 3. Conservar el volumen nombrado `restaurant_agent_postgres_data` en actualizaciones.
 4. Asignar el dominio HTTPS al servicio `web`, puerto `8080`. La API no necesita dominio
    público independiente porque el dashboard la publica bajo `/api`.

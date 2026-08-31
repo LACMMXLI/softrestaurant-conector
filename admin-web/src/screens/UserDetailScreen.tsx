@@ -224,7 +224,7 @@ export function UserDetailScreen({
         <h2 id="user-businesses-title">Negocios asignados</h2>
         <p className="panel-hint">
           {user.role === 'SUPERADMIN'
-            ? 'Un SUPERADMIN también administra el panel de operador (X-Admin-Key/sesión), pero para ver el dashboard de un negocio necesita, igual que cualquier cuenta, ser miembro explícito aquí.'
+            ? 'Un SUPERADMIN también administra el panel de operador mediante su sesión, pero para ver el dashboard de un negocio necesita, igual que cualquier cuenta, ser miembro explícito aquí.'
             : 'El acceso de esta cuenta a cada negocio (y por tanto a sus sucursales) se controla aquí.'}
         </p>
 

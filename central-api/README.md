@@ -60,8 +60,7 @@ Los conectores (`ConnectorInstallation`) envían `X-Connector-Id` + `Authorizati
 mecanismo legacy de token compartido por sucursal ni activación por código: se eliminaron por
 completo, sin compatibilidad hacia atrás.
 
-Los endpoints `/api/admin/*` aceptan **cualquiera** de dos credenciales: el header
-`X-Admin-Key` (llave interna estática, para scripts) o una cookie de sesión de
+Los endpoints `/api/admin/*` aceptan exclusivamente una cookie de sesión de
 `/api/web/auth/login` cuyo usuario tenga rol de cuenta `SUPERADMIN` (usada por `admin-web`).
 
 Los endpoints `/api/web/*` usan una cookie de sesión `HttpOnly`, `SameSite=Lax` y segura bajo
@@ -79,7 +78,6 @@ son conceptos separados.
 Desplegar `docker-compose.coolify.yml` desde el repositorio y definir al menos:
 
 - `SERVICE_PASSWORD_64_POSTGRES`
-- `SERVICE_PASSWORD_64_CONNECTOR_ADMIN` (32 caracteres o más)
 Las cuentas, incluyendo SUPERADMIN, se crean desde la aplicación mediante sus endpoints
 protegidos; no se leen contraseñas de usuarios desde variables de entorno. Son opcionales
 `INSTALLER_DOWNLOAD_URL`/`INSTALLER_VERSION` para la sección "Instalar conector".
@@ -96,8 +94,8 @@ Usa las mismas cookies de sesión que `web`, pero solo deja entrar cuentas `SUPE
 Para desplegar la API del panel como un recurso aislado, sin reiniciar el Compose central,
 usar `docker-compose.admin-api.yml`. Este Compose contiene solamente `admin-api` y se une
 como consumidor a la red externa del stack central para reutilizar PostgreSQL; no crea ni
-reinicia la base de datos, el dashboard operativo ni el agente. Deben definirse
-`POSTGRES_PASSWORD` y `CONNECTOR_ADMIN_KEY` en el recurso independiente. Las cuentas se
+reinicia la base de datos, el dashboard operativo ni el agente. Debe definirse
+`SERVICE_PASSWORD_64_POSTGRES` en el recurso independiente. Las cuentas se
 crean desde la aplicación y no se leen credenciales de usuario desde el entorno.
 
 ## Flujo normal (autoservicio, sin intervención de operador)

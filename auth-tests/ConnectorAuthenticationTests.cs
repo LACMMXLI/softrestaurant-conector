@@ -37,18 +37,6 @@ public sealed class ConnectorAuthenticationTests
     }
 
     [Fact]
-    public void Admin_key_must_be_internal_and_at_least_32_characters()
-    {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["ConnectionStrings:Database"] = "Host=test;Database=test;Username=test;Password=test",
-            ["CONNECTOR_ADMIN_KEY"] = "short"
-        }).Build();
-
-        Assert.Throws<InvalidOperationException>(() => ApiOptions.FromConfiguration(configuration));
-    }
-
-    [Fact]
     public void Installer_protects_sql_config_without_requiring_any_device_credential()
     {
         // Desde el modelo SaaS, el instalador nunca recoge credencial de dispositivo — solo

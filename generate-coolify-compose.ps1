@@ -30,8 +30,8 @@ $compose = Get-Content -LiteralPath $sourcePath -Raw
 $requiredMarkers = @(
     'dockerfile: central-api/Dockerfile',
     'dockerfile: dashboard-web/Dockerfile',
-    'SERVICE_PASSWORD_64_DASHBOARD_OWNER',
-    'restaurant-agent_postgres_data:/var/lib/postgresql'
+    'SERVICE_PASSWORD_64_POSTGRES',
+    'restaurant_agent_postgres_data:/var/lib/postgresql'
 )
 
 foreach ($marker in $requiredMarkers) {

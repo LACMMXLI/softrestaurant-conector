@@ -10,6 +10,11 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
 builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = 512L * 1024 * 1024);
 
 var apiOptions = ApiOptions.FromConfiguration(builder.Configuration);
+if (FirstSuperAdminCommand.IsRequested(args))
+{
+    await FirstSuperAdminCommand.RunAsync(apiOptions, CancellationToken.None);
+    return;
+}
 builder.Services.AddSingleton(apiOptions);
 builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(apiOptions.ConnectionString));
 builder.Services.AddSingleton<BatchIngestor>();
@@ -54,8 +59,6 @@ app.Use(async (context, next) =>
         context.Response.Headers.CacheControl = "no-store";
     await next();
 });
-if (apiOptions.ConnectorAdminKey.Length == 0)
-    app.Logger.LogWarning("CONNECTOR_ADMIN_KEY no está configurado; los endpoints administrativos quedan deshabilitados.");
 var dataSource = app.Services.GetRequiredService<NpgsqlDataSource>();
 await DbInitializer.InitializeAsync(dataSource, apiOptions, CancellationToken.None);
 
@@ -68,7 +71,7 @@ app.MapGet("/api/health/ready", async (CancellationToken ct) =>
     return Results.Ok(new { status = "ok", database = "up" });
 });
 
-// ── /api/admin/businesses — operador (SUPERADMIN / X-Admin-Key) ─────────────────────────────
+// ── /api/admin/businesses — operador (SUPERADMIN) ───────────────────────────────────────────
 
 app.MapGet("/api/admin/businesses", async (
     HttpContext context,

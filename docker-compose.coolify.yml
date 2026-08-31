@@ -22,7 +22,6 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-restaurant_agent_reports};Username=${POSTGRES_USER:-restaurant_agent};Password=${SERVICE_PASSWORD_64_POSTGRES}
-      CONNECTOR_ADMIN_KEY: ${SERVICE_PASSWORD_64_CONNECTOR_ADMIN:?Coolify debe generar SERVICE_PASSWORD_64_CONNECTOR_ADMIN}
       INSTALLER_DOWNLOAD_URL: ${INSTALLER_DOWNLOAD_URL:-}
       INSTALLER_VERSION: ${INSTALLER_VERSION:-}
     depends_on:
