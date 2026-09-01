@@ -128,7 +128,13 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         await ExecuteSnapshotJsonAsync(connection, transaction, branchId, batch.BatchId,
             batch.TransientPayments, TransientPaymentsSql, ct);
 
-        await using (var reconcile = new NpgsqlCommand("""
+        // Cuatro comandos separados a propósito, NO uno solo con las cuatro sentencias unidas por
+        // ";": Postgres/Npgsql rechaza combinar múltiples sentencias con parámetros en un mismo
+        // comando (protocolo extendido) con "42601: cannot insert multiple commands into a
+        // prepared statement" — esto rompía SIEMPRE la primera sincronización (snapshot
+        // completo) de cualquier sucursal recién vinculada, ya que este método solo corre cuando
+        // batch.TransientSnapshotComplete es true.
+        await using (var deleteSales = new NpgsqlCommand("""
             DELETE FROM transient_sales ts
             WHERE ts.branch_id = $1
               AND (ts.snapshot_id <> $2 OR EXISTS (
@@ -137,28 +143,49 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
                     AND s.source_shift_id = ts.source_shift_id
                     AND s.source_temp_folio = ts.source_temp_folio
                     AND s.source_temp_folio IS NOT NULL));
+            """, connection, transaction))
+        {
+            deleteSales.Parameters.AddWithValue(branchId);
+            deleteSales.Parameters.AddWithValue(batch.BatchId);
+            await deleteSales.ExecuteNonQueryAsync(ct);
+        }
 
+        await using (var deleteLines = new NpgsqlCommand("""
             DELETE FROM transient_sale_lines tl
             WHERE tl.branch_id = $1
               AND (tl.snapshot_id <> $2 OR NOT EXISTS (
                   SELECT 1 FROM transient_sales ts
                   WHERE ts.branch_id = tl.branch_id AND ts.idempotency_key = tl.header_key));
+            """, connection, transaction))
+        {
+            deleteLines.Parameters.AddWithValue(branchId);
+            deleteLines.Parameters.AddWithValue(batch.BatchId);
+            await deleteLines.ExecuteNonQueryAsync(ct);
+        }
 
+        await using (var deletePayments = new NpgsqlCommand("""
             DELETE FROM transient_sale_payments tp
             WHERE tp.branch_id = $1
               AND (tp.snapshot_id <> $2 OR NOT EXISTS (
                   SELECT 1 FROM transient_sales ts
                   WHERE ts.branch_id = tp.branch_id AND ts.idempotency_key = tp.header_key));
+            """, connection, transaction))
+        {
+            deletePayments.Parameters.AddWithValue(branchId);
+            deletePayments.Parameters.AddWithValue(batch.BatchId);
+            await deletePayments.ExecuteNonQueryAsync(ct);
+        }
 
+        await using (var updateState = new NpgsqlCommand("""
             UPDATE transient_snapshot_state
             SET last_created_at = $3, last_batch_id = $2, updated_at = now()
             WHERE branch_id = $1;
             """, connection, transaction))
         {
-            reconcile.Parameters.AddWithValue(branchId);
-            reconcile.Parameters.AddWithValue(batch.BatchId);
-            reconcile.Parameters.AddWithValue(batch.CreatedAtUtc);
-            await reconcile.ExecuteNonQueryAsync(ct);
+            updateState.Parameters.AddWithValue(branchId);
+            updateState.Parameters.AddWithValue(batch.BatchId);
+            updateState.Parameters.AddWithValue(batch.CreatedAtUtc);
+            await updateState.ExecuteNonQueryAsync(ct);
         }
     }
 

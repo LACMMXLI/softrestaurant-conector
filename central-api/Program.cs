@@ -42,6 +42,37 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+// Primer middleware de la cadena a propósito: sin esto, una excepción no controlada en
+// cualquier endpoint llega al cliente como 500 con cuerpo VACÍO (comportamiento por defecto de
+// ASP.NET Core fuera de Development) — el agente solo puede loguear "API respondió 500 Internal
+// Server Error:" sin ningún detalle, y el stack trace real queda enterrado en la consola del
+// contenedor sin más contexto que la hora. Este handler: (1) siempre loguea la excepción
+// completa vía ILogger (Console en Coolify => `docker logs`/panel de logs del servicio `api`),
+// (2) le agrega un errorId corto a ese log y a la respuesta para poder correlacionar "vi este
+// errorId en el agente" -> "busca este errorId en los logs del contenedor", sin filtrar nunca el
+// mensaje/stack interno al cliente.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex) when (!context.RequestAborted.IsCancellationRequested)
+    {
+        var errorId = Guid.NewGuid().ToString("N")[..8];
+        app.Logger.LogError(ex,
+            "Excepción no controlada en {Method} {Path} (errorId={ErrorId})",
+            context.Request.Method, context.Request.Path, errorId);
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new { error = "Error interno del servidor.", errorId });
+        }
+    }
+});
+
 var forwardedHeaders = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
