@@ -19,6 +19,7 @@ public sealed class LoginForm : Form
     public LoginForm(string? suggestedApiUrl)
     {
         Text = "RestaurantAgent Sync Agent — Iniciar sesión";
+        Icon = AppIcon.Load();
         Width = 460;
         Height = 420;
         StartPosition = FormStartPosition.CenterScreen;

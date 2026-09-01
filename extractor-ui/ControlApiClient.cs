@@ -77,10 +77,17 @@ public sealed class ControlApiClient(int port)
         Converters = { new JsonStringEnumConverter(), new FlexibleStringJsonConverter() }
     };
 
+    // Sin Timeout fijo a propósito: cada llamada ya trae su propio CancellationTokenSource con
+    // una duración apropiada (4s para /status, 5 minutos para /sync-now, 20s para /diagnostics,
+    // etc. — ver los sitios de llamada en StatusForm/TrayApplicationContext). Un HttpClient.Timeout
+    // corto aquí gana SIEMPRE a esos CTS más largos y aborta la petición HTTP a los 5s pase lo
+    // que pase; para /sync-now eso cancelaba una sincronización real en curso (log del agente:
+    // "Sincronización falló (origen=ManualGui): A task was canceled") y la GUI lo mostraba como
+    // "El servicio no está disponible en este momento" aunque el servicio estuviera sano.
     private readonly HttpClient client = new()
     {
         BaseAddress = new Uri($"http://127.0.0.1:{port}"),
-        Timeout = TimeSpan.FromSeconds(5)
+        Timeout = Timeout.InfiniteTimeSpan
     };
 
     public Task<AgentStatusDto?> GetStatusAsync(CancellationToken ct) =>
@@ -109,6 +116,13 @@ public sealed class ControlApiClient(int port)
     public async Task<bool> LinkAsync(LinkDeviceCredentialDto credential, CancellationToken ct)
     {
         using var response = await client.PostAsJsonAsync("/link", credential, JsonOptions, ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    /// <summary>"Cierra sesión" del equipo: borra la identidad de dispositivo local (ver AgentControlServer.POST /unlink) para poder vincularlo a otra sucursal.</summary>
+    public async Task<bool> UnlinkAsync(CancellationToken ct)
+    {
+        using var response = await client.PostAsync("/unlink", content: null, ct);
         return response.IsSuccessStatusCode;
     }
 }

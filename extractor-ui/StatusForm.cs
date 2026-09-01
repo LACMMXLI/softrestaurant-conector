@@ -28,6 +28,7 @@ public sealed class StatusForm : Form
         client = new ControlApiClient(controlPort);
 
         Text = "RestaurantAgent Sync Agent — Estado";
+        Icon = AppIcon.Load();
         Width = 560;
         Height = 480;
         StartPosition = FormStartPosition.CenterScreen;

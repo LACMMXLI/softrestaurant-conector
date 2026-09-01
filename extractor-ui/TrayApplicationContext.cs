@@ -22,14 +22,14 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         var menu = new ContextMenuStrip();
         menu.Items.Add("Abrir panel", null, (_, _) => ShowStatusForm());
-        menu.Items.Add("Vincular / reemplazar equipo…", null, async (_, _) => await RunLinkFlowAsync());
+        menu.Items.Add("Vincular / cerrar sesión del equipo…", null, async (_, _) => await RunLinkOrUnlinkFlowAsync());
         menu.Items.Add("Sincronizar ahora", null, async (_, _) => await SyncNowAsync());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Salir", null, (_, _) => ExitApplication());
 
         trayIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = AppIcon.Load(),
             Text = "RestaurantAgent Sync Agent",
             Visible = true,
             ContextMenuStrip = menu
@@ -50,27 +50,89 @@ public sealed class TrayApplicationContext : ApplicationContext
             trayIcon.ShowBalloonTip(6000, "RestaurantAgent Sync Agent",
                 "Este equipo todavía no está vinculado a ninguna sucursal. Haz clic aquí para vincularlo.",
                 ToolTipIcon.Info);
-            await RunLinkFlowAsync();
+            await RunLinkFlowAsync(config.ApiUrl);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             // El servicio puede tardar unos segundos más en levantar la API de control tras un
             // arranque de Windows; no interrumpir con un diálogo, el usuario puede pedirlo desde
-            // el menú "Vincular / reemplazar equipo…" en cualquier momento.
+            // el menú "Vincular / cerrar sesión del equipo…" en cualquier momento.
         }
     }
 
-    private async Task RunLinkFlowAsync()
+    /// <summary>
+    /// Punto de entrada único para el ítem de menú "Vincular / cerrar sesión del equipo…":
+    /// consulta el estado real del servicio y decide si corresponde vincular (equipo libre) o
+    /// pedir confirmación para cerrar sesión (equipo ya vinculado). Antes de este chequeo, el
+    /// menú relanzaba login+selección de sucursal sin importar si ya había un vínculo activo.
+    /// </summary>
+    private async Task RunLinkOrUnlinkFlowAsync()
     {
-        string? suggestedApiUrl = null;
+        AgentControlConfigDto? config;
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            suggestedApiUrl = (await client.GetConfigAsync(cts.Token))?.ApiUrl;
+            config = await client.GetConfigAsync(cts.Token);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            // Sin config disponible, el usuario escribe la URL a mano en LoginForm.
+            MessageBox.Show("El servicio no está disponible en este momento.", "Vincular equipo",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        if (config is { Linked: true })
+        {
+            await RunUnlinkFlowAsync(config);
+            return;
+        }
+
+        await RunLinkFlowAsync(config?.ApiUrl);
+    }
+
+    /// <summary>Pide confirmación y cierra la sesión del equipo (borra la identidad de dispositivo local). Nunca se llama sin confirmar primero: es la única puerta para volver a vincular.</summary>
+    private async Task RunUnlinkFlowAsync(AgentControlConfigDto config)
+    {
+        var confirm = MessageBox.Show(
+            $"Este equipo ya está vinculado a la sucursal \"{config.BranchCode}\". " +
+            "Para vincularlo a otra sucursal (o a la misma con otra cuenta) primero debes cerrar " +
+            "esta sesión.\n\n¿Cerrar sesión y desvincular este equipo ahora?",
+            "Cerrar sesión del equipo", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        if (confirm != DialogResult.Yes) return;
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var ok = await client.UnlinkAsync(cts.Token);
+            if (!ok)
+            {
+                MessageBox.Show("No se pudo cerrar la sesión del equipo.", "Cerrar sesión del equipo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            trayIcon.ShowBalloonTip(4000, "RestaurantAgent Sync Agent",
+                "Sesión cerrada. Este equipo ya no está vinculado a ninguna sucursal.", ToolTipIcon.Info);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            MessageBox.Show("El servicio no está disponible en este momento.", "Cerrar sesión del equipo",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async Task RunLinkFlowAsync(string? suggestedApiUrl)
+    {
+        if (suggestedApiUrl is null)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                suggestedApiUrl = (await client.GetConfigAsync(cts.Token))?.ApiUrl;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                // Sin config disponible, el usuario escribe la URL a mano en LoginForm.
+            }
         }
 
         using var login = new LoginForm(suggestedApiUrl);

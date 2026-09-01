@@ -31,7 +31,8 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 SetupLogging=yes
-UninstallDisplayIcon={app}\{#AgentExe}
+SetupIconFile=..\extractor-ui\Assets\AppIcon.ico
+UninstallDisplayIcon={app}\{#AgentUiExe}
 CloseApplications=no
 RestartApplications=no
 UsePreviousAppDir=yes
@@ -49,7 +50,7 @@ Name: "{commonappdata}\RestaurantAgentSyncAgent\out"
 
 [Icons]
 Name: "{group}\Estado del servicio"; Filename: "{sys}\services.msc"
-Name: "{group}\Panel del agente"; Filename: "{app}\{#AgentUiExe}"
+Name: "{group}\Panel del agente"; Filename: "{app}\{#AgentUiExe}"; IconFilename: "{app}\{#AgentUiExe}"
 ; Autoarranque para CUALQUIER usuario que inicie sesión en este equipo (no requiere admin en
 ; tiempo de ejecución): un acceso directo en el Startup común, no una clave HKCU (que solo
 ; aplicaría al usuario que corre el instalador, normalmente un administrador, no al personal

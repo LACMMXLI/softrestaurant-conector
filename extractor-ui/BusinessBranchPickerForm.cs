@@ -35,6 +35,7 @@ public sealed class BusinessBranchPickerForm : Form
         this.controlApi = controlApi;
 
         Text = "RestaurantAgent Sync Agent — Vincular este equipo";
+        Icon = AppIcon.Load();
         Width = 520;
         Height = 620;
         StartPosition = FormStartPosition.CenterScreen;

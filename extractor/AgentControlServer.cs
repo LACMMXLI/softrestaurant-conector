@@ -93,6 +93,28 @@ internal sealed class AgentControlServer(
             return Results.Ok(new { linked = true, credential.BranchCode, credential.InstallationId });
         });
 
+        app.MapPost("/unlink", () =>
+        {
+            // "Cerrar sesión" del equipo: borra la identidad de dispositivo local para que la GUI
+            // vuelva a exigir login + selección de sucursal antes de poder vincular de nuevo — sin
+            // esto, "Vincular / reemplazar equipo…" podía relanzarse aunque ya hubiera un vínculo
+            // activo. No revoca nada en central-api (ver ExtractorConfig.ClearLink).
+            if (!config.Linked)
+                return Results.Ok(new { linked = false, alreadyUnlinked = true });
+
+            var previousBranch = config.BranchCode;
+            config.ClearLink();
+            statusStore.Update(s => s with
+            {
+                Linked = false,
+                BranchCode = "",
+                State = AgentOperationalState.Idle,
+                LastError = null
+            });
+            log.Info($"Equipo desvinculado de la sucursal {previousBranch} (sesión cerrada desde la GUI).");
+            return Results.Ok(new { linked = false });
+        });
+
         try
         {
             await app.StartAsync(cancellationToken);

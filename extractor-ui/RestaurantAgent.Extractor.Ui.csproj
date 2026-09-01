@@ -12,6 +12,11 @@
          protegida ni el propio servicio de Windows. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>RestaurantAgent.Extractor.Ui</AssemblyName>
+    <!-- Icono del .exe (barra de tareas, accesos directos, Explorador). TrayApplicationContext
+         lo reutiliza en tiempo de ejecución para el ícono de la bandeja (Icon.ExtractAssociatedIcon
+         sobre el propio ejecutable) — antes el NotifyIcon usaba SystemIcons.Application, el
+         genérico de Windows. -->
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>

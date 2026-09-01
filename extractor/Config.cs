@@ -91,6 +91,23 @@ internal sealed class ExtractorConfig
         if (!string.IsNullOrWhiteSpace(apiUrl)) ApiUrl = apiUrl.TrimEnd('/');
     }
 
+    /// <summary>
+    /// Borra la identidad de dispositivo EN VIVO (equivalente a "cerrar sesión" del equipo) y la
+    /// quita del archivo DPAPI, preservando la conexión SQL y la URL de la API. Tras esto
+    /// <see cref="Linked"/> vuelve a ser falso, igual que justo después de instalar — el usuario
+    /// debe iniciar sesión y vincular de nuevo para reanudar la sincronización. No revoca nada en
+    /// central-api: el siguiente intento de vinculación detectará el conector todavía activo y
+    /// ofrecerá "reemplazar equipo" (revoca + emite uno nuevo, atómico).
+    /// </summary>
+    public void ClearLink()
+    {
+        ProtectedSettings.ClearLink();
+        InstallationId = null;
+        BranchCode = "";
+        BusinessId = null;
+        DeviceToken = null;
+    }
+
     public static ExtractorConfig Resolve(string[] args)
     {
         // 1) base: appsettings.json (si existe junto al ejecutable o al proyecto)
@@ -349,6 +366,20 @@ internal static class ProtectedSettings
         settings["SRX_BUSINESS_ID"] = businessId;
         settings["SRX_DEVICE_TOKEN"] = token;
         if (!string.IsNullOrWhiteSpace(apiUrl)) settings["SRX_API_URL"] = apiUrl;
+        WriteProtected(path, settings);
+    }
+
+    /// <summary>Quita del archivo protegido las cuatro claves de identidad de dispositivo, dejando intactas SQL y la URL de la API.</summary>
+    public static void ClearLink()
+    {
+        var path = GetPath();
+        if (!File.Exists(path)) return;
+
+        var settings = Load().ToDictionary(x => x.Key, x => x.Value);
+        settings.Remove("SRX_INSTALLATION_ID");
+        settings.Remove("SRX_BRANCH_CODE");
+        settings.Remove("SRX_BUSINESS_ID");
+        settings.Remove("SRX_DEVICE_TOKEN");
         WriteProtected(path, settings);
     }
 
