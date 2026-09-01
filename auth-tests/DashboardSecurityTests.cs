@@ -66,6 +66,18 @@ public sealed class DashboardSecurityTests
         Assert.Equal(10, options.DashboardStaleMinutes);
     }
 
+    [Fact]
+    public void Dashboard_uses_business_shift_number_instead_of_internal_shift_id()
+    {
+        Assert.Equal(426, DashboardReportService.ResolveBusinessShiftNumber(610301, 426));
+    }
+
+    [Fact]
+    public void Dashboard_keeps_legacy_shift_rows_without_business_shift_number_compatible()
+    {
+        Assert.Equal(420, DashboardReportService.ResolveBusinessShiftNumber(420, null));
+    }
+
     private static IConfiguration BuildConfiguration(Dictionary<string, string?> values)
     {
         values["ConnectionStrings:Database"] =

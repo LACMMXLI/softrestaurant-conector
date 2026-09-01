@@ -208,7 +208,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         DashboardUser user, string branchCode, CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""
-            SELECT s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer,
+            SELECT s.source_shift_id,
+                   COALESCE(NULLIF(s.payload->>'idTurno', '')::integer, s.source_shift_id),
                    s.opened_at, s.closed_at, s.payload->>'cajero', s.closed_at IS NULL
             FROM shifts s
             INNER JOIN branches b ON b.id = s.branch_id
@@ -439,10 +440,11 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using var command = dataSource.CreateCommand("""
             SELECT b.id, b.code, b.name, b.timezone, b.last_sync_at,
                    sb.id, sb.range_start, sb.range_end, sb.reconciliation_ok,
-                   selected_shift.shift_number, selected_shift.is_open
+                   selected_shift.source_shift_id, selected_shift.shift_number, selected_shift.is_open
             FROM branches b
             LEFT JOIN LATERAL (
-                SELECT COALESCE(s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer) AS shift_number,
+                SELECT s.source_shift_id,
+                       NULLIF(s.payload->>'idTurno', '')::integer AS shift_number,
                        s.closed_at IS NULL AS is_open
                 FROM shifts s
                 WHERE s.branch_id = b.id AND s.source_shift_id = $5
@@ -479,6 +481,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var rangeEnd = ReadNullableDateTime(reader, 7);
         var reconciliationOk = ReadNullableBool(reader, 8);
         var coverage = GetCoverage(date, batchId, rangeStart, rangeEnd, reconciliationOk);
+        int? selectedShiftId = reader.IsDBNull(9) ? null : reader.GetInt32(9);
+        int? selectedShiftNumber = reader.IsDBNull(10) ? null : reader.GetInt32(10);
         return new DashboardMeta(
             reader.GetGuid(0),
             reader.GetString(1),
@@ -494,9 +498,12 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             coverage,
             reconciliationOk == true && coverage is "complete" or "partial",
             shiftId,
-            reader.IsDBNull(9) ? null : reader.GetInt32(9),
-            !reader.IsDBNull(10) && reader.GetBoolean(10));
+            ResolveBusinessShiftNumber(selectedShiftId, selectedShiftNumber),
+            !reader.IsDBNull(11) && reader.GetBoolean(11));
     }
+
+    internal static int? ResolveBusinessShiftNumber(int? sourceShiftId, int? payloadShiftNumber) =>
+        payloadShiftNumber ?? sourceShiftId;
 
     private async Task<(Guid Id, string Timezone)?> GetBranchIdentityAsync(
         DashboardUser user,
