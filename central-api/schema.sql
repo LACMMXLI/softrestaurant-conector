@@ -114,6 +114,21 @@ CREATE INDEX IF NOT EXISTS ix_sales_branch_shift_temp
     ON sales(branch_id, source_shift_id, source_temp_folio)
     WHERE source_temp_folio IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS products (
+    branch_id uuid NOT NULL REFERENCES branches(id),
+    product_id text NOT NULL,
+    description text NULL,
+    group_id text NULL,
+    group_name text NULL,
+    classification integer NULL,
+    active boolean NOT NULL DEFAULT true,
+    payload jsonb NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (branch_id, product_id),
+    CONSTRAINT ck_products_classification CHECK (classification IS NULL OR classification IN (1, 2, 3))
+);
+CREATE INDEX IF NOT EXISTS ix_products_branch_classification ON products(branch_id, classification);
+
 CREATE TABLE IF NOT EXISTS sale_lines (
     branch_id uuid NOT NULL REFERENCES branches(id),
     idempotency_key text NOT NULL,

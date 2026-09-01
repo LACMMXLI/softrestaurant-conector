@@ -13,6 +13,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var transaction = await connection.BeginTransactionAsync(ct);
 
+        await ExecuteJsonAsync(connection, transaction, branchId, batch.Products, ProductsSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Sales, SalesSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Lines, LinesSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Payments, PaymentsSql, ct);
@@ -38,6 +39,7 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
 
         var counts = JsonSerializer.Serialize(new
         {
+            products = batch.Products.Count,
             sales = batch.Sales.Count,
             lines = batch.Lines.Count,
             payments = batch.Payments.Count,
@@ -248,6 +250,28 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
             cancelled = excluded.cancelled,
             total = excluded.total,
             tip = excluded.tip,
+            payload = excluded.payload,
+            updated_at = now();
+        """;
+
+    private const string ProductsSql = """
+        INSERT INTO products
+            (branch_id, product_id, description, group_id, group_name, classification, active, payload)
+        SELECT $1,
+               item->>'idProducto',
+               NULLIF(item->>'descripcion', ''),
+               NULLIF(item->>'idGrupo', ''),
+               NULLIF(item->>'grupo', ''),
+               NULLIF(item->>'clasificacion', '')::integer,
+               COALESCE((item->>'activo')::boolean, true),
+               item
+        FROM jsonb_array_elements($2::jsonb) AS item
+        ON CONFLICT (branch_id, product_id) DO UPDATE
+        SET description = excluded.description,
+            group_id = excluded.group_id,
+            group_name = excluded.group_name,
+            classification = excluded.classification,
+            active = excluded.active,
             payload = excluded.payload,
             updated_at = now();
         """;

@@ -12,6 +12,19 @@ namespace RestaurantAgent.Extractor;
 /// </summary>
 internal static class Queries
 {
+    public const string Products = """
+        SELECT
+            p.idproducto,
+            p.descripcion,
+            p.idgrupo,
+            g.descripcion AS groupDescription,
+            g.clasificacion,
+            CAST(1 AS bit) AS activo
+        FROM dbo.productos AS p
+        LEFT JOIN dbo.grupos AS g ON g.idgrupo = p.idgrupo
+        ORDER BY p.idproducto;
+        """;
+
     public const string Cheques = """
         SELECT
             c.WorkspaceId,

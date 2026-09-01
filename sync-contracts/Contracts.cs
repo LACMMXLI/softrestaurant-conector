@@ -1,5 +1,16 @@
 namespace RestaurantAgent.Sync.Contracts;
 
+public sealed record ProductCatalogItem
+{
+    public required string IdProducto { get; init; }
+    public string? Descripcion { get; init; }
+    public string? IdGrupo { get; init; }
+    public string? Grupo { get; init; }
+    /// <summary>1 = bebida, 2 = alimento, 3 = otro (catálogo nativo de SoftRestaurant).</summary>
+    public int? Clasificacion { get; init; }
+    public bool Activo { get; init; }
+}
+
 public sealed record SaleHeader
 {
     public string? WorkspaceId { get; init; }

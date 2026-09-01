@@ -182,8 +182,21 @@ export type DashboardHome = {
   hourlySales: HourlySalesPoint[]
   recentTickets: SalesTicket[]
   openAccounts: TransientAccount[]
+  topProducts: {
+    foods: TopProductItem[]
+    beverages: TopProductItem[]
+  }
   recentCancellations: CancellationItem[]
   recentCashMovements: CashMovementItem[]
+}
+
+export type TopProductItem = {
+  productId: string
+  productName: string
+  groupName: string | null
+  quantity: number
+  sales: number
+  rank: number
 }
 
 export type SalesPage = {

@@ -5,6 +5,21 @@ namespace RestaurantAgent.Extractor;
 
 internal sealed class Extractor(string connectionString, DateTime desde, DateTime hasta)
 {
+    public async Task<List<ProductCatalogItem>> ExtractProductsAsync(CancellationToken ct)
+    {
+        var result = new List<ProductCatalogItem>();
+        await ForEachRowAsync(Queries.Products, r => result.Add(new ProductCatalogItem
+        {
+            IdProducto = r.GetStringOrNull("idproducto")!,
+            Descripcion = r.GetStringOrNull("descripcion"),
+            IdGrupo = r.GetStringOrNull("idgrupo"),
+            Grupo = r.GetStringOrNull("groupDescription"),
+            Clasificacion = r.GetInt32OrNull("clasificacion"),
+            Activo = r.GetBool("activo")
+        }), ct);
+        return result;
+    }
+
     public async Task<List<SaleHeader>> ExtractSalesAsync(CancellationToken ct)
     {
         var result = new List<SaleHeader>();

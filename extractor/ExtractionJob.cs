@@ -8,6 +8,7 @@ namespace RestaurantAgent.Extractor;
 internal sealed record ExtractionResult(
     DateTime Desde,
     DateTime Hasta,
+    List<ProductCatalogItem> Products,
     List<SaleHeader> Sales,
     List<SaleLine> Lines,
     List<SalePayment> Payments,
@@ -34,6 +35,7 @@ internal static class ExtractionJob
         Directory.CreateDirectory(cfg.OutputDirectory);
 
         Console.WriteLine($"Extrayendo rango [{desde:yyyy-MM-dd}, {hasta:yyyy-MM-dd})...");
+        var products = await extractor.ExtractProductsAsync(ct);
         var sales = await extractor.ExtractSalesAsync(ct);
         var lines = await extractor.ExtractSaleLinesAsync(ct);
         var payments = await extractor.ExtractSalePaymentsAsync(ct);
@@ -45,10 +47,11 @@ internal static class ExtractionJob
         var cashMovements = await extractor.ExtractCashMovementsAsync(ct);
         var cancellations = await extractor.ExtractCancellationsAsync(ct);
 
-        Console.WriteLine($"  ventas={sales.Count}, líneas={lines.Count}, pagos={payments.Count}, turnos={shifts.Count}");
+        Console.WriteLine($"  productos={products.Count}, ventas={sales.Count}, líneas={lines.Count}, pagos={payments.Count}, turnos={shifts.Count}");
         Console.WriteLine($"  transitorias={transientSales.Count}, líneas transitorias={transientLines.Count}, pagos transitorios={transientPayments.Count}");
         Console.WriteLine($"  declaraciones={declarations.Count}, caja={cashMovements.Count}, cancelaciones={cancellations.Count}");
 
+        EnsureUnique("productos", products.Select(x => x.IdProducto));
         EnsureUnique("ventas", sales.Select(x => x.IdempotencyKey));
         EnsureUnique("líneas", lines.Select(x => x.IdempotencyKey));
         EnsureUnique("pagos", payments.Select(x => x.IdempotencyKey));
@@ -62,6 +65,7 @@ internal static class ExtractionJob
         var reconciliation = Reconciler.Compare(sales, lines, payments, control);
         Reconciler.PrintReport(reconciliation);
 
+        await WriteJsonAsync("productos.json", products, cfg.OutputDirectory, ct);
         await WriteJsonAsync("ventas.json", sales, cfg.OutputDirectory, ct);
         await WriteJsonAsync("lineas.json", lines, cfg.OutputDirectory, ct);
         await WriteJsonAsync("pagos.json", payments, cfg.OutputDirectory, ct);
@@ -75,7 +79,7 @@ internal static class ExtractionJob
         await WriteJsonAsync("reconciliacion.json", reconciliation, cfg.OutputDirectory, ct);
 
         return new ExtractionResult(
-            desde, hasta, sales, lines, payments, transientSales, transientLines, transientPayments, shifts, declarations,
+            desde, hasta, products, sales, lines, payments, transientSales, transientLines, transientPayments, shifts, declarations,
             cashMovements, cancellations, reconciliation);
     }
 
@@ -126,6 +130,7 @@ internal static class ExtractionJob
             CreatedAtUtc = DateTime.UtcNow,
             AgentVersion = typeof(ExtractionJob).Assembly.GetName().Version?.ToString() ?? "1.0.0",
             ReconciliationOk = result.Reconciliation.Ok,
+            Products = result.Products,
             Sales = result.Sales,
             Lines = result.Lines,
             Payments = result.Payments,

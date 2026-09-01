@@ -9,6 +9,7 @@ public sealed record SyncBatch
     public required DateTime CreatedAtUtc { get; init; }
     public required string AgentVersion { get; init; }
     public required bool ReconciliationOk { get; init; }
+    public List<ProductCatalogItem> Products { get; init; } = [];
     public List<SaleHeader> Sales { get; init; } = [];
     public List<SaleLine> Lines { get; init; } = [];
     public List<SalePayment> Payments { get; init; } = [];

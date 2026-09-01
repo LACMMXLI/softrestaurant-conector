@@ -924,6 +924,22 @@ html { scroll-behavior: smooth; }
   .access-section .login-card { padding: 24px 20px; }
 }
 /* Bloqueo de suscripción: no renderiza datos del restaurante y mantiene una salida clara. */
+.top-products-total { color: var(--ink-soft); font-size: .72rem; }
+.top-products-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+.top-product-column { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--canvas); }
+.top-product-heading { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; color: var(--teal); }
+.top-product-heading h3 { flex: 1; color: var(--ink); font-size: .92rem; }
+.top-product-heading > span { min-width: 28px; padding: 4px 8px; border-radius: 999px; background: var(--paper); color: var(--ink-soft); font-size: .66rem; text-align: center; }
+.top-product-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.top-product-list li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+.top-product-rank { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: .7rem; }
+.top-product-name, .top-product-values { min-width: 0; display: grid; gap: 3px; }
+.top-product-name strong { overflow: hidden; color: var(--ink); font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.top-product-name small, .top-product-values small { color: var(--ink-soft); font-size: .62rem; }
+.top-product-values { text-align: right; }
+.top-product-values strong { color: var(--ink); font-size: .72rem; }
+@media (max-width: 760px) { .top-products-grid { grid-template-columns: 1fr; } .top-products-total { display: none; } }
+
 .subscription-wall { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #17352e, #081713 60%); }
 .subscription-wall-card { width: min(560px, 100%); padding: 36px; border: 1px solid rgba(255,255,255,.12); border-radius: 24px; background: #10231e; color: #f5fbf8; text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
 .subscription-wall-icon { width: 64px; height: 64px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 20px; color: #ffd37a; background: rgba(255,190,66,.12); }
