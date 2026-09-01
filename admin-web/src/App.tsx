@@ -136,6 +136,7 @@ export function App() {
         lastLoginAt: next.lastLoginAt,
         createdAt: next.createdAt,
         businessCount: next.businesses.length,
+        subscription: next.subscription,
       }
       const exists = current.some((u) => u.id === next.id)
       const updated = exists ? current.map((u) => (u.id === next.id ? summary : u)) : [...current, summary]

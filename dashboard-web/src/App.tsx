@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BarChart3, Building2, LayoutDashboard, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
+import { BarChart3, Building2, CreditCard, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { LoginScreen } from './components/LoginScreen'
 import { TicketSheet } from './components/TicketSheet'
@@ -9,7 +9,7 @@ import { DashboardScreen } from './screens/DashboardScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { OperationsScreen } from './screens/OperationsScreen'
 import { SalesScreen } from './screens/SalesScreen'
-import type { DashboardBranch, DashboardHome, DashboardShift, DashboardUser } from './types'
+import type { DashboardBranch, DashboardHome, DashboardShift, DashboardUser, Subscription } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
 type Tab = 'home' | 'sales' | 'operations' | 'businesses' | 'more'
@@ -19,6 +19,7 @@ const storedBranchKey = 'sr-dashboard:v1:branch'
 export function App() {
   const [sessionState, setSessionState] = useState<SessionState>('loading')
   const [user, setUser] = useState<DashboardUser | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [branches, setBranches] = useState<DashboardBranch[]>([])
   const [branchCode, setBranchCode] = useState('')
   const [date, setDate] = useState('')
@@ -41,6 +42,7 @@ export function App() {
   const becomeAnonymous = useCallback(() => {
     setSessionState('anonymous')
     setUser(null)
+    setSubscription(null)
     setBranches([])
     setDashboard(null)
     setShifts([])
@@ -79,10 +81,11 @@ export function App() {
   useEffect(() => {
     let active = true
     api.me()
-      .then(async (session) => ({ session, availableBranches: await api.branches() }))
+      .then(async (session) => ({ session, availableBranches: session.subscription.canAccessContent ? await api.branches() : [] }))
       .then(({ session, availableBranches }) => {
         if (!active) return
         setUser(session.user)
+        setSubscription(session.subscription)
         applyBranches(availableBranches)
         setSessionState('authenticated')
       })
@@ -118,8 +121,9 @@ export function App() {
     setLoginError(null)
     try {
       const session = await api.login(email, password)
-      const resolvedBranches = await api.branches()
+      const resolvedBranches = session.subscription.canAccessContent ? await api.branches() : []
       setUser(session.user)
+      setSubscription(session.subscription)
       applyBranches(resolvedBranches)
       setSessionState('authenticated')
     } catch (reason) {
@@ -137,6 +141,7 @@ export function App() {
       // Cuenta recién creada: sin negocios todavía, applyBranches([]) deja al usuario en la
       // pantalla "sin sucursales" (que ahora ofrece directamente crear su primer negocio).
       setUser(session.user)
+      setSubscription(session.subscription)
       applyBranches([])
       setSessionState('authenticated')
     } catch (reason) {
@@ -181,6 +186,25 @@ export function App() {
 
   if (sessionState === 'anonymous' || !user) {
     return <LoginScreen error={loginError} busy={loginBusy} onLogin={handleLogin} onRegister={handleRegister} />
+  }
+
+  if (subscription && !subscription.canAccessContent) {
+    const suspended = subscription.status === 'SUSPENDED'
+    return (
+      <main className="subscription-wall">
+        <section className="subscription-wall-card" role="alert" aria-labelledby="subscription-title">
+          <span className="subscription-wall-icon"><CreditCard size={30} /></span>
+          <p className="subscription-wall-kicker">Acceso al restaurante pausado</p>
+          <h1 id="subscription-title">{suspended ? 'Tu cuenta está desactivada' : 'Tu periodo de acceso terminó'}</h1>
+          <p>{suspended
+            ? 'El administrador suspendió temporalmente esta cuenta. Tus negocios, sucursales e historial permanecen guardados.'
+            : 'La prueba gratuita de 15 días o el periodo contratado ya venció. Tus datos no se eliminaron, pero no pueden visualizarse hasta renovar.'}</p>
+          <div className="subscription-wall-plan">Plan {subscription.plan === 'PLUS' ? 'Plus' : 'Basic'}</div>
+          <p>Comunícate directamente con el administrador para registrar tu pago o solicitar una activación.</p>
+          <button className="primary-button" type="button" onClick={() => void handleLogout()}><LogOut size={17} /> Cerrar sesión</button>
+        </section>
+      </main>
+    )
   }
 
   if (!currentBranch) {

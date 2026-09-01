@@ -10,7 +10,8 @@ internal sealed record UserView(
     bool Active,
     DateTime? LastLoginAt,
     DateTime CreatedAt,
-    int BusinessCount);
+    int BusinessCount,
+    SubscriptionView Subscription);
 
 internal sealed record UserBusinessView(Guid BusinessId, string Name, string Slug, bool Active, string Role);
 
@@ -22,7 +23,8 @@ internal sealed record UserDetailView(
     bool Active,
     DateTime? LastLoginAt,
     DateTime CreatedAt,
-    IReadOnlyList<UserBusinessView> Businesses);
+    IReadOnlyList<UserBusinessView> Businesses,
+    SubscriptionView Subscription);
 
 internal enum UserMutationStatus { Ok, NotFound, BlockedLastSuperAdmin }
 
@@ -47,7 +49,7 @@ internal sealed record UserBusinessAssignRequest(IReadOnlyList<Guid> BusinessIds
 /// de negocio (OWNER/MANAGER/VIEWER, en business_members) son conceptos separados desde el
 /// modelo SaaS — ver central-api/schema.sql.
 /// </summary>
-internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService authService)
+internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService authService, SubscriptionRegistry subscriptions)
 {
     public async Task<bool> CreateFirstSuperAdminAsync(
         string email, string displayName, string password, CancellationToken ct)
@@ -92,7 +94,7 @@ internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService a
     {
         await using var command = dataSource.CreateCommand("""
             SELECT u.id, u.email, u.display_name, u.role, u.active, u.last_login_at, u.created_at,
-                   COUNT(bm.business_id)
+                   COUNT(bm.business_id), u.subscription_plan, u.trial_ends_at, u.paid_until, u.subscription_suspended
             FROM app_users u
             LEFT JOIN business_members bm ON bm.user_id = u.id
             GROUP BY u.id
@@ -105,7 +107,9 @@ internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService a
             result.Add(new UserView(
                 reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
                 reader.GetBoolean(4), reader.IsDBNull(5) ? null : reader.GetDateTime(5),
-                reader.GetDateTime(6), checked((int)reader.GetInt64(7))));
+                reader.GetDateTime(6), checked((int)reader.GetInt64(7)),
+                SubscriptionPolicy.Evaluate(reader.GetString(8), reader.GetDateTime(9),
+                    reader.IsDBNull(10) ? null : reader.GetDateTime(10), reader.GetBoolean(11), DateTime.UtcNow)));
         }
         return result;
     }
@@ -125,7 +129,7 @@ internal sealed class UserRegistry(NpgsqlDataSource dataSource, WebAuthService a
             user = new UserDetailView(
                 reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
                 reader.GetBoolean(4), reader.IsDBNull(5) ? null : reader.GetDateTime(5),
-                reader.GetDateTime(6), []);
+                reader.GetDateTime(6), [], (await subscriptions.GetAsync(id, ct))!);
         }
 
         var businesses = new List<UserBusinessView>();

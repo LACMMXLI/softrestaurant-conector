@@ -35,6 +35,9 @@ export function UserDetailScreen({
   const [businessToAdd, setBusinessToAdd] = useState('')
   const [businessRoleToAdd, setBusinessRoleToAdd] = useState<BusinessRole>('VIEWER')
   const [businessBusy, setBusinessBusy] = useState<string | null>(null)
+  const [subscriptionPlan, setSubscriptionPlan] = useState<'BASIC' | 'PLUS'>(user.subscription.plan)
+  const [subscriptionMonths, setSubscriptionMonths] = useState<1 | 2 | 3 | 6>(1)
+  const [subscriptionBusy, setSubscriptionBusy] = useState(false)
 
   const unassignedBusinesses = allBusinesses.filter(
     (business) => !user.businesses.some((assigned) => assigned.businessId === business.id),
@@ -136,6 +139,35 @@ export function UserDetailScreen({
     }
   }
 
+  async function handleActivateSubscription(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubscriptionBusy(true)
+    setError(null)
+    try {
+      const subscription = await api.activateSubscription(user.id, subscriptionPlan, subscriptionMonths)
+      onUserUpdated({ ...user, subscription })
+    } catch (reason) {
+      if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
+      setError(reason instanceof Error ? reason.message : 'No fue posible activar el plan.')
+    } finally {
+      setSubscriptionBusy(false)
+    }
+  }
+
+  async function handleSubscriptionStatus() {
+    setSubscriptionBusy(true)
+    setError(null)
+    try {
+      const subscription = await api.setSubscriptionSuspended(user.id, !user.subscription.suspended)
+      onUserUpdated({ ...user, subscription })
+    } catch (reason) {
+      if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
+      setError(reason instanceof Error ? reason.message : 'No fue posible cambiar el acceso del plan.')
+    } finally {
+      setSubscriptionBusy(false)
+    }
+  }
+
   return (
     <div className="panel-stack">
       <button className="icon-button back-button" type="button" onClick={onBack}>
@@ -195,6 +227,34 @@ export function UserDetailScreen({
             cualquier sesión abierta. Puede reactivarse en cualquier momento.
           </p>
         </div>
+      </section>
+
+      <section className="panel-card" aria-labelledby="user-subscription-title">
+        <h2 id="user-subscription-title">Plan y activación</h2>
+        <p className="panel-hint">
+          Estado: <strong>{user.subscription.status}</strong> · Plan {user.subscription.plan === 'PLUS' ? 'Plus' : 'Basic'} ·
+          {user.subscription.paidUntil
+            ? ` vigente hasta ${new Date(user.subscription.paidUntil).toLocaleDateString('es-MX')}`
+            : ` prueba hasta ${new Date(user.subscription.trialEndsAt).toLocaleDateString('es-MX')}`}
+        </p>
+        <form className="inline-form" onSubmit={handleActivateSubscription}>
+          <label>Plan
+            <select value={subscriptionPlan} onChange={(event) => setSubscriptionPlan(event.target.value as 'BASIC' | 'PLUS')}>
+              <option value="BASIC">Basic / normal</option>
+              <option value="PLUS">Plus / avanzada</option>
+            </select>
+          </label>
+          <label>Periodo
+            <select value={subscriptionMonths} onChange={(event) => setSubscriptionMonths(Number(event.target.value) as 1 | 2 | 3 | 6)}>
+              <option value={1}>1 mes</option><option value={2}>2 meses</option><option value={3}>3 meses</option><option value={6}>6 meses</option>
+            </select>
+          </label>
+          <button className="primary-button" type="submit" disabled={subscriptionBusy}>Activar / extender</button>
+          <button className={user.subscription.suspended ? 'secondary-button' : 'secondary-button danger-outline'} type="button" disabled={subscriptionBusy} onClick={() => void handleSubscriptionStatus()}>
+            {user.subscription.suspended ? 'Rehabilitar acceso' : 'Desactivar acceso'}
+          </button>
+        </form>
+        <p className="panel-hint">La desactivación no elimina la cuenta, negocios, sucursales ni historial.</p>
       </section>
 
       <section className="panel-card" aria-labelledby="user-password-title">

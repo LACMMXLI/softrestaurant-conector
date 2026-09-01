@@ -29,7 +29,7 @@ internal static class FirstSuperAdminCommand
         await using var dataSource = Npgsql.NpgsqlDataSource.Create(options.ConnectionString);
         await DbInitializer.InitializeAsync(dataSource, options, ct);
         var auth = new WebAuthService(dataSource, options);
-        var users = new UserRegistry(dataSource, auth);
+        var users = new UserRegistry(dataSource, auth, new SubscriptionRegistry(dataSource));
         if (!await users.CreateFirstSuperAdminAsync(email, displayName, password, ct))
             throw new InvalidOperationException("La operación fue rechazada: ya existe un SUPERADMIN.");
 

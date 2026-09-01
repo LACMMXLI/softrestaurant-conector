@@ -276,6 +276,21 @@ CREATE TABLE IF NOT EXISTS app_users (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Suscripción por cuenta. La prueba y las activaciones no cambian `active`: una cuenta
+-- vencida conserva sesión, negocios e historial, pero el API web deja de entregar contenido.
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS subscription_plan text NOT NULL DEFAULT 'BASIC';
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz NOT NULL DEFAULT (now() + interval '15 days');
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS paid_until timestamptz NULL;
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS subscription_suspended boolean NOT NULL DEFAULT false;
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS subscription_updated_at timestamptz NOT NULL DEFAULT now();
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'app_users_subscription_plan_check') THEN
+        ALTER TABLE app_users ADD CONSTRAINT app_users_subscription_plan_check
+            CHECK (subscription_plan IN ('BASIC', 'PLUS'));
+    END IF;
+END $$;
+
 DO $$
 BEGIN
     IF NOT EXISTS (

@@ -6,6 +6,7 @@ import type {
   ConnectorInstallation,
   DeviceCredential,
   Role,
+  Subscription,
   UserDetail,
   UserMutationResponse,
   UserSummary,
@@ -107,6 +108,16 @@ export const api = {
     request<UserMutationResponse>(`/api/admin/users/${id}/status`, {
       method: 'POST',
       body: JSON.stringify({ active }),
+    }),
+  activateSubscription: (id: string, plan: 'BASIC' | 'PLUS', months: 1 | 2 | 3 | 6) =>
+    request<Subscription>(`/api/admin/users/${id}/subscription/activate`, {
+      method: 'POST',
+      body: JSON.stringify({ plan, months }),
+    }),
+  setSubscriptionSuspended: (id: string, suspended: boolean) =>
+    request<Subscription>(`/api/admin/users/${id}/subscription/status`, {
+      method: 'POST',
+      body: JSON.stringify({ suspended }),
     }),
   resetUserPassword: (id: string, password: string) =>
     request<UserMutationResponse>(`/api/admin/users/${id}/password`, {

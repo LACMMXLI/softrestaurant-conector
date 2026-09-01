@@ -6,6 +6,7 @@ import type {
   DashboardHome,
   DashboardShift,
   DashboardUser,
+  DashboardSession,
   CashMovementsPage,
   ConnectorInstallation,
   SalesPage,
@@ -49,14 +50,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   login: (email: string, password: string) =>
-    request<{ user: DashboardUser; expiresAt: string }>('/api/web/auth/login', {
+    request<DashboardSession>('/api/web/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
   logout: () => request<void>('/api/web/auth/logout', { method: 'POST' }),
-  me: () => request<{ user: DashboardUser }>('/api/web/auth/me'),
+  me: () => request<DashboardSession>('/api/web/auth/me'),
   register: (email: string, password: string, displayName: string) =>
-    request<{ user: DashboardUser; expiresAt: string }>('/api/web/auth/register', {
+    request<DashboardSession>('/api/web/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, displayName }),
     }),

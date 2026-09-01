@@ -35,6 +35,17 @@ export type UserSummary = {
   lastLoginAt: string | null
   createdAt: string
   businessCount: number
+  subscription: Subscription
+}
+
+export type Subscription = {
+  plan: 'BASIC' | 'PLUS'
+  status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'SUSPENDED'
+  trialEndsAt: string
+  paidUntil: string | null
+  suspended: boolean
+  canAccessContent: boolean
+  trialDaysRemaining: number
 }
 
 export type UserBusiness = {
@@ -54,6 +65,7 @@ export type UserDetail = {
   lastLoginAt: string | null
   createdAt: string
   businesses: UserBusiness[]
+  subscription: Subscription
 }
 
 export type UserMutationResponse = {

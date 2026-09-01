@@ -7,6 +7,18 @@ export type DashboardUser = {
   role: 'SUPERADMIN' | 'USER'
 }
 
+export type Subscription = {
+  plan: 'BASIC' | 'PLUS'
+  status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'SUSPENDED'
+  trialEndsAt: string
+  paidUntil: string | null
+  suspended: boolean
+  canAccessContent: boolean
+  trialDaysRemaining: number
+}
+
+export type DashboardSession = { user: DashboardUser; expiresAt?: string; subscription: Subscription }
+
 export type BusinessMembership = {
   id: string
   name: string

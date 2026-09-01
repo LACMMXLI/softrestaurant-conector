@@ -23,6 +23,7 @@ builder.Services.AddSingleton<BusinessRegistry>();
 builder.Services.AddSingleton<ConnectorInstallationRegistry>();
 builder.Services.AddSingleton<WebAuthService>();
 builder.Services.AddSingleton<UserRegistry>();
+builder.Services.AddSingleton<SubscriptionRegistry>();
 builder.Services.AddSingleton<DashboardReportService>();
 builder.Services.AddRateLimiter(options =>
 {
@@ -92,6 +93,38 @@ app.Use(async (context, next) =>
 });
 var dataSource = app.Services.GetRequiredService<NpgsqlDataSource>();
 await DbInitializer.InitializeAsync(dataSource, apiOptions, CancellationToken.None);
+
+// Defensa en servidor: una cuenta vencida puede autenticarse para ver el aviso y cerrar sesión,
+// pero no obtiene datos del restaurante aunque llame al API directamente.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/web") &&
+        !context.Request.Path.StartsWithSegments("/api/web/auth") &&
+        !context.Request.Path.StartsWithSegments("/api/web/agent/latest"))
+    {
+        var auth = context.RequestServices.GetRequiredService<WebAuthService>();
+        var user = await auth.AuthenticateAsync(context, context.RequestAborted);
+        if (user is not null && user.Role != "SUPERADMIN")
+        {
+            var subscriptions = context.RequestServices.GetRequiredService<SubscriptionRegistry>();
+            var subscription = await subscriptions.GetAsync(user.Id, context.RequestAborted);
+            if (subscription is not null && !subscription.CanAccessContent)
+            {
+                context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = subscription.Suspended
+                        ? "La cuenta fue desactivada. Comunícate con el administrador para reactivarla."
+                        : "Tu prueba de 15 días o periodo contratado terminó. Realiza tu pago o solicita la activación al administrador.",
+                    code = "SUBSCRIPTION_REQUIRED",
+                    subscription
+                });
+                return;
+            }
+        }
+    }
+    await next();
+});
 
 app.MapGet("/api/health/live", () => Results.Ok(new { status = "ok" }));
 
@@ -227,6 +260,29 @@ app.MapGet("/api/admin/users/{id:guid}", async (
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
     var user = await users.GetUserAsync(id, ct);
     return user is null ? Results.NotFound() : Results.Ok(user);
+});
+
+app.MapPost("/api/admin/users/{id:guid}/subscription/activate", async (
+    HttpContext context, Guid id, SubscriptionActivationRequest request,
+    SubscriptionRegistry subscriptions, WebAuthService webAuth, CancellationToken ct) =>
+{
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    var plan = request.Plan?.Trim().ToUpperInvariant() ?? string.Empty;
+    if (!SubscriptionPolicy.IsValidPlan(plan))
+        return Results.BadRequest(new { error = "Plan inválido: use BASIC o PLUS." });
+    if (!SubscriptionPolicy.IsValidDuration(request.Months))
+        return Results.BadRequest(new { error = "Duración inválida: use 1, 2, 3 o 6 meses." });
+    var result = await subscriptions.ActivateAsync(id, plan, request.Months, ct);
+    return result is null ? Results.NotFound() : Results.Ok(result);
+});
+
+app.MapPost("/api/admin/users/{id:guid}/subscription/status", async (
+    HttpContext context, Guid id, SubscriptionStatusRequest request,
+    SubscriptionRegistry subscriptions, WebAuthService webAuth, CancellationToken ct) =>
+{
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    var result = await subscriptions.SetSuspendedAsync(id, request.Suspended, ct);
+    return result is null ? Results.NotFound() : Results.Ok(result);
 });
 
 app.MapPost("/api/admin/users", async (
