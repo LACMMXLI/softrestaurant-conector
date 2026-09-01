@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BarChart3,
   Building2,
+  Check,
   Clock3,
   CreditCard,
   Eye,
@@ -13,6 +14,7 @@ import {
   MonitorSmartphone,
   ReceiptText,
   ShieldCheck,
+  Sparkles,
   Smartphone,
   Store,
   TrendingUp,
@@ -34,6 +36,22 @@ const capabilities = [
   { icon: ReceiptText, title: 'Tickets', copy: 'Abre el detalle de cada venta desde un mismo lugar.' },
   { icon: CreditCard, title: 'Formas de pago', copy: 'Entiende cómo se compone la venta del periodo consultado.' },
   { icon: BarChart3, title: 'Cobertura visible', copy: 'Identifica datos completos, parciales o pendientes de conciliar.' },
+]
+
+const plans = [
+  {
+    name: 'Estándar',
+    price: '$199',
+    description: 'Para tener la operación diaria de una sucursal siempre a la mano.',
+    features: ['1 sucursal', 'Historial de 4 días', 'Ventas y cuentas abiertas', 'Sincronización en vivo'],
+  },
+  {
+    name: 'Plus',
+    price: '$499',
+    description: 'Para equipos que necesitan más alcance, historial y herramientas de análisis.',
+    features: ['Hasta 5 sucursales', 'Historial de 90 días', 'Analítica y alertas', 'Exportación y soporte prioritario'],
+    featured: true,
+  },
 ]
 
 function ProductLogo({ compact = false }: { compact?: boolean }) {
@@ -97,6 +115,12 @@ export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenPro
     setMenuOpen(false)
   }
 
+  function openAccess(nextMode: 'login' | 'register') {
+    setMode(nextMode)
+    setMenuOpen(false)
+    window.setTimeout(() => document.querySelector('#acceso input')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
+  }
+
   return (
     <main className="landing-page">
       <section className="landing-hero" id="inicio">
@@ -109,9 +133,10 @@ export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenPro
             <a href="#inicio" onClick={closeMenu}>Inicio</a>
             <a href="#beneficios" onClick={closeMenu}>Beneficios</a>
             <a href="#dispositivos" onClick={closeMenu}>Características</a>
-            <a href="#acceso" onClick={closeMenu}>Acceso</a>
+            <a href="#planes" onClick={closeMenu}>Planes</a>
+            <a href="#acceso" onClick={() => openAccess('login')}>Acceso</a>
           </div>
-          <a className="nav-login" href="#acceso">Iniciar sesión</a>
+          <a className="nav-login" href="#acceso" onClick={() => setMode('login')}>Iniciar sesión</a>
         </nav>
 
         <div className="hero-inner">
@@ -120,8 +145,8 @@ export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenPro
             <h1>Tu restaurante,<br /><span>siempre contigo</span></h1>
             <p className="hero-lead">Conecta la información de RestaurantAgent con un panel web para consultar ventas, sucursales y operación desde cualquier dispositivo.</p>
             <div className="hero-actions">
-              <a className="landing-button landing-button--primary" href="#beneficios">Conocer el sistema <ArrowRight size={18} /></a>
-              <a className="landing-button landing-button--ghost" href="#acceso">Ya soy cliente</a>
+              <a className="landing-button landing-button--primary" href="#acceso" onClick={() => setMode('register')}>Probar gratis 15 días <ArrowRight size={18} /></a>
+              <a className="landing-button landing-button--ghost" href="#acceso" onClick={() => setMode('login')}>Iniciar sesión</a>
             </div>
             <div className="hero-trust"><span><Wifi size={17} /> Sin reemplazar tu sistema</span><span><ShieldCheck size={17} /> Acceso protegido</span><span><MonitorSmartphone size={17} /> Diseño adaptable</span></div>
           </div>
@@ -162,6 +187,39 @@ export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenPro
         </div>
       </section>
 
+      <section className="landing-section plans-section" id="planes">
+        <div className="landing-container">
+          <div className="plans-heading">
+            <div>
+              <p className="section-kicker">Planes claros, sin sorpresas</p>
+              <h2>Empieza con 15 días gratis.<br />Elige después.</h2>
+            </div>
+            <p>Conecta tu restaurante, conoce el panel con tu propia operación y decide qué alcance necesita tu equipo. No solicitamos pago para crear tu cuenta.</p>
+          </div>
+          <div className="public-pricing-grid">
+            <article className="trial-card">
+              <span className="trial-orbit" aria-hidden="true"><Sparkles size={25} /></span>
+              <p className="utility-label">Primero, compruébalo</p>
+              <strong>15</strong>
+              <span>días de prueba gratis</span>
+              <p>Acceso completo para conocer el servicio antes de elegir un plan.</p>
+              <button type="button" className="plan-cta plan-cta--light" onClick={() => openAccess('register')}>Crear mi cuenta <ArrowRight size={17} /></button>
+            </article>
+            {plans.map((plan) => (
+              <article className={`public-plan-card${plan.featured ? ' is-featured' : ''}`} key={plan.name}>
+                {plan.featured ? <span className="plan-ribbon">Más completo</span> : null}
+                <p className="utility-label">Plan {plan.name}</p>
+                <div className="public-plan-price"><strong>{plan.price}</strong><span>MXN / mes</span></div>
+                <p className="public-plan-description">{plan.description}</p>
+                <ul>{plan.features.map((feature) => <li key={feature}><Check size={16} /><span>{feature}</span></li>)}</ul>
+                <button type="button" className="plan-cta" onClick={() => openAccess('register')}>Comenzar prueba gratis <ArrowRight size={17} /></button>
+              </article>
+            ))}
+          </div>
+          <p className="plans-note">Precios informativos. La prueba inicia al crear tu cuenta; la contratación del plan se gestiona por separado.</p>
+        </div>
+      </section>
+
       <section className="branches-band">
         <div className="landing-container branches-layout">
           <div className="section-intro section-intro--light">
@@ -175,13 +233,13 @@ export function LoginScreen({ error, busy, onLogin, onRegister }: LoginScreenPro
 
       <section className="access-section" id="acceso">
         <div className="landing-container access-layout">
-          <div className="access-copy"><p className="section-kicker">Acceso para clientes</p><h2>Consulta tu operación.</h2><p>Inicia sesión con la cuenta y las sucursales que tu administrador te asignó.</p><div className="access-proof"><ShieldCheck size={20} /><span>Sesión protegida y permisos por sucursal</span></div></div>
+          <div className="access-copy"><p className="section-kicker">{mode === 'register' ? 'Tu prueba comienza aquí' : 'Acceso para clientes'}</p><h2>{mode === 'register' ? 'Crea tu cuenta.' : 'Consulta tu operación.'}</h2><p>{mode === 'register' ? 'Regístrate para iniciar tus 15 días de prueba y crear tu primer negocio.' : 'Inicia sesión con la cuenta y las sucursales que tu administrador te asignó.'}</p><div className="access-proof"><ShieldCheck size={20} /><span>Sesión protegida y permisos por sucursal</span></div></div>
           <section className="login-card" aria-label={mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión'}>
             <div>
               <p className="utility-label">Panel de control</p>
               <h2>{mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión'}</h2>
               <p className="login-card-copy">
-                {mode === 'register' ? 'Registra tu cuenta para crear tu negocio.' : 'Accede a tu información operativa.'}
+                {mode === 'register' ? 'Incluye 15 días de prueba gratis. No necesitas ingresar datos de pago.' : 'Accede a tu información operativa.'}
               </p>
             </div>
             <form onSubmit={handleSubmit}>

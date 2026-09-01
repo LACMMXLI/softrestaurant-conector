@@ -1,6 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, Ban, Banknote, Coins, CreditCard, Equal, Hourglass, Landmark, Minus, Plus, Receipt, WalletCards } from 'lucide-react'
 import { EmptyState } from '../components/EmptyState'
-import { PricingBanner } from '../components/PricingBanner'
 import { SalesChart } from '../components/SalesChart'
 import { StatusPill } from '../components/StatusPill'
 import { TicketRow } from '../components/TicketRow'
@@ -40,8 +39,6 @@ export function DashboardScreen({
 
   return (
     <div className="screen-stack">
-      <PricingBanner />
-
       {error ? (
         <button className="inline-alert" type="button" onClick={onRetry}>
           {error} · Toca para volver a intentar
