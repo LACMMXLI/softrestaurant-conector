@@ -7,6 +7,12 @@
 #ifndef BuildOutputName
   #define BuildOutputName "RestaurantAgent-Sync-Agent-Setup"
 #endif
+#ifndef BuildSqlUser
+  #define BuildSqlUser ""
+#endif
+#ifndef BuildSqlPassword
+  #define BuildSqlPassword ""
+#endif
 
 #define AppName "RestaurantAgent Sync Agent"
 #define AppPublisher "Fatboy"
@@ -65,6 +71,8 @@ Filename: "{app}\{#AgentUiExe}"; Description: "Abrir el panel del agente"; Flags
 const
   AgentServiceName = '{#ServiceName}';
   AgentApiUrl = '{#BuildApiUrl}';
+  DefaultSqlUser = '{#BuildSqlUser}';
+  DefaultSqlPassword = '{#BuildSqlPassword}';
 
 var
   DatabasePage: TInputQueryWizardPage;
@@ -218,6 +226,8 @@ begin
     'El agente ejecuta únicamente consultas SELECT. La contraseña no se mostrará en el resumen.');
   CredentialsPage.Add('Usuario SQL:', False);
   CredentialsPage.Add('Contraseña SQL:', True);
+  CredentialsPage.Values[0] := DefaultSqlUser;
+  CredentialsPage.Values[1] := DefaultSqlPassword;
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -226,8 +236,10 @@ begin
     usuario ni contraseña. La configuración protegida existente se conserva intacta
     (ver ConfigureAndStartService) — esto incluye cualquier vínculo de dispositivo ya
     hecho desde la GUI, que el instalador nunca toca ni pide de nuevo. }
-  Result := ExistingConfigValid and
-    ((PageID = DatabasePage.ID) or (PageID = CredentialsPage.ID));
+  Result := (ExistingConfigValid and
+    ((PageID = DatabasePage.ID) or (PageID = CredentialsPage.ID))) or
+    ((not ExistingConfigValid) and (PageID = CredentialsPage.ID) and
+      (DefaultSqlUser <> '') and (DefaultSqlPassword <> ''));
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -520,6 +532,7 @@ begin
     DetectionSummary +
     '  Servidor: ' + DatabasePage.Values[0] + NewLine +
     '  Base: ' + DatabasePage.Values[1] + NewLine +
-    '  Usuario: ' + CredentialsPage.Values[0] + NewLine + NewLine +
+    '  Usuario SQL preconfigurado: ' + CredentialsPage.Values[0] + NewLine +
+    '  La contraseña se cifrará con DPAPI y no se mostrará.' + NewLine + NewLine +
     'Se creará el servicio automático "RestaurantAgent Sync Agent".';
 end;

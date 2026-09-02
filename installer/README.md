@@ -8,13 +8,12 @@ SQL Server. Si varias cajas comparten la misma base, no debe instalarse en cada 
 
 1. Busca `restaurant.ini` en las rutas conocidas de RestaurantAgent 11, 10 y 9.5.
 2. Lee `DataSource` y `Catalog` para completar servidor y base automáticamente.
-3. Solicita el usuario y contraseña SQL que ya utiliza RestaurantAgent.
-4. Solicita una clave de activación de un solo uso y el nombre del equipo.
-5. Instala `RestaurantAgentSyncAgent` con inicio automático y recuperación por reinicio.
-6. Guarda la cola SQLite y los JSON de diagnóstico en
+3. Usa las credenciales SQL preconfiguradas durante la compilación; no vuelve a pedirlas al cliente final.
+4. Instala `RestaurantAgentSyncAgent` con inicio automático y recuperación por reinicio.
+5. Guarda la cola SQLite y los JSON de diagnóstico en
    `%ProgramData%\RestaurantAgentSyncAgent`.
-7. En la primera conexión obtiene un ID/token exclusivo y elimina la clave de activación.
-8. Envía por HTTPS y conserva los lotes localmente cuando no hay Internet.
+6. El equipo se vincula desde el panel local usando la cuenta del negocio.
+7. Envía por HTTPS y conserva los lotes localmente cuando no hay Internet.
 
 El agente mantiene una lista fija de consultas `SELECT`; usar una cuenta SQL existente con
 permisos más amplios no cambia el SQL que ejecuta, aunque sí aumenta el impacto si esa
@@ -56,19 +55,26 @@ por una instalación 1.1.x ya es compatible con `--config-status` de 1.2.0+.
 ## Compilar una prueba
 
 ```powershell
+$env:SRX_INSTALLER_SQL_PASSWORD = '<contraseña de prueba>'
 .\installer\build-installer.ps1 -TestBuild
+Remove-Item Env:SRX_INSTALLER_SQL_PASSWORD
 ```
 
 El nombre incluye `TEST`. El instalador no contiene claves de activación ni tokens.
 
-## Generar el instalador final genérico
+## Generar el instalador final preconfigurado
 
 ```powershell
-.\installer\build-installer.ps1
+$env:SRX_INSTALLER_SQL_PASSWORD = '<contraseña entregada por National Soft>'
+.\installer\build-installer.ps1 -Version 2.1.1 -SqlUser sa
+Remove-Item Env:SRX_INSTALLER_SQL_PASSWORD
 ```
 
-El mismo `.exe` sirve para cualquier sucursal. La clave de activación se genera en el backend
-y se captura durante la instalación; nunca se incorpora un secreto permanente al instalador.
+El mismo `.exe` sirve para equipos con la configuración estándar de National Soft. La contraseña
+no se guarda en el repositorio ni se imprime en la salida del build, pero sí queda incorporada en
+el instalador y después se cifra con DPAPI LocalMachine en el equipo destino. Quien tenga acceso al
+instalador podría intentar extraerla; para producción se recomienda reemplazar `sa` por una cuenta
+SQL dedicada con permisos únicamente de lectura.
 
 Los artefactos se generan en `installer\dist` y el script imprime tamaño, SHA-256 y estado
 de firma.

@@ -2,6 +2,8 @@
 param(
     [string] $Version = '1.2.0',
     [string] $ApiUrl = 'https://agente-restaurante.fatboymexicali.com',
+    [string] $SqlUser = 'sa',
+    [string] $SqlPassword = $env:SRX_INSTALLER_SQL_PASSWORD,
     [switch] $TestBuild
 )
 
@@ -19,6 +21,9 @@ if (-not (Test-Path -LiteralPath $iscc -PathType Leaf)) {
 
 if ($ApiUrl -notmatch '^https://') {
     throw 'ApiUrl debe usar HTTPS.'
+}
+if ([string]::IsNullOrWhiteSpace($SqlUser) -or [string]::IsNullOrEmpty($SqlPassword)) {
+    throw 'Define SqlUser y SRX_INSTALLER_SQL_PASSWORD (o -SqlPassword) para generar el instalador preconfigurado.'
 }
 
 $buildKind = if ($TestBuild) { 'TEST' } else { 'x64' }
@@ -65,6 +70,8 @@ function ConvertTo-InnoLiteral([string] $Value) {
 $includeText = @"
 #define BuildVersion "$(ConvertTo-InnoLiteral $Version)"
 #define BuildApiUrl "$(ConvertTo-InnoLiteral ($ApiUrl.TrimEnd('/')))"
+#define BuildSqlUser "$(ConvertTo-InnoLiteral $SqlUser)"
+#define BuildSqlPassword "$(ConvertTo-InnoLiteral $SqlPassword)"
 #define BuildOutputName "$(ConvertTo-InnoLiteral $outputName)"
 "@
 
@@ -96,5 +103,6 @@ $signature = Get-AuthenticodeSignature -LiteralPath $artifact
     Sha256 = $hash.Hash
     Signature = $signature.Status
     ApiUrl = $ApiUrl.TrimEnd('/')
+    PreconfiguredSqlUser = $SqlUser
     TestBuild = [bool]$TestBuild
 } | Format-List
