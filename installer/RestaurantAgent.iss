@@ -41,8 +41,8 @@ SetupIconFile=..\extractor-ui\Assets\AppIcon.ico
 UninstallDisplayIcon={app}\{#AgentUiExe}
 CloseApplications=no
 RestartApplications=no
-UsePreviousAppDir=yes
-UsePreviousLanguage=yes
+UsePreviousAppDir=no
+UsePreviousLanguage=no
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
@@ -79,8 +79,6 @@ var
   CredentialsPage: TInputQueryWizardPage;
   DetectedIniPath: string;
   DataRootPath: string;
-  ProtectedConfigPath: string;
-  ExistingConfigValid: Boolean;
 
 function StripQuotes(Value: string): string;
 begin
@@ -161,47 +159,11 @@ begin
   end;
 end;
 
-function CheckExistingConfig: Boolean;
-var
-  ExeForCheck: string;
-  ResultCode: Integer;
-begin
-  Result := False;
-  DataRootPath := ExpandConstant('{commonappdata}\RestaurantAgentSyncAgent');
-  ProtectedConfigPath := DataRootPath + '\agent-settings.dpapi';
-  ExeForCheck := ExpandConstant('{app}\{#AgentExe}');
-
-  { Solo hay algo que reutilizar si el equipo ya tiene la config protegida Y el ejecutable
-    de una instalación previa (para poder pedirle que la valide/descifre). En instalación
-    nueva ninguno de los dos existe todavía y esto sigue el flujo normal del asistente. }
-  if not FileExists(ProtectedConfigPath) then
-    Exit;
-  if not FileExists(ExeForCheck) then
-    Exit;
-
-  Log('Verificando configuración existente en: ' + ProtectedConfigPath);
-  if Exec(ExeForCheck, '--config-status "' + ProtectedConfigPath + '"', '', SW_HIDE,
-    ewWaitUntilTerminated, ResultCode) then
-    Result := (ResultCode = 0);
-
-  if Result then
-    Log('Configuración existente válida detectada; se conservará sin pedir datos nuevos.')
-  else
-    Log('No se detectó configuración existente reutilizable; se pedirán los datos normalmente.');
-end;
-
 procedure InitializeWizard;
 var
   SqlServer, SqlDatabase, DetectionText: string;
 begin
-  // OJO: la constante app todavia NO esta inicializada aqui (InitializeWizard
-  // corre antes de mostrar la pagina wpSelectDir). CheckExistingConfig usa
-  // ExpandConstant de esa constante, asi que se pospone hasta
-  // NextButtonClick(wpSelectDir), justo cuando ya tiene el valor confirmado
-  // por el usuario. Hacerlo aqui provoca el error de Inno Setup "An attempt
-  // was made to expand the 'app' constant before it was initialized" en
-  // equipos con instalacion previa (unica ruta que ejercita CheckExistingConfig).
-  ExistingConfigValid := False;
+  DataRootPath := ExpandConstant('{commonappdata}\RestaurantAgentSyncAgent');
 
   DetectRestaurantAgent(SqlServer, SqlDatabase);
   if DetectedIniPath <> '' then
@@ -232,28 +194,13 @@ end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
-  { Actualización sobre un equipo ya configurado: no volver a pedir servidor, base,
-    usuario ni contraseña. La configuración protegida existente se conserva intacta
-    (ver ConfigureAndStartService) — esto incluye cualquier vínculo de dispositivo ya
-    hecho desde la GUI, que el instalador nunca toca ni pide de nuevo. }
-  Result := (ExistingConfigValid and
-    ((PageID = DatabasePage.ID) or (PageID = CredentialsPage.ID))) or
-    ((not ExistingConfigValid) and (PageID = CredentialsPage.ID) and
-      (DefaultSqlUser <> '') and (DefaultSqlPassword <> ''));
+  Result := (PageID = CredentialsPage.ID) and
+    (DefaultSqlUser <> '') and (DefaultSqlPassword <> '');
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
-
-  if CurPageID = wpSelectDir then
-  begin
-    // Primer punto donde la constante app ya esta inicializada con el valor
-    // confirmado por el usuario; aqui es seguro llamar a CheckExistingConfig
-    // (ver el comentario en InitializeWizard).
-    ExistingConfigValid := CheckExistingConfig;
-    Exit;
-  end;
 
   if CurPageID = DatabasePage.ID then
   begin
@@ -388,17 +335,14 @@ end;
 procedure ConfigureAndStartService;
 var
   ExePath, DataRoot, ProtectedPath, EnvironmentBlock, RegistryPath,
-    ExpectedImagePath, RegisteredImagePath, IcaclsParams, IcaclsOutput,
-    TakeownOutput: string;
+    ExpectedImagePath, RegisteredImagePath, IcaclsParams, IcaclsOutput: string;
   ResultCode: Integer;
 begin
   ExePath := ExpandConstant('{app}\{#AgentExe}');
   DataRoot := DataRootPath;
   RegistryPath := 'SYSTEM\CurrentControlSet\Services\' + AgentServiceName;
 
-  // Defensivo: [Dirs] ya debería haber creado esta carpeta, pero si por lo que sea
-  // no existe (antivirus, instalación previa corrupta) icacls fallaría igual con un
-  // mensaje confuso de "no se pudieron proteger los permisos".
+  // Instalación limpia: crea el directorio de datos y aplica ACL nuevas.
   ForceDirectories(DataRoot);
 
   IcaclsParams := '"' + DataRoot + '" /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F"';
@@ -406,41 +350,14 @@ begin
   if not RunCaptured(ExpandConstant('{sys}\icacls.exe'), IcaclsParams, ResultCode, IcaclsOutput)
     or (ResultCode <> 0) then
   begin
-    Log('icacls falló en el primer intento (código ' + IntToStr(ResultCode) + '): ' + IcaclsOutput);
-
-    // Causa más común en equipos con una instalación anterior: la carpeta quedó con un
-    // dueño/ACL que ya no permite al administrador actual cambiar los permisos. Forzar
-    // la propiedad con takeown.exe antes de reintentar suele resolverlo.
-    RunCaptured(ExpandConstant('{sys}\takeown.exe'), '/F "' + DataRoot + '" /R /D Y',
-      ResultCode, TakeownOutput);
-    Log('takeown (código ' + IntToStr(ResultCode) + '): ' + TakeownOutput);
-
-    if not RunCaptured(ExpandConstant('{sys}\icacls.exe'), IcaclsParams, ResultCode, IcaclsOutput)
-      or (ResultCode <> 0) then
-    begin
-      MsgBox('No se pudieron proteger los permisos de la configuración en:' + #13#10 +
-        DataRoot + #13#10#13#10 +
-        'Código: ' + IntToStr(ResultCode) + #13#10 +
-        IcaclsOutput, mbError, MB_OK);
-      Abort;
-    end;
+    MsgBox('No se pudieron proteger los permisos de la configuración en:' + #13#10 +
+      DataRoot + #13#10#13#10 +
+      'Código: ' + IntToStr(ResultCode) + #13#10 +
+      IcaclsOutput, mbError, MB_OK);
+    Abort;
   end;
 
-  if ExistingConfigValid then
-  begin
-    { Actualización: NO se toca el archivo protegido existente (activación, SQL,
-      tokens). Solo se reutiliza su ruta para apuntar el servicio nuevo a él. }
-    ProtectedPath := ProtectedConfigPath;
-    if not FileExists(ProtectedPath) then
-    begin
-      MsgBox('No se encontró la configuración existente esperada en ' + ProtectedPath +
-        '. Cancela la instalación y contacta a soporte antes de continuar.', mbError, MB_OK);
-      Abort;
-    end;
-    Log('Actualización: se conserva la configuración protegida existente sin modificarla: ' + ProtectedPath);
-  end
-  else
-    ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
+  ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
   { sc.exe necesita que el valor completo de binPath sea un argumento entre comillas
     y que las comillas internas de la ruta del ejecutable lleguen escapadas. Sin este
     formato devuelve ERROR_INVALID_COMMAND_LINE (1639) cuando la ruta contiene espacios. }
@@ -477,9 +394,7 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-  if CurStep = ssInstall then
-    StopAndDeleteService
-  else if CurStep = ssPostInstall then
+  if CurStep = ssPostInstall then
     ConfigureAndStartService;
 end;
 
@@ -497,23 +412,6 @@ function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo,
 var
   DetectionSummary: string;
 begin
-  if ExistingConfigValid then
-  begin
-    Result :=
-      'Instalación:' + NewLine +
-      '  ' + ExpandConstant('{app}') + NewLine + NewLine +
-      'Conector:' + NewLine +
-      '  Se detectó una configuración existente en este equipo (' + ProtectedConfigPath + ').' + NewLine +
-      '  Se conservará tal cual: servidor, base, usuario, contraseña, el vínculo del' + NewLine +
-      '  equipo (si ya lo hiciste desde el panel) y la cola local de sincronización NO' + NewLine +
-      '  se modifican.' + NewLine + NewLine +
-      'Backend:' + NewLine +
-      '  ' + AgentApiUrl + NewLine + NewLine +
-      'Se actualizará el servicio "RestaurantAgent Sync Agent" a esta versión sin pedir' + NewLine +
-      'ni sobrescribir ningún dato de configuración.';
-    Exit;
-  end;
-
   if DetectedIniPath <> '' then
     DetectionSummary := 'Detectado desde: ' + DetectedIniPath + NewLine
   else

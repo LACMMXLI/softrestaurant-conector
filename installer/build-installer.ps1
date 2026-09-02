@@ -22,9 +22,13 @@ if (-not (Test-Path -LiteralPath $iscc -PathType Leaf)) {
 if ($ApiUrl -notmatch '^https://') {
     throw 'ApiUrl debe usar HTTPS.'
 }
-if ([string]::IsNullOrWhiteSpace($SqlUser) -or [string]::IsNullOrEmpty($SqlPassword)) {
-    throw 'Define SqlUser y SRX_INSTALLER_SQL_PASSWORD (o -SqlPassword) para generar el instalador preconfigurado.'
+if ([string]::IsNullOrWhiteSpace($SqlUser)) {
+    throw 'SqlUser no puede estar vacío.'
 }
+
+# Si no se proporciona una contraseña durante el build, el instalador la solicita
+# en la instalación limpia. Así el artefacto final no depende de secretos ni archivos
+# preexistentes y tampoco incrusta una contraseña SQL en el ejecutable.
 
 $buildKind = if ($TestBuild) { 'TEST' } else { 'x64' }
 $outputName = "RestaurantAgent-Sync-Agent-$Version-$buildKind"
