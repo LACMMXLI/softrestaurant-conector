@@ -12,6 +12,7 @@ type DashboardScreenProps = {
   error: string | null
   onRetry: () => void
   onOpenTicket: (folio: number) => void
+  onOpenAccount: (tempFolio: number) => void
   onOpenSales: () => void
 }
 
@@ -21,6 +22,7 @@ export function DashboardScreen({
   error,
   onRetry,
   onOpenTicket,
+  onOpenAccount,
   onOpenSales,
 }: DashboardScreenProps) {
   if (loading && !data) return <DashboardSkeleton />
@@ -111,7 +113,7 @@ export function DashboardScreen({
               {data.openAccounts.length > 0 ? (
                 <div className="ticket-list">
                   {data.openAccounts.map((account) => (
-                    <div className="ticket-row transient-row" key={`${account.tempFolio}:${account.checkNumber ?? ''}`}>
+                    <button className="ticket-row transient-row" type="button" key={`${account.tempFolio}:${account.checkNumber ?? ''}`} onClick={() => onOpenAccount(account.tempFolio)}>
                       <span className="ticket-status-rail" data-state="open" />
                       <span className="ticket-main">
                         <span className="ticket-title">Cuenta {account.checkNumber || `temporal ${account.tempFolio}`}</span>
@@ -123,7 +125,7 @@ export function DashboardScreen({
                       </span>
                       <strong>{formatAmount(account.total)}</strong>
                       <span className="transient-badge">Abierta</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (

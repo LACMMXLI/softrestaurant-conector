@@ -15,6 +15,7 @@ import type { BusinessDashboard, BusinessMembership, DashboardBranch, DashboardH
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
 type Tab = 'home' | 'sales' | 'operations' | 'businesses' | 'more'
+type SelectedTicket = { folio: number; openAccount: boolean }
 
 const storedBranchKey = 'sr-dashboard:v1:branch'
 
@@ -35,7 +36,7 @@ export function App() {
   const [dashboardError, setDashboardError] = useState<string | null>(null)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loginBusy, setLoginBusy] = useState(false)
-  const [selectedFolio, setSelectedFolio] = useState<number | null>(null)
+  const [selectedTicket, setSelectedTicket] = useState<SelectedTicket | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const currentBranch = useMemo(
@@ -54,10 +55,10 @@ export function App() {
     setBusinessDashboard(null)
     setShifts([])
     setShiftId(null)
-    setSelectedFolio(null)
+    setSelectedTicket(null)
   }, [])
 
-  const closeTicket = useCallback(() => setSelectedFolio(null), [])
+  const closeTicket = useCallback(() => setSelectedTicket(null), [])
 
   const updateBranch = useCallback((next: DashboardBranch) => {
     setBranches((current) => current.map((branch) => (branch.code === next.code ? next : branch)))
@@ -314,12 +315,13 @@ export function App() {
               loading={dashboardLoading}
               error={dashboardError}
               onRetry={() => setRefreshKey((value) => value + 1)}
-              onOpenTicket={setSelectedFolio}
+              onOpenTicket={(folio) => setSelectedTicket({ folio, openAccount: false })}
+              onOpenAccount={(folio) => setSelectedTicket({ folio, openAccount: true })}
               onOpenSales={() => setTab('sales')}
             />
           ) : null}
           {tab === 'sales' ? (
-            <SalesScreen key={`${branchCode}:${shiftId}`} branchCode={branchCode} date={date} shiftId={shiftId} onOpenTicket={setSelectedFolio} onUnauthorized={becomeAnonymous} />
+            <SalesScreen key={`${branchCode}:${shiftId}`} branchCode={branchCode} date={date} shiftId={shiftId} onOpenTicket={(folio) => setSelectedTicket({ folio, openAccount: false })} onUnauthorized={becomeAnonymous} />
           ) : null}
           {tab === 'operations' ? (
             <OperationsScreen
@@ -350,8 +352,8 @@ export function App() {
         </nav>
       </div>
 
-      {selectedFolio !== null ? (
-        <TicketSheet branchCode={branchCode} folio={selectedFolio} onClose={closeTicket} onUnauthorized={becomeAnonymous} />
+      {selectedTicket !== null ? (
+        <TicketSheet branchCode={branchCode} folio={selectedTicket.folio} openAccount={selectedTicket.openAccount} onClose={closeTicket} onUnauthorized={becomeAnonymous} />
       ) : null}
     </div>
   )

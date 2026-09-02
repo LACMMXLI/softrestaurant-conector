@@ -117,4 +117,6 @@ export const api = {
   },
   ticket: (branchCode: string, folio: number, signal?: AbortSignal) =>
     request<TicketDetail>(`/api/web/sales/${encodeURIComponent(branchCode)}/${folio}`, { signal }),
+  openAccount: (branchCode: string, tempFolio: number, signal?: AbortSignal) =>
+    request<TicketDetail>(`/api/web/open-accounts/${encodeURIComponent(branchCode)}/${tempFolio}`, { signal }),
 }

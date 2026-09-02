@@ -623,6 +623,75 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             payments);
     }
 
+    public async Task<TicketDetail?> GetOpenAccountAsync(
+        DashboardUser user,
+        string branchCode,
+        long tempFolio,
+        CancellationToken ct)
+    {
+        var branch = await GetBranchIdentityAsync(user, branchCode, ct);
+        if (branch is null) return null;
+
+        SalesTicketItem? ticket = null;
+        string? station = null;
+        string? restaurantArea = null;
+        string? waiterId = null;
+        string? accountKey = null;
+
+        await using (var command = dataSource.CreateCommand("""
+            SELECT idempotency_key, source_temp_folio, check_number, opened_at, closed_at, total, tip,
+                   paid, cancelled, payload->>'mesa', payload->>'usuarioPago', true AS transient,
+                   payload->>'estacion', payload->>'idAreaRestaurant', payload->>'idMesero'
+            FROM transient_sales
+            WHERE branch_id = $1 AND source_temp_folio = $2
+              AND NOT paid AND NOT cancelled AND closed_at IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM sales s
+                  WHERE s.branch_id = transient_sales.branch_id
+                    AND s.source_shift_id = transient_sales.source_shift_id
+                    AND s.source_temp_folio = transient_sales.source_temp_folio)
+            ORDER BY updated_at DESC
+            LIMIT 1;
+            """))
+        {
+            command.Parameters.AddWithValue(branch.Value.Id);
+            command.Parameters.AddWithValue(tempFolio);
+            await using var reader = await command.ExecuteReaderAsync(ct);
+            if (!await reader.ReadAsync(ct)) return null;
+            accountKey = reader.GetString(0);
+            ticket = new SalesTicketItem(
+                reader.GetInt64(1), ReadNullableString(reader, 2), ReadNullableDateTime(reader, 3),
+                ReadNullableDateTime(reader, 4), ReadNullableDecimal(reader, 5), ReadNullableDecimal(reader, 6),
+                reader.GetBoolean(7), reader.GetBoolean(8), ReadNullableString(reader, 9),
+                ReadNullableString(reader, 10), reader.GetBoolean(11));
+            station = ReadNullableString(reader, 12);
+            restaurantArea = ReadNullableString(reader, 13);
+            waiterId = ReadNullableString(reader, 14);
+        }
+
+        var lines = new List<TicketLineItem>();
+        await using (var command = dataSource.CreateCommand("""
+            SELECT product_id, NULLIF(payload->>'descripcionProducto', ''), quantity, price,
+                   NULLIF(payload->>'descuento', '')::numeric, payload->>'comentario'
+            FROM transient_sale_lines
+            WHERE branch_id = $1 AND header_key = $2
+            ORDER BY NULLIF(payload->>'hora', '')::timestamp NULLS LAST, idempotency_key;
+            """))
+        {
+            command.Parameters.AddWithValue(branch.Value.Id);
+            command.Parameters.AddWithValue(accountKey!);
+            await using var reader = await command.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                lines.Add(new TicketLineItem(
+                    ReadNullableString(reader, 0), ReadNullableString(reader, 1), ReadNullableDecimal(reader, 2),
+                    ReadNullableDecimal(reader, 3), ReadNullableDecimal(reader, 4), ReadNullableString(reader, 5)));
+            }
+        }
+
+        return new TicketDetail(ticket, station, restaurantArea, waiterId, null, null, lines, []);
+    }
+
     private async Task<DashboardMeta?> GetMetaAsync(
         DashboardUser user,
         string branchCode,

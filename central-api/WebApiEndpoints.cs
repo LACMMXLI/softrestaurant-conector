@@ -483,6 +483,23 @@ internal static class WebApiEndpoints
             var ticket = await reports.GetTicketAsync(user, branchCode, folio, ct);
             return ticket is null ? Results.NotFound() : Results.Ok(ticket);
         });
+
+        group.MapGet("/open-accounts/{branchCode}/{tempFolio:long}", async (
+            HttpContext context,
+            string branchCode,
+            long tempFolio,
+            WebAuthService auth,
+            DashboardReportService reports,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            if (tempFolio <= 0) return Results.BadRequest(new { error = "Folio temporal inválido." });
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var account = await reports.GetOpenAccountAsync(user, branchCode, tempFolio, ct);
+            return account is null ? Results.NotFound() : Results.Ok(account);
+        });
     }
 
     private static IResult? ValidateBranchCode(string branchCode) =>

@@ -7,17 +7,18 @@ import type { TicketDetail } from '../types'
 type TicketSheetProps = {
   branchCode: string
   folio: number
+  openAccount?: boolean
   onClose: () => void
   onUnauthorized: () => void
 }
 
-export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: TicketSheetProps) {
+export function TicketSheet({ branchCode, folio, openAccount = false, onClose, onUnauthorized }: TicketSheetProps) {
   const [detail, setDetail] = useState<TicketDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
-    api.ticket(branchCode, folio, controller.signal)
+    ;(openAccount ? api.openAccount(branchCode, folio, controller.signal) : api.ticket(branchCode, folio, controller.signal))
       .then(setDetail)
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === 'AbortError') return
@@ -25,7 +26,7 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
         else setError(reason instanceof Error ? reason.message : 'No fue posible abrir el ticket.')
       })
     return () => controller.abort()
-  }, [branchCode, folio, onUnauthorized])
+  }, [branchCode, folio, onUnauthorized, openAccount])
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -50,17 +51,17 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
         {detail ? (
           <>
             <header className="sheet-header">
-              <p className="utility-label">Rastro del ticket</p>
-              <h2 id="ticket-sheet-title">Ticket {detail.ticket.checkNumber || detail.ticket.folio}</h2>
+              <p className="utility-label">{openAccount ? 'Comanda en curso' : 'Rastro del ticket'}</p>
+              <h2 id="ticket-sheet-title">{openAccount ? 'Cuenta' : 'Ticket'} {detail.ticket.checkNumber || detail.ticket.folio}</h2>
               <div className="sheet-ticket-meta">
                 <span>{formatTime(detail.ticket.closedAt ?? detail.ticket.openedAt)}</span>
                 {detail.ticket.table ? <span>Mesa {detail.ticket.table}</span> : null}
-                {detail.ticket.cancelled ? <span className="danger-text"><Ban size={14} /> Cancelado</span> : <span>Pagado</span>}
+                {detail.ticket.cancelled ? <span className="danger-text"><Ban size={14} /> Cancelado</span> : openAccount ? <span className="transient-badge">Abierta · sin pagar</span> : <span>Pagado</span>}
               </div>
             </header>
 
             <section className="sheet-total">
-              <span>Total registrado</span>
+              <span>{openAccount ? 'Total pendiente' : 'Total registrado'}</span>
               <strong>{formatAmount(detail.ticket.total)}</strong>
               {detail.ticket.tip !== null ? <small>Propina: {formatAmount(detail.ticket.tip)}</small> : null}
             </section>
@@ -88,7 +89,7 @@ export function TicketSheet({ branchCode, folio, onClose, onUnauthorized }: Tick
 
             <section className="sheet-section">
               <div className="sheet-section-title"><CreditCard size={18} /><h3>Pagos</h3></div>
-              {detail.payments.length === 0 ? <p className="quiet-empty">Sin pagos sincronizados.</p> : (
+              {detail.payments.length === 0 ? <p className="quiet-empty">{openAccount ? 'Esta cuenta todavía no tiene pagos registrados.' : 'Sin pagos sincronizados.'}</p> : (
                 <div className="detail-rows">
                   {detail.payments.map((payment, index) => (
                     <div className="detail-row" key={`${payment.paymentMethodId ?? 'sin-id'}-${index}`}>
