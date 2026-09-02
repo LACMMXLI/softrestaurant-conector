@@ -597,6 +597,22 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
 .data-note { margin-top: 10px; padding: 10px 12px; border-radius: 11px; background: #f2f6f5; color: var(--ink-soft); font-size: .64rem; line-height: 1.5; }
 .cancellation-note { display: grid; gap: 4px; margin-top: 12px; padding: 13px; border-radius: 13px; background: var(--red-soft); color: #833434; font-size: .72rem; }
 
+.install-app-card { display: flex; align-items: center; gap: 14px; }
+.install-app-card h2 { font-size: 1rem; }
+.install-app-card p { margin-top: 3px; color: var(--ink-soft); font-size: .75rem; line-height: 1.45; }
+.install-app-card .install-app-button { flex: none; margin-left: auto; border: 1px solid var(--line); }
+.install-app-button { position: relative; }
+.install-app-dot { position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 2px var(--paper); animation: install-pulse 2.2s ease-in-out infinite; }
+@keyframes install-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.25); opacity: .7; } }
+.install-app-sheet { max-width: 460px; }
+.install-app-sheet .sheet-header h2 { display: flex; align-items: center; gap: 9px; font-size: 1.3rem; }
+.install-app-sheet .sheet-header p { margin-top: 9px; color: var(--ink-soft); font-size: .84rem; line-height: 1.55; }
+.install-app-cta { margin-top: 20px; }
+.install-app-steps { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+.install-app-steps li { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #f2f6f5; color: var(--ink); font-size: .82rem; line-height: 1.4; }
+.install-app-steps li svg { flex: 0 0 auto; color: var(--teal); }
+.install-app-dismiss { width: 100%; margin-top: 18px; }
+
 .skeleton { position: relative; overflow: hidden; border-radius: 20px; background: #dfe7e5; }
 .skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); animation: shimmer 1.35s infinite; }
 .pulse-skeleton { height: 260px; }
