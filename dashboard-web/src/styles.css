@@ -228,8 +228,16 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
   backdrop-filter: blur(16px);
 }
 
-.mobile-brand { display: flex; align-items: center; gap: 7px; font-weight: 850; letter-spacing: -0.04em; }
-.mobile-brand svg { color: var(--teal); }
+.product-brand { display: inline-flex; align-items: center; gap: 9px; min-width: 0; color: inherit; }
+.product-brand__mark { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 12px; object-fit: cover; }
+.product-brand__name { display: grid; min-width: 0; line-height: 1; }
+.product-brand__name strong { font-size: 1rem; letter-spacing: -.045em; white-space: nowrap; }
+.product-brand__name small { margin-top: 4px; color: #d6a944; font-family: 'IBM Plex Mono', monospace; font-size: .5rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.product-brand--compact { gap: 7px; }
+.product-brand--compact .product-brand__mark { width: 34px; height: 34px; border-radius: 10px; }
+.product-brand--compact .product-brand__name strong { font-size: .78rem; }
+.product-brand--compact .product-brand__name small { font-size: .4rem; }
+.mobile-brand { font-weight: 850; letter-spacing: -0.04em; }
 
 .context-controls { display: flex; align-items: center; gap: 7px; }
 
@@ -616,8 +624,9 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
 @media (min-width: 980px) {
   .app-shell { display: grid; grid-template-columns: 230px minmax(0,1fr); }
   .desktop-sidebar { position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column; padding: 26px 18px; background: var(--night); color: #fff; }
-  .sidebar-brand { display: flex; align-items: center; gap: 9px; padding: 0 9px 28px; font-size: 1.2rem; font-weight: 850; letter-spacing: -.04em; }
-  .sidebar-brand svg { color: #78d7c9; }
+  .sidebar-brand { padding: 0 3px 28px; font-weight: 850; letter-spacing: -.04em; }
+  .sidebar-brand .product-brand__mark { width: 48px; height: 48px; }
+  .sidebar-brand .product-brand__name strong { font-size: 1rem; }
   .desktop-sidebar .nav-items { display: grid; grid-template-columns: 1fr; gap: 5px; }
   .desktop-sidebar .nav-item { min-height: 48px; grid-template-columns: 25px 1fr; justify-items: start; align-content: center; padding: 0 13px; }
   .desktop-sidebar .nav-item span { font-size: .78rem; }
@@ -690,15 +699,7 @@ html { scroll-behavior: smooth; }
   border-bottom: 1px solid rgba(255, 255, 255, .1);
 }
 
-.landing-logo { display: inline-flex; align-items: center; gap: 10px; color: #fff; }
-.landing-logo__mark { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 12px; background: var(--landing-blue); box-shadow: 0 8px 20px rgba(47, 145, 255, .22); }
-.landing-logo > span:last-child { display: grid; line-height: 1; }
-.landing-logo strong { font-size: 1rem; letter-spacing: -.035em; }
-.landing-logo small { margin-top: 4px; color: #8dc5ff; font-family: 'IBM Plex Mono', monospace; font-size: .48rem; letter-spacing: .06em; text-transform: uppercase; }
-.landing-logo--compact { gap: 7px; }
-.landing-logo--compact .landing-logo__mark { width: 30px; height: 30px; border-radius: 9px; }
-.landing-logo--compact strong { font-size: .76rem; }
-.landing-logo--compact small { font-size: .37rem; }
+.landing-logo { color: #fff; }
 
 .landing-links { display: flex; justify-content: center; gap: 36px; font-size: .8rem; font-weight: 650; }
 .landing-links a { position: relative; padding-block: 32px; color: rgba(255,255,255,.82); }
@@ -730,8 +731,7 @@ html { scroll-behavior: smooth; }
 .laptop-base { width: 650px; height: 17px; margin-left: -30px; border-radius: 3px 3px 55px 55px; background: linear-gradient(#e6e9ed, #9299a2); box-shadow: inset 0 2px #fff; }
 .preview-sidebar { display: flex; flex-direction: column; gap: 17px; padding: 18px 12px; background: #102a47; color: #b8c9dc; font-size: .58rem; }
 .preview-sidebar .landing-logo { margin-bottom: 13px; }
-.preview-sidebar .landing-logo > span:last-child { display: none; }
-.preview-sidebar .landing-logo__mark { background: transparent; box-shadow: none; }
+.preview-sidebar .landing-logo .product-brand__name { display: none; }
 .preview-content { padding: 27px 28px; color: #18304c; }
 .preview-topline { display: flex; justify-content: space-between; font-size: .69rem; font-weight: 800; }
 .preview-live { display: flex; align-items: center; gap: 4px; color: #1eaa77; font-size: .48rem; }
@@ -747,8 +747,8 @@ html { scroll-behavior: smooth; }
 .phone-device { position: absolute; z-index: 2; bottom: 42px; left: -12px; width: 176px; height: 350px; overflow: hidden; padding: 25px 16px 0; border: 7px solid #111820; border-radius: 31px; background: #f9fbfe; color: #1a334e; box-shadow: 0 25px 35px rgba(0,0,0,.36), inset 0 0 0 1px #89929c; }
 .phone-speaker { position: absolute; top: 7px; left: 63px; width: 43px; height: 4px; border-radius: 4px; background: #35404b; }
 .phone-head { display: flex; align-items: center; justify-content: space-between; font-size: .6rem; }
-.phone-head .landing-logo > span:last-child { display: none; }
-.phone-head .landing-logo__mark { width: 25px; height: 25px; background: transparent; color: #246faf; box-shadow: none; }
+.phone-head .landing-logo .product-brand__name { display: none; }
+.phone-head .landing-logo .product-brand__mark { width: 25px; height: 25px; }
 .phone-device > p { margin-top: 18px; color: #718196; font-size: .54rem; }
 .phone-device > strong { display: block; margin-top: 8px; font-size: .93rem; letter-spacing: -.04em; }
 .phone-status { display: block; margin-top: 5px; color: #1ea576; font-size: .46rem; }
@@ -770,7 +770,7 @@ html { scroll-behavior: smooth; }
 .section-intro > p:last-of-type,
 .access-copy > p { max-width: 540px; margin-top: 19px; color: var(--landing-muted); font-size: .93rem; line-height: 1.7; }
 .connection-note { margin-top: 28px; display: flex; align-items: center; gap: 19px; padding: 17px 20px; border-radius: 12px; background: #f3f7fc; color: #5f7086; font-size: .74rem; }
-.connection-note .landing-logo > span:last-child { display: none; }
+.connection-note .landing-logo .product-brand__name { display: none; }
 .connection-note span { display: grid; gap: 4px; }
 .connection-note strong { color: var(--landing-blue); }
 .capability-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px 28px; }
@@ -910,7 +910,7 @@ html { scroll-behavior: smooth; }
 }
 
 @media (max-width: 480px) {
-  .landing-logo__mark { width: 35px; height: 35px; }
+  .landing-logo .product-brand__mark { width: 35px; height: 35px; }
   .hero-actions { align-items: stretch; flex-direction: column; }
   .landing-button { width: 100%; }
   .hero-trust span { width: calc(50% - 10px); }

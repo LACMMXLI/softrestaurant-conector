@@ -1,5 +1,14 @@
-const SHELL_CACHE = 'pulso-shell-v1'
-const SHELL_URLS = ['/', '/manifest.webmanifest', '/app-icon.svg']
+const SHELL_CACHE = 'restaurant-agent-shell-v2'
+const SHELL_URLS = [
+  '/',
+  '/manifest.webmanifest',
+  '/brand-mark.png',
+  '/brand-logo.png',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-maskable-512.png',
+  '/apple-touch-icon.png',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_URLS)))

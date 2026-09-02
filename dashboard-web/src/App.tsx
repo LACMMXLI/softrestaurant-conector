@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BarChart3, Building2, CreditCard, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
+import { Brand } from './components/Brand'
 import { LoginScreen } from './components/LoginScreen'
 import { TicketSheet } from './components/TicketSheet'
 import { dateInTimezone } from './format'
@@ -178,8 +179,8 @@ export function App() {
   if (sessionState === 'loading') {
     return (
       <main className="startup-screen" aria-label="Iniciando dashboard">
-        <span className="brand-mark"><ReceiptText size={26} /></span>
-        <p>Preparando el pulso operativo…</p>
+        <Brand compact />
+        <p>Preparando RestaurantAgent…</p>
       </main>
     )
   }
@@ -215,7 +216,7 @@ export function App() {
       <div className="app-shell">
         <div className="app-column">
           <header className="app-header">
-            <div className="mobile-brand"><ReceiptText size={20} /><span>Pulso</span></div>
+            <Brand compact className="mobile-brand" />
           </header>
           <main className="app-main">
             <BusinessesScreen onUnauthorized={becomeAnonymous} />
@@ -229,14 +230,14 @@ export function App() {
   return (
     <div className="app-shell">
       <aside className="desktop-sidebar">
-        <div className="sidebar-brand"><ReceiptText size={22} /><span>Pulso</span></div>
+        <Brand className="sidebar-brand" />
         <Navigation tab={tab} onChange={setTab} />
         <div className="sidebar-user"><UserRound size={18} /><span>{user.displayName}</span></div>
       </aside>
 
       <div className="app-column">
         <header className="app-header">
-          <div className="mobile-brand"><ReceiptText size={20} /><span>Pulso</span></div>
+          <Brand compact className="mobile-brand" />
           <div className="context-controls">
             <label className="context-select">
               <Store size={17} aria-hidden="true" />

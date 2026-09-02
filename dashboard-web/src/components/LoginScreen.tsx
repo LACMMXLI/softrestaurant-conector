@@ -21,6 +21,7 @@ import {
   Wifi,
   X,
 } from 'lucide-react'
+import { Brand } from './Brand'
 
 type LoginScreenProps = {
   error: string | null
@@ -55,12 +56,7 @@ const plans = [
 ]
 
 function ProductLogo({ compact = false }: { compact?: boolean }) {
-  return (
-    <span className={`landing-logo${compact ? ' landing-logo--compact' : ''}`}>
-      <span className="landing-logo__mark"><ReceiptText size={compact ? 18 : 22} strokeWidth={2} /></span>
-      <span><strong>RestaurantAgent</strong><small>Pulso operativo</small></span>
-    </span>
-  )
+  return <Brand compact={compact} className="landing-logo" />
 }
 
 function DashboardPreview() {
