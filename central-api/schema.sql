@@ -284,7 +284,8 @@ CREATE TABLE IF NOT EXISTS app_users (
     email text NOT NULL,
     display_name text NOT NULL,
     password_hash text NOT NULL,
-    role text NOT NULL CHECK (role IN ('SUPERADMIN', 'OWNER', 'MANAGER', 'VIEWER')),
+    -- Rol de plataforma. Los permisos del negocio viven en business_members.
+    role text NOT NULL DEFAULT 'USER' CHECK (role IN ('SUPERADMIN', 'USER')),
     active boolean NOT NULL DEFAULT true,
     last_login_at timestamptz NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -318,22 +319,8 @@ BEGIN
 END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS ux_app_users_email_lower ON app_users(lower(email));
 
--- Migración compatible: bases existentes tienen el CHECK sin SUPERADMIN (panel admin del SaaS).
-DO $$
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM pg_constraint WHERE conname = 'app_users_role_check'
-    ) THEN
-        ALTER TABLE app_users DROP CONSTRAINT app_users_role_check;
-    END IF;
-    ALTER TABLE app_users ADD CONSTRAINT app_users_role_check
-        CHECK (role IN ('SUPERADMIN', 'OWNER', 'MANAGER', 'VIEWER'));
-END $$;
-
--- Relación muchos-a-muchos entre cuentas OWNER/MANAGER/VIEWER y las sucursales a las que
--- tienen acceso. Ya la usa DashboardReportService para acotar /api/web/* a las sucursales
--- asignadas; la fase de "gestión de usuarios" del panel admin reutilizará esta misma tabla
--- para asignar/quitar sucursales a una cuenta en vez de crear un esquema nuevo.
+-- Tabla heredada de asignación por sucursal. Se conserva para que bases legacy puedan
+-- migrar sus asociaciones a business_members sin eliminar evidencia ni accesos.
 CREATE TABLE IF NOT EXISTS app_user_branches (
     user_id uuid NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     branch_id uuid NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
@@ -396,41 +383,41 @@ CREATE TABLE IF NOT EXISTS business_members (
 );
 CREATE INDEX IF NOT EXISTS ix_business_members_user ON business_members(user_id);
 
-  -- app_users.role ahora solo distingue operador de plataforma (SUPERADMIN, panel admin) de
-  -- cuenta normal (USER); el permiso real de negocio vive en business_members.role.
-  DO $$
-  BEGIN
-    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'app_users_role_check') THEN
-        ALTER TABLE app_users DROP CONSTRAINT app_users_role_check;
-    END IF;
-    UPDATE app_users SET role = 'USER' WHERE role IN ('OWNER','MANAGER','VIEWER');
-    ALTER TABLE app_users ADD CONSTRAINT app_users_role_check CHECK (role IN ('SUPERADMIN','USER'));
-END $$;
-
--- Backfill: si hay sucursales sin negocio (base existente antes de este cambio), un único
--- negocio bootstrap se queda con todas y hereda los accesos que ya existían en
--- app_user_branches, para no perder datos ni dejar a nadie sin acceso.
+-- Transición legacy -> SaaS. El orden es deliberado: primero se asigna el negocio y se
+-- copian los permisos usando OWNER/MANAGER/VIEWER; solo después se convierte app_users.role
+-- a USER. Así la ejecución es segura tanto en una base legacy como en una ya migrada.
 DO $$
 DECLARE bootstrap_business_id uuid;
 BEGIN
-    IF EXISTS (SELECT 1 FROM branches WHERE business_id IS NULL)
-       AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_user_branches') THEN
+    IF EXISTS (SELECT 1 FROM branches WHERE business_id IS NULL) THEN
         INSERT INTO businesses (name, slug) VALUES ('Negocio principal', 'negocio-principal')
         ON CONFLICT (slug) DO NOTHING;
         SELECT id INTO bootstrap_business_id FROM businesses WHERE slug = 'negocio-principal';
 
         UPDATE branches SET business_id = bootstrap_business_id WHERE business_id IS NULL;
-
-        INSERT INTO business_members (business_id, user_id, role)
-        SELECT DISTINCT bootstrap_business_id, ub.user_id, u.role
-        FROM app_user_branches ub
-        JOIN app_users u ON u.id = ub.user_id
-        WHERE u.role IN ('OWNER','MANAGER','VIEWER')
-        ON CONFLICT DO NOTHING;
     END IF;
+
+    -- Solo las cuentas legacy aportan su rol heredado. Las ya normalizadas conservan las
+    -- filas existentes de business_members y esta inserción se vuelve un no-op.
+    INSERT INTO business_members (business_id, user_id, role)
+    SELECT DISTINCT b.business_id, ub.user_id, u.role
+    FROM app_user_branches ub
+    JOIN branches b ON b.id = ub.branch_id
+    JOIN app_users u ON u.id = ub.user_id
+    WHERE b.business_id IS NOT NULL
+      AND u.role IN ('OWNER','MANAGER','VIEWER')
+    ON CONFLICT (business_id, user_id) DO NOTHING;
+
+    -- La transición del rol de cuenta se hace únicamente después del backfill. Nunca se
+    -- vuelve a crear el CHECK legacy: una base con USER pasa este bloque sin cambios de rol.
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'app_users_role_check') THEN
+        ALTER TABLE app_users DROP CONSTRAINT app_users_role_check;
+    END IF;
+    UPDATE app_users SET role = 'USER' WHERE role IN ('OWNER','MANAGER','VIEWER');
+    ALTER TABLE app_users ADD CONSTRAINT app_users_role_check
+        CHECK (role IN ('SUPERADMIN','USER'));
 END $$;
 
-UPDATE app_users SET role = 'USER' WHERE role IN ('OWNER','MANAGER','VIEWER');
 ALTER TABLE app_users ALTER COLUMN role SET DEFAULT 'USER';
 
 -- Solo se exige NOT NULL una vez que el backfill de arriba garantiza que toda sucursal tiene
@@ -502,4 +489,3 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_connector_installations_branch_active
 DROP TABLE IF EXISTS connector_activation_keys;
 ALTER TABLE branches DROP COLUMN IF EXISTS token_hash;
 ALTER TABLE branches DROP COLUMN IF EXISTS legacy_auth_enabled;
-DROP TABLE IF EXISTS app_user_branches;
