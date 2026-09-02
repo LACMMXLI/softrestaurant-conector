@@ -622,9 +622,6 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
 .install-banner-body h3 { margin-top: 4px; font-size: 1rem; color: #fff; letter-spacing: -0.03em; }
 .install-banner-body > p { margin-top: 4px; color: #b7c6c9; font-size: .78rem; line-height: 1.45; }
 .install-banner-cta { width: 100%; justify-content: center; gap: 8px; margin-top: 14px; background: #fff; color: var(--night); }
-.install-banner-steps { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
-.install-banner-steps li { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 11px; background: rgba(255,255,255,.08); color: #e4ecec; font-size: .74rem; line-height: 1.4; }
-.install-banner-steps li svg { flex: none; color: var(--gold); }
 .install-fab {
   position: fixed;
   z-index: 70;

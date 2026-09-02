@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BarChart3, Building2, CreditCard, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { Brand } from './components/Brand'
-import { InstallAppBanner } from './components/InstallAppBanner'
 import { LoginScreen } from './components/LoginScreen'
 import { TicketSheet } from './components/TicketSheet'
 import { dateInTimezone } from './format'
@@ -310,8 +309,6 @@ export function App() {
       {selectedFolio !== null ? (
         <TicketSheet branchCode={branchCode} folio={selectedFolio} onClose={closeTicket} onUnauthorized={becomeAnonymous} />
       ) : null}
-
-      <InstallAppBanner />
     </div>
   )
 }

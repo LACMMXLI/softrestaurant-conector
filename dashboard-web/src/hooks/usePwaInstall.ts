@@ -13,23 +13,9 @@ function isStandalone(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches || navigatorWithIosFlag.standalone === true
 }
 
-function isIos(): boolean {
-  if (typeof window === 'undefined') return false
-  const ua = window.navigator.userAgent
-  // iPadOS 13+ reporta como Mac pero con soporte táctil.
-  const isIpadOs = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1
-  return /iPhone|iPad|iPod/.test(ua) || isIpadOs
-}
-
-function isAndroid(): boolean {
-  if (typeof window === 'undefined') return false
-  return /Android/.test(window.navigator.userAgent)
-}
-
 /**
  * Detecta la posibilidad de instalar el dashboard como PWA y expone el flujo nativo
- * (Android/desktop Chrome vía `beforeinstallprompt`) o la señal para mostrar instrucciones
- * manuales (iOS, que no soporta el prompt nativo).
+ * únicamente cuando el navegador entrega `beforeinstallprompt`.
  */
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
@@ -63,8 +49,6 @@ export function usePwaInstall() {
 
   return {
     installed,
-    ios: isIos(),
-    android: isAndroid(),
     canPromptNatively: deferredPrompt !== null,
     promptInstall,
   }
