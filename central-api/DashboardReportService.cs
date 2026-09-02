@@ -62,6 +62,17 @@ internal sealed record DashboardSummary(
     decimal? OpenAccountsTotal,
     decimal? CurrentActivity);
 
+internal sealed record OpenShiftSnapshotMetrics(
+    long PaidTickets,
+    decimal Sales,
+    decimal Tips,
+    decimal CashSales,
+    decimal CardSales,
+    decimal OtherSales,
+    bool PaymentBreakdownComplete,
+    long OpenAccounts,
+    decimal OpenAccountsTotal);
+
 internal sealed record HourlySalesPoint(int Hour, decimal Sales, long Tickets);
 
 internal sealed record TopProductItem(string ProductId, string ProductName, string? GroupName,
@@ -79,7 +90,8 @@ internal sealed record SalesTicketItem(
     bool Paid,
     bool Cancelled,
     string? Table,
-    string? PaymentUser);
+    string? PaymentUser,
+    bool Transient);
 
 internal sealed record TransientAccountItem(
     long TempFolio,
@@ -307,22 +319,40 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var start = meta.Date.ToDateTime(TimeOnly.MinValue);
         var end = start.AddDays(1);
         await using var command = dataSource.CreateCommand("""
-            WITH totals AS (
-                SELECT l.product_id,
-                       COALESCE(NULLIF(p.description, ''), NULLIF(l.payload->>'descripcionProducto', ''), l.product_id) AS product_name,
-                       p.group_name, p.classification,
-                       SUM(COALESCE(l.quantity, 0)) AS quantity,
-                       SUM(GREATEST(COALESCE(l.quantity, 0) * COALESCE(l.price, 0)
-                           - COALESCE(NULLIF(l.payload->>'descuento', '')::numeric, 0), 0)) AS sales
+            WITH eligible_lines AS (
+                SELECT l.branch_id, l.product_id, l.quantity, l.price, l.payload
                 FROM sale_lines l
-                INNER JOIN products p ON p.branch_id = l.branch_id AND p.product_id = l.product_id
-                WHERE l.branch_id = $1 AND p.classification IN (1, 2) AND COALESCE(l.quantity, 0) > 0
+                WHERE l.branch_id = $1 AND COALESCE(l.quantity, 0) > 0 AND COALESCE(l.price, 0) > 0
                   AND EXISTS (
                       SELECT 1 FROM sales s
                       WHERE s.branch_id = l.branch_id AND s.source_folio = l.source_folio
                         AND s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL
                         AND (($4::integer IS NULL AND s.business_date >= $2 AND s.business_date < $3)
                              OR ($4::integer IS NOT NULL AND COALESCE(s.source_shift_id, NULLIF(s.payload->>'idTurno', '')::integer) = $4)))
+                UNION ALL
+                SELECT tl.branch_id, tl.product_id, tl.quantity, tl.price, tl.payload
+                FROM transient_sale_lines tl
+                INNER JOIN transient_sales ts
+                  ON ts.branch_id = tl.branch_id AND ts.idempotency_key = tl.header_key
+                WHERE tl.branch_id = $1 AND $4::integer IS NOT NULL
+                  AND ts.source_shift_id = $4
+                  AND ts.paid AND NOT ts.cancelled AND ts.closed_at IS NOT NULL
+                  AND COALESCE(tl.quantity, 0) > 0 AND COALESCE(tl.price, 0) > 0
+                  AND NOT EXISTS (
+                      SELECT 1 FROM sales s
+                      WHERE s.branch_id = ts.branch_id
+                        AND s.source_shift_id = ts.source_shift_id
+                        AND s.source_temp_folio = ts.source_temp_folio)
+            ), totals AS (
+                SELECT l.product_id,
+                       COALESCE(NULLIF(p.description, ''), NULLIF(l.payload->>'descripcionProducto', ''), l.product_id) AS product_name,
+                       p.group_name, p.classification,
+                       SUM(COALESCE(l.quantity, 0)) AS quantity,
+                       SUM(GREATEST(COALESCE(l.quantity, 0) * COALESCE(l.price, 0)
+                           - COALESCE(NULLIF(l.payload->>'descuento', '')::numeric, 0), 0)) AS sales
+                FROM eligible_lines l
+                INNER JOIN products p ON p.branch_id = l.branch_id AND p.product_id = l.product_id
+                WHERE p.classification IN (1, 2)
                 GROUP BY l.product_id,
                          COALESCE(NULLIF(p.description, ''), NULLIF(l.payload->>'descripcionProducto', ''), l.product_id),
                          p.group_name, p.classification
@@ -336,7 +366,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(end);
-        command.Parameters.AddWithValue((object?)meta.ShiftId ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
         command.Parameters.AddWithValue(limitPerCategory);
         var foods = new List<TopProductItem>();
         var beverages = new List<TopProductItem>();
@@ -402,7 +432,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using (var command = dataSource.CreateCommand("""
             SELECT source_folio,
                    payload->>'numCheque', business_date, closed_at, total, tip, paid, cancelled,
-                   payload->>'mesa', payload->>'usuarioPago', payload->>'estacion',
+                   payload->>'mesa', payload->>'usuarioPago', false AS transient, payload->>'estacion',
                    payload->>'idAreaRestaurant', payload->>'idMesero',
                    payload->>'razonCancelado', payload->>'usuarioCancelo'
             FROM sales
@@ -416,11 +446,11 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             await using var reader = await command.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct)) return null;
             ticket = ReadTicket(reader);
-            station = ReadNullableString(reader, 10);
-            restaurantArea = ReadNullableString(reader, 11);
-            waiterId = ReadNullableString(reader, 12);
-            cancellationReason = ReadNullableString(reader, 13);
-            cancelledBy = ReadNullableString(reader, 14);
+            station = ReadNullableString(reader, 11);
+            restaurantArea = ReadNullableString(reader, 12);
+            waiterId = ReadNullableString(reader, 13);
+            cancellationReason = ReadNullableString(reader, 14);
+            cancelledBy = ReadNullableString(reader, 15);
         }
 
         var lines = new List<TicketLineItem>();
@@ -701,67 +731,116 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using var reader = await command.ExecuteReaderAsync(ct);
         await reader.ReadAsync(ct);
 
-        var sales = reader.GetDecimal(1);
+        var historicalTickets = reader.GetInt64(0);
+        var historicalSales = reader.GetDecimal(1);
+        var historicalTips = reader.GetDecimal(3);
+        var historicalCashSales = reader.GetDecimal(9);
+        var historicalCardSales = reader.GetDecimal(10);
+        var historicalOtherSales = reader.GetDecimal(11);
+        var openShift = await GetOpenShiftSnapshotMetricsAsync(meta, ct);
+        var tickets = historicalTickets + openShift.PaidTickets;
+        var sales = historicalSales + openShift.Sales;
+        var tips = historicalTips + openShift.Tips;
+        var cashSales = historicalCashSales + openShift.CashSales;
+        var cardSales = historicalCardSales + openShift.CardSales;
+        var otherSales = historicalOtherSales + openShift.OtherSales;
         var previousSales = reader.GetBoolean(15) ? reader.GetDecimal(5) : (decimal?)null;
-        var paymentBreakdownComplete = reader.GetBoolean(14);
+        var paymentBreakdownComplete = tickets > 0
+            && (historicalTickets == 0 || reader.GetBoolean(14))
+            && (openShift.PaidTickets == 0 || openShift.PaymentBreakdownComplete);
         var expectedCash = paymentBreakdownComplete
-            ? reader.GetDecimal(12) + reader.GetDecimal(9) + reader.GetDecimal(7) - reader.GetDecimal(8)
+            ? reader.GetDecimal(12) + cashSales + reader.GetDecimal(7) - reader.GetDecimal(8)
             : (decimal?)null;
-        var cashDifference = expectedCash is null
+        var declaredCash = meta.ShiftIsOpen ? (decimal?)null : reader.GetDecimal(13);
+        var cashDifference = expectedCash is null || declaredCash is null
             ? (decimal?)null
-            : reader.GetDecimal(13) - expectedCash.Value;
+            : declaredCash.Value - expectedCash.Value;
         decimal? change = previousSales is > 0
             ? Math.Round((sales - previousSales.Value) / previousSales.Value * 100m, 1)
             : null;
 
-        var (openAccounts, openAccountsTotal) = await GetTransientSummaryAsync(meta, ct);
-
         return new DashboardSummary(
-            reader.GetInt64(0),
+            tickets,
             sales,
-            reader.GetDecimal(2),
-            reader.GetDecimal(3),
+            tickets > 0 ? sales / tickets : 0,
+            tips,
             reader.GetInt64(4),
             reader.GetInt64(6),
             reader.GetDecimal(7),
             reader.GetDecimal(8),
-            reader.GetDecimal(9),
-            reader.GetDecimal(10),
-            reader.GetDecimal(11),
+            cashSales,
+            cardSales,
+            otherSales,
             reader.GetDecimal(12),
-            reader.GetDecimal(13),
+            declaredCash,
             expectedCash,
             cashDifference,
             paymentBreakdownComplete,
             previousSales,
             change,
-            openAccounts,
-            openAccountsTotal,
-            sales + openAccountsTotal);
+            openShift.OpenAccounts,
+            openShift.OpenAccountsTotal,
+            sales + openShift.OpenAccountsTotal);
     }
 
-    private async Task<(long Count, decimal Total)> GetTransientSummaryAsync(
+    private async Task<OpenShiftSnapshotMetrics> GetOpenShiftSnapshotMetricsAsync(
         DashboardMeta meta,
         CancellationToken ct)
     {
-        if (!meta.ShiftIsOpen || meta.ShiftNumber is null) return (0, 0);
+        if (!meta.ShiftIsOpen || meta.ShiftNumber is null)
+            return new OpenShiftSnapshotMetrics(0, 0, 0, 0, 0, 0, false, 0, 0);
         await using var command = dataSource.CreateCommand("""
-            SELECT COUNT(*), COALESCE(SUM(ts.total), 0)
-            FROM transient_sales ts
-            WHERE ts.branch_id = $1
-              AND ts.source_shift_id = $2
-              AND NOT ts.cancelled
-              AND NOT EXISTS (
-                  SELECT 1 FROM sales s
-                  WHERE s.branch_id = ts.branch_id
-                    AND s.source_shift_id = ts.source_shift_id
-                    AND s.source_temp_folio = ts.source_temp_folio);
+            WITH active_transient AS (
+                SELECT ts.*
+                FROM transient_sales ts
+                WHERE ts.branch_id = $1
+                  AND ts.source_shift_id = $2
+                  AND NOT ts.cancelled
+                  AND NOT EXISTS (
+                      SELECT 1 FROM sales s
+                      WHERE s.branch_id = ts.branch_id
+                        AND s.source_shift_id = ts.source_shift_id
+                        AND s.source_temp_folio = ts.source_temp_folio)
+            ), paid_transient AS (
+                SELECT * FROM active_transient WHERE paid AND closed_at IS NOT NULL
+            )
+            SELECT
+                (SELECT COUNT(*) FROM paid_transient),
+                COALESCE((SELECT SUM(total) FROM paid_transient), 0),
+                COALESCE((SELECT SUM(tip) FROM paid_transient), 0),
+                COALESCE((SELECT SUM(tp.amount * COALESCE(NULLIF(tp.exchange_rate, 0), 1))
+                    FROM transient_sale_payments tp
+                    INNER JOIN paid_transient pts ON pts.branch_id = tp.branch_id AND pts.idempotency_key = tp.header_key
+                    WHERE NULLIF(tp.payload->>'tipoFormaDePago', '')::integer = 1), 0),
+                COALESCE((SELECT SUM(tp.amount * COALESCE(NULLIF(tp.exchange_rate, 0), 1))
+                    FROM transient_sale_payments tp
+                    INNER JOIN paid_transient pts ON pts.branch_id = tp.branch_id AND pts.idempotency_key = tp.header_key
+                    WHERE NULLIF(tp.payload->>'tipoFormaDePago', '')::integer = 2), 0),
+                COALESCE((SELECT SUM(tp.amount * COALESCE(NULLIF(tp.exchange_rate, 0), 1))
+                    FROM transient_sale_payments tp
+                    INNER JOIN paid_transient pts ON pts.branch_id = tp.branch_id AND pts.idempotency_key = tp.header_key
+                    WHERE NULLIF(tp.payload->>'tipoFormaDePago', '')::integer IN (3, 4)), 0),
+                NOT EXISTS (
+                    SELECT 1 FROM paid_transient pts
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM transient_sale_payments tp
+                        WHERE tp.branch_id = pts.branch_id AND tp.header_key = pts.idempotency_key))
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM transient_sale_payments tp
+                    INNER JOIN paid_transient pts ON pts.branch_id = tp.branch_id AND pts.idempotency_key = tp.header_key
+                    WHERE NULLIF(tp.payload->>'tipoFormaDePago', '') IS NULL),
+                (SELECT COUNT(*) FROM active_transient WHERE NOT paid),
+                COALESCE((SELECT SUM(total) FROM active_transient WHERE NOT paid), 0);
             """);
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(meta.ShiftNumber.Value);
         await using var reader = await command.ExecuteReaderAsync(ct);
         await reader.ReadAsync(ct);
-        return (reader.GetInt64(0), reader.GetDecimal(1));
+        return new OpenShiftSnapshotMetrics(
+            reader.GetInt64(0), reader.GetDecimal(1), reader.GetDecimal(2),
+            reader.GetDecimal(3), reader.GetDecimal(4), reader.GetDecimal(5),
+            reader.GetBoolean(6), reader.GetInt64(7), reader.GetDecimal(8));
     }
 
     private async Task<IReadOnlyList<TransientAccountItem>> GetTransientAccountItemsAsync(
@@ -777,6 +856,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             WHERE ts.branch_id = $1
               AND ts.source_shift_id = $2
               AND NOT ts.cancelled
+              AND NOT ts.paid
               AND NOT EXISTS (
                   SELECT 1 FROM sales s
                   WHERE s.branch_id = ts.branch_id
@@ -812,13 +892,28 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
     {
         var start = meta.Date.ToDateTime(TimeOnly.MinValue);
         await using var command = dataSource.CreateCommand("""
+            WITH paid_activity AS (
+                SELECT closed_at, total
+                FROM sales
+                WHERE branch_id = $1
+                  AND (($4::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                       OR ($4::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4))
+                  AND paid AND NOT cancelled AND closed_at IS NOT NULL
+                UNION ALL
+                SELECT ts.closed_at, ts.total
+                FROM transient_sales ts
+                WHERE ts.branch_id = $1 AND $4::integer IS NOT NULL
+                  AND ts.source_shift_id = $4
+                  AND ts.paid AND NOT ts.cancelled AND ts.closed_at IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM sales s
+                      WHERE s.branch_id = ts.branch_id
+                        AND s.source_shift_id = ts.source_shift_id
+                        AND s.source_temp_folio = ts.source_temp_folio)
+            )
             SELECT EXTRACT(HOUR FROM closed_at)::int AS hour,
                    COALESCE(SUM(total), 0), COUNT(*)
-            FROM sales
-            WHERE branch_id = $1
-              AND (($4::integer IS NULL AND business_date >= $2 AND business_date < $3)
-                   OR ($4::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4))
-              AND paid AND NOT cancelled AND closed_at IS NOT NULL
+            FROM paid_activity
             GROUP BY 1
             ORDER BY 1;
             """);
@@ -843,15 +938,33 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var start = meta.Date.ToDateTime(TimeOnly.MinValue);
         var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
         await using var command = dataSource.CreateCommand("""
-            SELECT source_folio,
-                   payload->>'numCheque', business_date, closed_at, total, tip, paid, cancelled,
-                   payload->>'mesa', payload->>'usuarioPago'
-            FROM sales
-            WHERE branch_id = $1
-              AND (($4::integer IS NULL AND business_date >= $2 AND business_date < $3)
-                   OR ($4::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4))
-              AND ($5::text IS NULL OR source_folio::text ILIKE '%' || $5 || '%'
-                   OR COALESCE(payload->>'numCheque', '') ILIKE '%' || $5 || '%')
+            WITH ticket_activity AS (
+                SELECT source_folio, payload->>'numCheque' AS check_number, business_date, closed_at,
+                       total, tip, paid, cancelled, payload->>'mesa' AS table_name,
+                       payload->>'usuarioPago' AS payment_user, false AS transient
+                FROM sales
+                WHERE branch_id = $1
+                  AND (($4::integer IS NULL AND business_date >= $2 AND business_date < $3)
+                       OR ($4::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $4))
+                  AND ($5::text IS NULL OR source_folio::text ILIKE '%' || $5 || '%'
+                       OR COALESCE(payload->>'numCheque', '') ILIKE '%' || $5 || '%')
+                UNION ALL
+                SELECT ts.source_temp_folio, ts.check_number, ts.opened_at, ts.closed_at,
+                       ts.total, ts.tip, ts.paid, ts.cancelled, ts.payload->>'mesa',
+                       ts.payload->>'usuarioPago', true AS transient
+                FROM transient_sales ts
+                WHERE ts.branch_id = $1 AND $4::integer IS NOT NULL
+                  AND ts.source_shift_id = $4
+                  AND ts.paid AND NOT ts.cancelled AND ts.closed_at IS NOT NULL
+                  AND ($5::text IS NULL OR ts.source_temp_folio::text ILIKE '%' || $5 || '%'
+                       OR COALESCE(ts.check_number, '') ILIKE '%' || $5 || '%')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM sales s
+                      WHERE s.branch_id = ts.branch_id
+                        AND s.source_shift_id = ts.source_shift_id
+                        AND s.source_temp_folio = ts.source_temp_folio)
+            )
+            SELECT * FROM ticket_activity
             ORDER BY COALESCE(closed_at, business_date) DESC NULLS LAST, source_folio DESC
             LIMIT $6 OFFSET $7;
             """);
@@ -972,7 +1085,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         reader.GetBoolean(6),
         reader.GetBoolean(7),
         ReadNullableString(reader, 8),
-        ReadNullableString(reader, 9));
+        ReadNullableString(reader, 9),
+        reader.GetBoolean(10));
 
     private string GetFreshness(DateTime? lastSyncAt)
     {

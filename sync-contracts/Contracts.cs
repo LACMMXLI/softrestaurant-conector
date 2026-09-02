@@ -55,9 +55,9 @@ public sealed record SaleHeader
 }
 
 /// <summary>
-/// Snapshot de una cuenta que todavía vive en dbo.tempcheques. No representa una
-/// venta definitiva: puede cambiar, cancelarse o desaparecer cuando SoftRestaurant
-/// la traslada a dbo.cheques.
+/// Snapshot de una cuenta que todavía vive en dbo.tempcheques. Mientras el turno está
+/// abierto, SoftRestaurant conserva aquí tanto tickets ya cobrados como cuentas pendientes;
+/// ambos desaparecen o pasan a dbo.cheques cuando se consolida el corte.
 /// </summary>
 public sealed record TransientSaleHeader
 {
@@ -78,6 +78,9 @@ public sealed record TransientSaleHeader
     public decimal? Subtotal { get; init; }
     public decimal? Total { get; init; }
     public decimal? Propina { get; init; }
+
+    public bool EsVentaCobrada => Pagado && !Cancelado && Cierre is not null;
+    public bool EsCuentaAbierta => !Pagado && !Cancelado;
 
     public string IdempotencyKey => IdTurno is > 0
         ? $"{IdTurno}:{TempFolio}"

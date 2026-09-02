@@ -54,4 +54,34 @@ public sealed class TransientContractTests
         Assert.Empty(batch.TransientLines);
         Assert.Empty(batch.TransientPayments);
     }
+
+    [Fact]
+    public void Paid_transient_ticket_is_collected_sale_not_open_account()
+    {
+        var ticket = new TransientSaleHeader
+        {
+            TempFolio = 1,
+            IdTurno = 427,
+            Pagado = true,
+            Cierre = new DateTime(2026, 9, 1, 23, 44, 23)
+        };
+
+        Assert.True(ticket.EsVentaCobrada);
+        Assert.False(ticket.EsCuentaAbierta);
+    }
+
+    [Fact]
+    public void Unpaid_transient_account_is_pending_not_collected_sale()
+    {
+        var account = new TransientSaleHeader
+        {
+            TempFolio = 12,
+            IdTurno = 427,
+            Pagado = false,
+            Cierre = null
+        };
+
+        Assert.False(account.EsVentaCobrada);
+        Assert.True(account.EsCuentaAbierta);
+    }
 }

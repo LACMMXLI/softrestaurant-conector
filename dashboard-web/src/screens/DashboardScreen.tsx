@@ -55,11 +55,11 @@ export function DashboardScreen({
         </div>
 
         <div className="pulse-amount">
-          <span>{meta.shiftIsOpen ? 'Actividad actual del turno' : 'Venta cerrada'}</span>
-          <strong>{formatAmount(meta.shiftIsOpen ? summary.currentActivity : summary.sales)}</strong>
+          <span>{meta.shiftIsOpen ? 'Venta cobrada acumulada' : 'Venta cerrada'}</span>
+          <strong>{formatAmount(summary.sales)}</strong>
           <small>
             {meta.shiftIsOpen
-              ? `Venta cerrada ${formatAmount(summary.sales)} + cuentas abiertas ${formatAmount(summary.openAccountsTotal)}`
+              ? `${formatInteger(summary.tickets)} tickets cobrados · ${formatAmount(summary.openAccountsTotal)} pendiente en cuentas abiertas`
               : 'Importe de tickets pagados, no cancelados y cerrados'}
           </small>
         </div>
@@ -93,8 +93,8 @@ export function DashboardScreen({
       ) : (
         <>
           <section className="metric-strip" aria-label="Indicadores principales">
-            <Metric icon={<Receipt size={19} />} label="Tickets cerrados" value={formatInteger(summary.tickets)} />
-            {meta.shiftIsOpen ? <Metric icon={<Hourglass size={19} />} label="Cuentas transitorias" value={formatInteger(summary.openAccounts)} /> : null}
+            <Metric icon={<Receipt size={19} />} label={meta.shiftIsOpen ? 'Tickets cobrados' : 'Tickets cerrados'} value={formatInteger(summary.tickets)} />
+            {meta.shiftIsOpen ? <Metric icon={<Hourglass size={19} />} label="Cuentas abiertas" value={formatInteger(summary.openAccounts)} /> : null}
             <Metric icon={<WalletCards size={19} />} label="Promedio" value={formatAmount(summary.averageTicket)} />
             <Metric icon={<Coins size={19} />} label="Propinas" value={formatAmount(summary.tips)} />
           </section>
@@ -103,8 +103,8 @@ export function DashboardScreen({
             <section className="content-card tickets-card" aria-labelledby="open-accounts-title">
               <div className="section-heading horizontal">
                 <div>
-                  <p className="utility-label">Estado transitorio de RestaurantAgent</p>
-                  <h2 id="open-accounts-title">Cuentas abiertas / transitorias</h2>
+                  <p className="utility-label">Pendiente por cobrar</p>
+                  <h2 id="open-accounts-title">Cuentas abiertas</h2>
                 </div>
                 <strong>{formatAmount(summary.openAccountsTotal)}</strong>
               </div>
@@ -122,14 +122,14 @@ export function DashboardScreen({
                         </span>
                       </span>
                       <strong>{formatAmount(account.total)}</strong>
-                      <span className="transient-badge">{account.paid ? 'Pagada · en proceso' : 'Abierta'}</span>
+                      <span className="transient-badge">Abierta</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="quiet-empty">No hay cuentas transitorias para este turno.</p>
+                <p className="quiet-empty">No hay cuentas abiertas para este turno.</p>
               )}
-              <p className="data-note">Estas cuentas todavía pueden cambiar o cancelarse. No se consideran venta definitiva hasta pasar a tickets cerrados.</p>
+              <p className="data-note">Estas cuentas no se suman a la venta cobrada. Permanecen separadas hasta que SoftRestaurant registre su pago.</p>
             </section>
           ) : null}
 
@@ -162,13 +162,19 @@ export function DashboardScreen({
                   <div><WalletCards size={17} /><span>Otros</span><strong>{formatAmount(summary.otherSales)}</strong></div>
                 </div>
 
-                <div className="cash-reconciliation">
-                  <span>Declarado por cajeros: <strong>{formatAmount(summary.declaredCash)}</strong></span>
-                  <span className={summary.cashDifference === 0 ? 'balanced' : 'attention'}>
-                    Diferencia candidata: <strong>{formatAmount(summary.cashDifference)}</strong>
-                  </span>
-                </div>
-                <p className="data-note">Cálculo: fondo + cobros en efectivo + entradas − salidas. La diferencia es candidata hasta contrastarla con el corte impreso de RestaurantAgent.</p>
+                {meta.shiftIsOpen ? (
+                  <p className="data-note">Cálculo operativo: fondo + cobros en efectivo + entradas − salidas. La declaración y diferencia de caja estarán disponibles al realizar el corte.</p>
+                ) : (
+                  <>
+                    <div className="cash-reconciliation">
+                      <span>Declarado por cajeros: <strong>{formatAmount(summary.declaredCash)}</strong></span>
+                      <span className={summary.cashDifference === 0 ? 'balanced' : 'attention'}>
+                        Diferencia candidata: <strong>{formatAmount(summary.cashDifference)}</strong>
+                      </span>
+                    </div>
+                    <p className="data-note">Cálculo: fondo + cobros en efectivo + entradas − salidas. La diferencia es candidata hasta contrastarla con el corte impreso de RestaurantAgent.</p>
+                  </>
+                )}
               </>
             ) : (
               <div className="coverage-note" role="status">
@@ -190,7 +196,7 @@ export function DashboardScreen({
               <TopProductList title="Alimentos" icon={<Utensils size={19} />} items={data.topProducts.foods} />
               <TopProductList title="Bebidas" icon={<GlassWater size={19} />} items={data.topProducts.beverages} />
             </div>
-            <p className="data-note">Solo incluye líneas de tickets pagados, cerrados y no cancelados del corte seleccionado. La categoría proviene del grupo configurado en SoftRestaurant.</p>
+            <p className="data-note">Incluye productos con importe de tickets cobrados y no cancelados del turno, aunque el corte siga abierto. La categoría proviene del grupo configurado en SoftRestaurant.</p>
           </section>
 
           <section className="content-card operational-card">
@@ -227,7 +233,7 @@ export function DashboardScreen({
             {data.recentTickets.length > 0 ? (
               <div className="ticket-list">
                 {data.recentTickets.map((ticket) => (
-                  <TicketRow key={ticket.folio} ticket={ticket} onOpen={onOpenTicket} />
+                  <TicketRow key={`${ticket.transient ? 'temp' : 'final'}:${ticket.folio}`} ticket={ticket} onOpen={onOpenTicket} />
                 ))}
               </div>
             ) : (

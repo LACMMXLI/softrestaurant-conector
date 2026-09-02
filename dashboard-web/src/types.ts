@@ -141,6 +141,7 @@ export type SalesTicket = {
   cancelled: boolean
   table: string | null
   paymentUser: string | null
+  transient: boolean
 }
 
 export type TransientAccount = {

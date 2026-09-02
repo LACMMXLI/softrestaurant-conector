@@ -9,12 +9,19 @@ type TicketRowProps = {
 
 export function TicketRow({ ticket, onOpen }: TicketRowProps) {
   return (
-    <button className="ticket-row" type="button" onClick={() => onOpen(ticket.folio)}>
+    <button
+      className="ticket-row"
+      type="button"
+      onClick={() => { if (!ticket.transient) onOpen(ticket.folio) }}
+      aria-disabled={ticket.transient}
+      title={ticket.transient ? 'Ticket cobrado del turno abierto; el detalle seguirá disponible al consolidarse en el corte.' : undefined}
+    >
       <span className="ticket-status-rail" data-state={ticket.cancelled ? 'cancelled' : 'paid'} />
       <span className="ticket-main">
         <span className="ticket-title">
           Ticket {ticket.checkNumber || `folio ${ticket.folio}`}
           {ticket.cancelled ? <em>Cancelado</em> : null}
+          {ticket.transient ? <em>Turno abierto</em> : null}
         </span>
         <span className="ticket-meta">
           {formatTime(ticket.closedAt ?? ticket.openedAt)}
@@ -23,7 +30,7 @@ export function TicketRow({ ticket, onOpen }: TicketRowProps) {
         </span>
       </span>
       <strong>{formatAmount(ticket.total)}</strong>
-      <ChevronRight size={18} aria-hidden="true" />
+      {ticket.transient ? null : <ChevronRight size={18} aria-hidden="true" />}
     </button>
   )
 }

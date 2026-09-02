@@ -78,7 +78,7 @@ internal static class Queries
             t.cierre,
             t.pagado,
             t.cancelado,
-            t.idturno,
+            COALESCE(NULLIF(t.idturno, 0), open_shift.idturno) AS idturno,
             t.cuentaenuso,
             t.cuentapagadaprocesada,
             t.estacion,
@@ -89,6 +89,14 @@ internal static class Queries
             t.total,
             t.propina
         FROM dbo.tempcheques AS t
+        OUTER APPLY (
+            SELECT TOP (1) s.idturno
+            FROM dbo.turnos AS s
+            WHERE s.cierre IS NULL
+              AND s.apertura <= COALESCE(t.fecha, GETDATE())
+              AND s.idestacion = t.estacion
+            ORDER BY s.apertura DESC, s.idturnointerno DESC
+        ) AS open_shift
         ORDER BY t.folio;
         """;
 
@@ -97,7 +105,7 @@ internal static class Queries
             d.WorkspaceId,
             t.WorkspaceId AS headerWorkspaceId,
             d.foliodet,
-            t.idturno,
+            COALESCE(NULLIF(t.idturno, 0), open_shift.idturno) AS idturno,
             d.movimiento,
             d.comanda,
             d.idproducto,
@@ -109,6 +117,14 @@ internal static class Queries
             d.comentario
         FROM dbo.tempcheqdet AS d
         INNER JOIN dbo.tempcheques AS t ON t.folio = d.foliodet
+        OUTER APPLY (
+            SELECT TOP (1) s.idturno
+            FROM dbo.turnos AS s
+            WHERE s.cierre IS NULL
+              AND s.apertura <= COALESCE(t.fecha, GETDATE())
+              AND s.idestacion = t.estacion
+            ORDER BY s.apertura DESC, s.idturnointerno DESC
+        ) AS open_shift
         LEFT JOIN dbo.productos AS p ON p.idproducto = d.idproducto
         ORDER BY d.foliodet, d.movimiento;
         """;
@@ -118,7 +134,7 @@ internal static class Queries
             tp.WorkspaceId,
             t.WorkspaceId AS headerWorkspaceId,
             tp.folio,
-            t.idturno,
+            COALESCE(NULLIF(t.idturno, 0), open_shift.idturno) AS idturno,
             tp.idformadepago,
             fp.descripcion AS paymentMethodDescription,
             fp.tipo AS paymentMethodType,
@@ -129,6 +145,14 @@ internal static class Queries
             tp.cardBrand
         FROM dbo.tempchequespagos AS tp
         INNER JOIN dbo.tempcheques AS t ON t.folio = tp.folio
+        OUTER APPLY (
+            SELECT TOP (1) s.idturno
+            FROM dbo.turnos AS s
+            WHERE s.cierre IS NULL
+              AND s.apertura <= COALESCE(t.fecha, GETDATE())
+              AND s.idestacion = t.estacion
+            ORDER BY s.apertura DESC, s.idturnointerno DESC
+        ) AS open_shift
         LEFT JOIN dbo.formasdepago AS fp ON fp.idformadepago = tp.idformadepago
         ORDER BY tp.folio, tp.idformadepago;
         """;
