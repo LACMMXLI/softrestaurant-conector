@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { Database, Download, LogOut, RefreshCw, Server, ShieldCheck, UserRound } from 'lucide-react'
-import { InstallAppButton } from '../components/InstallAppButton'
+import { Database, LogOut, RefreshCw, Server, ShieldCheck, UserRound } from 'lucide-react'
 import { StatusPill } from '../components/StatusPill'
-import { usePwaInstall } from '../hooks/usePwaInstall'
 import { timeAgo } from '../format'
 import { api, ApiError } from '../api'
 import type { DashboardBranch, DashboardHome, DashboardUser } from '../types'
@@ -19,7 +17,6 @@ type MoreScreenProps = {
 export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated, onUnauthorized }: MoreScreenProps) {
   const [requestingSync, setRequestingSync] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
-  const { installed } = usePwaInstall()
 
   async function handleRequestSync() {
     setRequestingSync(true)
@@ -80,17 +77,6 @@ export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated,
         </p>
         {syncError ? <p className="form-error" role="alert">{syncError}</p> : null}
       </section>
-
-      {!installed ? (
-        <section className="content-card install-app-card">
-          <span className="profile-avatar"><Download size={22} /></span>
-          <div>
-            <h2>Instala la app en tu teléfono</h2>
-            <p>Agrega RestaurantAgent a tu pantalla de inicio, en Android o iOS, para abrirlo como una app.</p>
-          </div>
-          <InstallAppButton />
-        </section>
-      ) : null}
 
       <button className="logout-button" type="button" onClick={() => void onLogout()}>
         <LogOut size={19} /> Cerrar sesión

@@ -597,21 +597,50 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
 .data-note { margin-top: 10px; padding: 10px 12px; border-radius: 11px; background: #f2f6f5; color: var(--ink-soft); font-size: .64rem; line-height: 1.5; }
 .cancellation-note { display: grid; gap: 4px; margin-top: 12px; padding: 13px; border-radius: 13px; background: var(--red-soft); color: #833434; font-size: .72rem; }
 
-.install-app-card { display: flex; align-items: center; gap: 14px; }
-.install-app-card h2 { font-size: 1rem; }
-.install-app-card p { margin-top: 3px; color: var(--ink-soft); font-size: .75rem; line-height: 1.45; }
-.install-app-card .install-app-button { flex: none; margin-left: auto; border: 1px solid var(--line); }
-.install-app-button { position: relative; }
-.install-app-dot { position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 2px var(--paper); animation: install-pulse 2.2s ease-in-out infinite; }
-@keyframes install-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.25); opacity: .7; } }
-.install-app-sheet { max-width: 460px; }
-.install-app-sheet .sheet-header h2 { display: flex; align-items: center; gap: 9px; font-size: 1.3rem; }
-.install-app-sheet .sheet-header p { margin-top: 9px; color: var(--ink-soft); font-size: .84rem; line-height: 1.55; }
-.install-app-cta { margin-top: 20px; }
-.install-app-steps { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
-.install-app-steps li { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #f2f6f5; color: var(--ink); font-size: .82rem; line-height: 1.4; }
-.install-app-steps li svg { flex: 0 0 auto; color: var(--teal); }
-.install-app-dismiss { width: 100%; margin-top: 18px; }
+.install-banner {
+  position: fixed;
+  z-index: 70;
+  left: 10px;
+  right: 10px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: var(--night);
+  color: #fff;
+  box-shadow: 0 20px 50px rgba(15, 29, 37, 0.4);
+}
+.install-banner-close { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; background: rgba(255,255,255,.12); color: #fff; }
+.install-banner-close:hover { background: rgba(255,255,255,.2); color: #fff; }
+.install-banner-icon { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: rgba(255,255,255,.12); color: #fff; }
+.install-banner-body { flex: 1; min-width: 0; padding-right: 20px; }
+.install-banner-body .utility-label { color: var(--gold); }
+.install-banner-body h3 { margin-top: 4px; font-size: 1rem; color: #fff; letter-spacing: -0.03em; }
+.install-banner-body > p { margin-top: 4px; color: #b7c6c9; font-size: .78rem; line-height: 1.45; }
+.install-banner-cta { width: 100%; justify-content: center; gap: 8px; margin-top: 14px; background: #fff; color: var(--night); }
+.install-banner-steps { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.install-banner-steps li { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 11px; background: rgba(255,255,255,.08); color: #e4ecec; font-size: .74rem; line-height: 1.4; }
+.install-banner-steps li svg { flex: none; color: var(--gold); }
+.install-fab {
+  position: fixed;
+  z-index: 70;
+  right: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--night);
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(15, 29, 37, 0.4);
+}
+@media (min-width: 980px) { .install-banner, .install-fab { bottom: 24px; } }
 
 .skeleton { position: relative; overflow: hidden; border-radius: 20px; background: #dfe7e5; }
 .skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); animation: shimmer 1.35s infinite; }
