@@ -355,6 +355,22 @@ internal static class WebApiEndpoints
             return dashboard is null ? Results.NotFound() : Results.Ok(dashboard);
         });
 
+        // Consolidado sin materializar copias: DashboardReportService consulta los mismos
+        // hechos por branch_id y limita el conjunto al business_id autorizado del usuario.
+        group.MapGet("/dashboard/business-home", async (
+            HttpContext context,
+            Guid businessId,
+            DateOnly date,
+            WebAuthService auth,
+            DashboardReportService reports,
+            CancellationToken ct) =>
+        {
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var dashboard = await reports.GetBusinessHomeAsync(user, businessId, date, ct);
+            return dashboard is null ? Results.NotFound() : Results.Ok(dashboard);
+        });
+
         group.MapGet("/dashboard/shifts", async (
             HttpContext context,
             string branchCode,

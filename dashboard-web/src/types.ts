@@ -61,6 +61,7 @@ export type AgentLatest = {
 }
 
 export type DashboardBranch = {
+  businessId: string
   code: string
   name: string
   timezone: string
@@ -70,6 +71,22 @@ export type DashboardBranch = {
   rangeStart: string | null
   rangeEnd: string | null
   syncRequestedAt: string | null
+}
+
+export type BusinessDashboard = {
+  businessId: string
+  businessName: string
+  date: string
+  coverage: 'complete' | 'partial' | 'missing'
+  includedBranches: number
+  totalBranches: number
+  summary: {
+    tickets: number; sales: number; averageTicket: number; tips: number
+    cancelledTickets: number; cancelledLines: number; cashIn: number; cashOut: number
+    cashSales: number; cardSales: number; otherSales: number
+  }
+  branches: Array<{ code: string; name: string; tickets: number; sales: number; averageTicket: number; participationPercent: number; coverage: string }>
+  topProducts: { foods: TopProductItem[]; beverages: TopProductItem[] }
 }
 
 export type DashboardMeta = {

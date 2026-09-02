@@ -982,6 +982,15 @@ html { scroll-behavior: smooth; }
 .top-product-values strong { color: var(--ink); font-size: .72rem; }
 @media (max-width: 760px) { .top-products-grid { grid-template-columns: 1fr; } .top-products-total { display: none; } }
 
+/* Consolidado: la jerarquía se expresa con venta y participación, no con una gráfica que
+   pierda legibilidad en teléfono. Cada fila abre la sucursal que originó la cifra. */
+.business-hero { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 18px; padding: 26px; border-radius: 22px; color: #f4faf7; background: linear-gradient(135deg, #123b2d, #0d211f 67%); box-shadow: var(--shadow); }
+.business-hero p { margin: 0; color: #a3d9b7; font-size: .76rem; font-weight: 800; }
+.business-hero h1 { margin: 5px 0 8px; font-size: clamp(1.45rem, 5vw, 2.15rem); letter-spacing: -.04em; }
+.business-hero span { color: #c3d9d0; font-size: .73rem; }.business-hero > strong { font-size: clamp(1.75rem, 7vw, 3rem); letter-spacing: -.06em; }.business-hero > small { grid-column: 2; color: #a3d9b7; text-align: right; font-size: .68rem; }
+.branch-comparison { display: grid; gap: 4px; }.branch-share { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; padding: 14px 0 11px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; cursor: pointer; }.branch-share > span { display: grid; grid-template-columns: 20px minmax(0,1fr); align-items: center; column-gap: 8px; }.branch-share svg { color: var(--teal); }.branch-share b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }.branch-share small { grid-column: 2; margin-top: 3px; color: var(--ink-soft); font-size: .67rem; }.branch-share > strong { display: grid; align-content: center; justify-items: end; font-size: .81rem; }.branch-share em { margin-top: 3px; color: var(--teal); font-size: .64rem; font-style: normal; }.branch-share > i { grid-column: 1/-1; height: 4px; overflow: hidden; border-radius: 999px; background: var(--line); }.branch-share > i > i { display:block; height:100%; border-radius:inherit; background:var(--teal); }.business-operations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:16px; }.business-operations span { display:grid; gap:5px; padding:12px; border-radius:12px; background:var(--canvas); color:var(--ink-soft); font-size:.67rem; }.business-operations svg { color:var(--teal); }.business-operations b { color:var(--ink); font-size:.82rem; }.business-operations small { font-size:.6rem; }.business-skeleton { height: 340px; border-radius: 22px; }
+@media (max-width: 520px) { .business-hero { padding:20px 17px; }.business-hero > strong { font-size:1.8rem; }.business-operations { grid-template-columns:1fr; }.business-operations span { grid-template-columns:20px 1fr auto; align-items:center; }.business-operations small { grid-column:2/-1; } }
+
 .subscription-wall { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #17352e, #081713 60%); }
 .subscription-wall-card { width: min(560px, 100%); padding: 36px; border: 1px solid rgba(255,255,255,.12); border-radius: 24px; background: #10231e; color: #f5fbf8; text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
 .subscription-wall-icon { width: 64px; height: 64px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 20px; color: #ffd37a; background: rgba(255,190,66,.12); }
@@ -1036,6 +1045,7 @@ html { scroll-behavior: smooth; }
   .context-select svg { width: 14px; height: 14px; }
   .context-select select { width: 76px; color: #edf4f4; font-size: .68rem; }
   .context-select:nth-child(2) select { width: 72px; }
+  .context-date input { width: 92px; color: #edf4f4; font-size: .67rem; }
 
   .app-main { min-height: calc(100svh - 62px); padding: 16px 12px 98px; }
   .screen-stack { gap: 12px; }

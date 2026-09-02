@@ -3,6 +3,7 @@ using Npgsql;
 namespace RestaurantAgent.CentralApi;
 
 internal sealed record DashboardBranch(
+    Guid BusinessId,
     string Code,
     string Name,
     string Timezone,
@@ -12,6 +13,20 @@ internal sealed record DashboardBranch(
     DateTime? RangeStart,
     DateTime? RangeEnd,
     DateTime? SyncRequestedAt);
+
+internal sealed record BusinessDashboardSummary(
+    long Tickets, decimal Sales, decimal AverageTicket, decimal Tips,
+    long CancelledTickets, long CancelledLines, decimal CashIn, decimal CashOut,
+    decimal CashSales, decimal CardSales, decimal OtherSales);
+
+internal sealed record BusinessBranchContribution(
+    string Code, string Name, long Tickets, decimal Sales, decimal AverageTicket,
+    decimal ParticipationPercent, string Coverage);
+
+internal sealed record BusinessDashboardResponse(
+    Guid BusinessId, string BusinessName, DateOnly Date, string Coverage,
+    int IncludedBranches, int TotalBranches, BusinessDashboardSummary Summary,
+    IReadOnlyList<BusinessBranchContribution> Branches, TopProducts TopProducts);
 
 internal sealed record DashboardMeta(
     Guid BranchId,
@@ -181,7 +196,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""
-            SELECT b.code, b.name, b.timezone, b.last_sync_at,
+            SELECT b.business_id, b.code, b.name, b.timezone, b.last_sync_at,
                    sb.reconciliation_ok, sb.range_start, sb.range_end, b.sync_requested_at
             FROM branches b
             LEFT JOIN LATERAL (
@@ -209,17 +224,109 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         {
             var lastSyncAt = ReadNullableDateTime(reader, 3);
             branches.Add(new DashboardBranch(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                lastSyncAt,
-                GetFreshness(lastSyncAt),
-                ReadNullableBool(reader, 4),
-                ReadNullableDateTime(reader, 5),
-                ReadNullableDateTime(reader, 6),
-                ReadNullableDateTime(reader, 7)));
+                reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+                ReadNullableDateTime(reader, 4), GetFreshness(ReadNullableDateTime(reader, 4)),
+                ReadNullableBool(reader, 5), ReadNullableDateTime(reader, 6),
+                ReadNullableDateTime(reader, 7), ReadNullableDateTime(reader, 8)));
         }
         return branches;
+    }
+
+    /// <summary>
+    /// Consolidado calculado directamente sobre los hechos sincronizados. Solo incorpora una
+    /// sucursal cuando su lote conciliado cubre por completo la fecha solicitada; así una
+    /// ausencia de sincronización nunca se presenta como venta cero.
+    /// </summary>
+    public async Task<BusinessDashboardResponse?> GetBusinessHomeAsync(
+        DashboardUser user, Guid businessId, DateOnly date, CancellationToken ct)
+    {
+        var start = date.ToDateTime(TimeOnly.MinValue);
+        var end = start.AddDays(1);
+        await using var command = dataSource.CreateCommand("""
+            WITH scoped_branches AS (
+                SELECT b.id, b.code, b.name,
+                       EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id = b.id
+                         AND sb.reconciliation_ok AND sb.range_start <= $3 AND sb.range_end >= $4) AS covered
+                FROM branches b
+                WHERE b.business_id = $1 AND b.active
+                  AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id = b.business_id AND bm.user_id = $2)
+            ), eligible AS (SELECT * FROM scoped_branches WHERE covered),
+            sales_by_branch AS (
+                SELECT e.id, COUNT(s.*) FILTER (WHERE s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL) tickets,
+                       COALESCE(SUM(s.total) FILTER (WHERE s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL), 0) sales,
+                       COALESCE(SUM(s.tip) FILTER (WHERE s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL), 0) tips,
+                       COUNT(s.*) FILTER (WHERE s.cancelled) cancelled_tickets
+                FROM eligible e LEFT JOIN sales s ON s.branch_id = e.id AND s.business_date >= $3 AND s.business_date < $4
+                GROUP BY e.id
+            ), payments AS (
+                SELECT sp.branch_id,
+                       COALESCE(SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1)) FILTER (WHERE NULLIF(sp.payload->>'tipoFormaDePago', '')::integer = 1),0) cash_sales,
+                       COALESCE(SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1)) FILTER (WHERE NULLIF(sp.payload->>'tipoFormaDePago', '')::integer = 2),0) card_sales,
+                       COALESCE(SUM(sp.amount * COALESCE(NULLIF(sp.exchange_rate, 0), 1)) FILTER (WHERE NULLIF(sp.payload->>'tipoFormaDePago', '')::integer IN (3,4)),0) other_sales
+                FROM sale_payments sp JOIN sales s ON s.branch_id=sp.branch_id AND s.source_folio=sp.source_folio
+                JOIN eligible e ON e.id=sp.branch_id
+                WHERE s.business_date >= $3 AND s.business_date < $4 AND s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL
+                GROUP BY sp.branch_id
+            ), movements AS (
+                SELECT cm.branch_id,
+                  COALESCE(SUM(cm.amount) FILTER (WHERE cm.movement_type=2 AND NOT cm.cancelled),0) cash_in,
+                  COALESCE(SUM(cm.amount) FILTER (WHERE cm.movement_type=1 AND NOT cm.cancelled),0) cash_out
+                FROM cash_movements cm JOIN eligible e ON e.id=cm.branch_id
+                WHERE cm.movement_date >= $3 AND cm.movement_date < $4 GROUP BY cm.branch_id
+            ), cancellations AS (
+                SELECT cs.branch_id, COALESCE(SUM(cs.occurrences),0) cancelled_lines
+                FROM cancellation_summaries cs JOIN eligible e ON e.id=cs.branch_id
+                WHERE cs.cancellation_date=$3::date GROUP BY cs.branch_id
+            )
+            SELECT b.name, (SELECT COUNT(*) FROM scoped_branches), (SELECT COUNT(*) FROM eligible),
+                   e.code, e.name, COALESCE(sb.tickets,0), COALESCE(sb.sales,0), COALESCE(sb.tips,0), COALESCE(sb.cancelled_tickets,0),
+                   COALESCE(c.cancelled_lines,0), COALESCE(m.cash_in,0), COALESCE(m.cash_out,0),
+                   COALESCE(p.cash_sales,0), COALESCE(p.card_sales,0), COALESCE(p.other_sales,0)
+            FROM businesses b LEFT JOIN eligible e ON true
+            LEFT JOIN sales_by_branch sb ON sb.id=e.id LEFT JOIN payments p ON p.branch_id=e.id
+            LEFT JOIN movements m ON m.branch_id=e.id LEFT JOIN cancellations c ON c.branch_id=e.id
+            WHERE b.id=$1
+              AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id=b.id AND bm.user_id=$2)
+            ORDER BY e.name;
+            """);
+        command.Parameters.AddWithValue(businessId); command.Parameters.AddWithValue(user.Id);
+        command.Parameters.AddWithValue(start); command.Parameters.AddWithValue(end);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        if (!await reader.ReadAsync(ct)) return null;
+        var name = reader.GetString(0); var total = reader.GetInt32(1); var included = reader.GetInt32(2);
+        var branches = new List<BusinessBranchContribution>();
+        long tickets=0, cancelledTickets=0, cancelledLines=0; decimal sales=0,tips=0,cashIn=0,cashOut=0,cashSales=0,cardSales=0,otherSales=0;
+        do {
+            if (reader.IsDBNull(3)) continue;
+            var branchTickets=reader.GetInt64(5); var branchSales=reader.GetDecimal(6);
+            tickets += branchTickets; sales += branchSales; tips += reader.GetDecimal(7); cancelledTickets += reader.GetInt64(8); cancelledLines += reader.GetInt64(9);
+            cashIn += reader.GetDecimal(10); cashOut += reader.GetDecimal(11); cashSales += reader.GetDecimal(12); cardSales += reader.GetDecimal(13); otherSales += reader.GetDecimal(14);
+            branches.Add(new BusinessBranchContribution(reader.GetString(3), reader.GetString(4), branchTickets, branchSales,
+                branchTickets > 0 ? branchSales / branchTickets : 0, 0, "complete"));
+        } while (await reader.ReadAsync(ct));
+        branches = branches.Select(x => x with { ParticipationPercent = sales > 0 ? Math.Round(x.Sales / sales * 100m, 1) : 0 }).OrderByDescending(x => x.Sales).ToList();
+        var products = await GetBusinessTopProductsAsync(user, businessId, start, end, ct);
+        var coverage = included == 0 ? "missing" : included == total ? "complete" : "partial";
+        return new BusinessDashboardResponse(businessId, name, date, coverage, included, total,
+            new BusinessDashboardSummary(tickets, sales, tickets > 0 ? sales/tickets : 0, tips, cancelledTickets, cancelledLines, cashIn, cashOut, cashSales, cardSales, otherSales), branches, products);
+    }
+
+    private async Task<TopProducts> GetBusinessTopProductsAsync(DashboardUser user, Guid businessId, DateTime start, DateTime end, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            WITH eligible AS (SELECT b.id FROM branches b WHERE b.business_id=$1 AND b.active AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id=b.business_id AND bm.user_id=$2)
+              AND EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id=b.id AND sb.reconciliation_ok AND sb.range_start <= $3 AND sb.range_end >= $4)),
+            totals AS (SELECT COALESCE(NULLIF(p.description,''),NULLIF(l.payload->>'descripcionProducto',''),l.product_id) product_name, MAX(p.group_name) group_name,p.classification,
+              SUM(l.quantity) quantity,SUM(GREATEST(l.quantity*l.price-COALESCE(NULLIF(l.payload->>'descuento','')::numeric,0),0)) sales
+              FROM sale_lines l JOIN eligible e ON e.id=l.branch_id JOIN products p ON p.branch_id=l.branch_id AND p.product_id=l.product_id
+              WHERE COALESCE(l.quantity,0)>0 AND COALESCE(l.price,0)>0 AND p.classification IN (1,2) AND EXISTS (SELECT 1 FROM sales s WHERE s.branch_id=l.branch_id AND s.source_folio=l.source_folio AND s.business_date >= $3 AND s.business_date < $4 AND s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL)
+              GROUP BY COALESCE(NULLIF(p.description,''),NULLIF(l.payload->>'descripcionProducto',''),l.product_id),p.classification), ranked AS (SELECT *,ROW_NUMBER() OVER(PARTITION BY classification ORDER BY quantity DESC,sales DESC,product_name) rank FROM totals)
+            SELECT product_name,group_name,classification,quantity,sales,rank FROM ranked WHERE rank<=20 ORDER BY classification,rank;
+            """);
+        command.Parameters.AddWithValue(businessId); command.Parameters.AddWithValue(user.Id); command.Parameters.AddWithValue(start); command.Parameters.AddWithValue(end);
+        var foods=new List<TopProductItem>(); var beverages=new List<TopProductItem>(); await using var reader=await command.ExecuteReaderAsync(ct);
+        while(await reader.ReadAsync(ct)){ var item=new TopProductItem(reader.GetString(0),reader.GetString(0),ReadNullableString(reader,1),reader.GetDecimal(3),reader.GetDecimal(4),checked((int)reader.GetInt64(5))); if(reader.GetInt32(2)==1) beverages.Add(item); else foods.Add(item); }
+        return new TopProducts(foods,beverages);
     }
 
     public async Task<IReadOnlyList<DashboardShift>> GetShiftsAsync(

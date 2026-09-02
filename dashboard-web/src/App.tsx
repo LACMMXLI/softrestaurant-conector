@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BarChart3, Building2, CreditCard, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
+import { BarChart3, Building2, CalendarDays, CreditCard, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { Brand } from './components/Brand'
 import { LoginScreen } from './components/LoginScreen'
@@ -7,10 +7,11 @@ import { TicketSheet } from './components/TicketSheet'
 import { dateInTimezone } from './format'
 import { BusinessesScreen } from './screens/BusinessesScreen'
 import { DashboardScreen } from './screens/DashboardScreen'
+import { BusinessDashboardScreen } from './screens/BusinessDashboardScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { OperationsScreen } from './screens/OperationsScreen'
 import { SalesScreen } from './screens/SalesScreen'
-import type { DashboardBranch, DashboardHome, DashboardShift, DashboardUser, Subscription } from './types'
+import type { BusinessDashboard, BusinessMembership, DashboardBranch, DashboardHome, DashboardShift, DashboardUser, Subscription } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
 type Tab = 'home' | 'sales' | 'operations' | 'businesses' | 'more'
@@ -22,12 +23,14 @@ export function App() {
   const [user, setUser] = useState<DashboardUser | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [branches, setBranches] = useState<DashboardBranch[]>([])
+  const [businesses, setBusinesses] = useState<BusinessMembership[]>([])
   const [branchCode, setBranchCode] = useState('')
   const [date, setDate] = useState('')
   const [shifts, setShifts] = useState<DashboardShift[]>([])
   const [shiftId, setShiftId] = useState<number | null>(null)
   const [tab, setTab] = useState<Tab>('home')
   const [dashboard, setDashboard] = useState<DashboardHome | null>(null)
+  const [businessDashboard, setBusinessDashboard] = useState<BusinessDashboard | null>(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
   const [dashboardError, setDashboardError] = useState<string | null>(null)
   const [loginError, setLoginError] = useState<string | null>(null)
@@ -39,13 +42,16 @@ export function App() {
     () => branches.find((branch) => branch.code === branchCode) ?? null,
     [branchCode, branches],
   )
+  const selectedBusinessId = branchCode.startsWith('all:') ? branchCode.slice(4) : null
 
   const becomeAnonymous = useCallback(() => {
     setSessionState('anonymous')
     setUser(null)
     setSubscription(null)
     setBranches([])
+    setBusinesses([])
     setDashboard(null)
+    setBusinessDashboard(null)
     setShifts([])
     setShiftId(null)
     setSelectedFolio(null)
@@ -82,11 +88,12 @@ export function App() {
   useEffect(() => {
     let active = true
     api.me()
-      .then(async (session) => ({ session, availableBranches: session.subscription.canAccessContent ? await api.branches() : [] }))
-      .then(({ session, availableBranches }) => {
+      .then(async (session) => ({ session, availableBranches: session.subscription.canAccessContent ? await api.branches() : [], availableBusinesses: session.subscription.canAccessContent ? await api.businesses() : [] }))
+      .then(({ session, availableBranches, availableBusinesses }) => {
         if (!active) return
         setUser(session.user)
         setSubscription(session.subscription)
+        setBusinesses(availableBusinesses)
         applyBranches(availableBranches)
         setSessionState('authenticated')
       })
@@ -97,14 +104,20 @@ export function App() {
   }, [applyBranches, becomeAnonymous])
 
   useEffect(() => {
-    if (sessionState !== 'authenticated' || !branchCode || !date || shiftId === null) return
+    if (sessionState !== 'authenticated' || !branchCode || !date) return
     const controller = new AbortController()
     setDashboardLoading(true)
     setDashboardError(null)
     setDashboard(null)
-    api.dashboard(branchCode, date, shiftId, controller.signal)
+    setBusinessDashboard(null)
+    const request = selectedBusinessId
+      ? api.businessDashboard(selectedBusinessId, date, controller.signal)
+      : api.dashboard(branchCode, date, shiftId, controller.signal)
+    request
       .then((nextDashboard) => {
-        if (!controller.signal.aborted) setDashboard(nextDashboard)
+        if (controller.signal.aborted) return
+        if (selectedBusinessId) setBusinessDashboard(nextDashboard as BusinessDashboard)
+        else setDashboard(nextDashboard as DashboardHome)
       })
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === 'AbortError') return
@@ -115,7 +128,7 @@ export function App() {
         if (!controller.signal.aborted) setDashboardLoading(false)
       })
     return () => controller.abort()
-  }, [becomeAnonymous, branchCode, date, refreshKey, sessionState, shiftId])
+  }, [becomeAnonymous, branchCode, date, refreshKey, selectedBusinessId, sessionState, shiftId])
 
   async function handleLogin(email: string, password: string) {
     setLoginBusy(true)
@@ -123,8 +136,10 @@ export function App() {
     try {
       const session = await api.login(email, password)
       const resolvedBranches = session.subscription.canAccessContent ? await api.branches() : []
+      const resolvedBusinesses = session.subscription.canAccessContent ? await api.businesses() : []
       setUser(session.user)
       setSubscription(session.subscription)
+      setBusinesses(resolvedBusinesses)
       applyBranches(resolvedBranches)
       setSessionState('authenticated')
     } catch (reason) {
@@ -161,6 +176,17 @@ export function App() {
   }
 
   function handleBranchChange(nextCode: string) {
+    if (nextCode.startsWith('all:')) {
+      localStorage.setItem(storedBranchKey, nextCode)
+      setBranchCode(nextCode)
+      setDate(dateInTimezone('America/Tijuana'))
+      setShiftId(null)
+      setShifts([])
+      setDashboard(null)
+      setBusinessDashboard(null)
+      setTab('home')
+      return
+    }
     const nextBranch = branches.find((branch) => branch.code === nextCode)
     if (!nextBranch) return
     localStorage.setItem(storedBranchKey, nextCode)
@@ -174,6 +200,7 @@ export function App() {
       if (current?.openedAt) setDate(current.openedAt.slice(0, 10))
     }).catch(() => setShifts([]))
     setDashboard(null)
+    setBusinessDashboard(null)
   }
 
   if (sessionState === 'loading') {
@@ -208,7 +235,7 @@ export function App() {
     )
   }
 
-  if (!currentBranch) {
+  if (!currentBranch && !selectedBusinessId) {
     // Cuenta válida pero sin ninguna sucursal accesible todavía — el caso normal para un
     // usuario recién registrado, antes de crear su primer negocio/sucursal. En vez de un
     // callejón sin salida, se ofrece directamente la pantalla de negocios.
@@ -243,10 +270,13 @@ export function App() {
               <Store size={17} aria-hidden="true" />
               <span className="sr-only">Sucursal</span>
               <select value={branchCode} onChange={(event) => handleBranchChange(event.target.value)}>
+                {businesses.filter((business) => branches.some((branch) => branch.businessId === business.id)).map((business) => (
+                  <option value={`all:${business.id}`} key={`all:${business.id}`}>Resumen general · {business.name}</option>
+                ))}
                 {branches.map((branch) => <option value={branch.code} key={branch.code}>{branch.name}</option>)}
               </select>
             </label>
-            <label className="context-select">
+            {!selectedBusinessId ? <label className="context-select">
               <span className="sr-only">Turno</span>
               <select value={shiftId ?? ''} onChange={(event) => {
                 const next = shifts.find((shift) => shift.id === Number(event.target.value))
@@ -256,6 +286,14 @@ export function App() {
                 {shifts.length === 0 ? <option value="">Sin turnos sincronizados</option> : null}
                 {shifts.map((shift) => <option value={shift.id} key={shift.id}>{shift.isOpen ? 'Abierto' : 'Cerrado'} · Turno {shift.number} · {shift.cashier || 'Sin cajero'}</option>)}
               </select>
+            </label> : null}
+            <label className="context-select context-date">
+              <CalendarDays size={16} aria-hidden="true" />
+              <span className="sr-only">Fecha</span>
+              <input type="date" value={date} onChange={(event) => {
+                setDate(event.target.value)
+                if (!selectedBusinessId) setShiftId(null)
+              }} />
             </label>
             <button className="icon-button refresh-button" type="button" onClick={() => setRefreshKey((value) => value + 1)} aria-label="Actualizar datos">
               <RefreshCw size={18} className={dashboardLoading ? 'spinning' : ''} />
@@ -265,7 +303,13 @@ export function App() {
 
         <main className="app-main">
           {tab === 'home' ? (
-            <DashboardScreen
+            selectedBusinessId ? <BusinessDashboardScreen
+              data={businessDashboard}
+              loading={dashboardLoading}
+              error={dashboardError}
+              onRetry={() => setRefreshKey((value) => value + 1)}
+              onOpenBranch={handleBranchChange}
+            /> : <DashboardScreen
               data={dashboard}
               loading={dashboardLoading}
               error={dashboardError}
@@ -289,7 +333,7 @@ export function App() {
             />
           ) : null}
           {tab === 'businesses' ? <BusinessesScreen onUnauthorized={becomeAnonymous} /> : null}
-          {tab === 'more' ? (
+          {tab === 'more' && currentBranch ? (
             <MoreScreen
               user={user}
               branch={currentBranch}
