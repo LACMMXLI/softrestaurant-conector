@@ -236,7 +236,7 @@ begin
 end;
 
 // Ejecuta Exe+Params via cmd.exe redirigiendo stdout/stderr a un archivo temporal, para
-// poder mostrar el motivo real cuando un comando externo falla (icacls, takeown, etc.)
+// poder mostrar el motivo real cuando un comando externo falla (por ejemplo, icacls)
 // en vez de solo el codigo de salida. Devuelve False si ni siquiera se pudo lanzar cmd.exe.
 function RunCaptured(const Exe, Params: string; out ResultCode: Integer;
   out OutputText: string): Boolean;
