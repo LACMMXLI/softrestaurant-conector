@@ -222,10 +222,11 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var branches = new List<DashboardBranch>();
         while (await reader.ReadAsync(ct))
         {
-            var lastSyncAt = ReadNullableDateTime(reader, 3);
+            // SELECT ordinal 3 is b.timezone (text); the timestamp begins at ordinal 4.
+            var lastSyncAt = ReadNullableDateTime(reader, 4);
             branches.Add(new DashboardBranch(
                 reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
-                ReadNullableDateTime(reader, 4), GetFreshness(ReadNullableDateTime(reader, 4)),
+                lastSyncAt, GetFreshness(lastSyncAt),
                 ReadNullableBool(reader, 5), ReadNullableDateTime(reader, 6),
                 ReadNullableDateTime(reader, 7), ReadNullableDateTime(reader, 8)));
         }
