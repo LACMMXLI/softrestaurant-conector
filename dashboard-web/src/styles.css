@@ -989,3 +989,137 @@ html { scroll-behavior: smooth; }
 .subscription-wall-card h1 { margin: 8px 0 14px; font-size: clamp(1.8rem, 6vw, 2.7rem); }
 .subscription-wall-card p { color: #bfd0ca; line-height: 1.65; }
 .subscription-wall-plan { display: inline-flex; margin: 10px 0; padding: 8px 14px; border-radius: 999px; background: rgba(78,203,154,.14); color: #8ce2be; font-weight: 800; }
+
+/* Mobile dashboard: a single, compact navigation row and a dark operational
+   surface inspired by the shift-control reference.  The data structure and
+   all interactions remain the same; only the presentation changes. */
+@media (max-width: 979px) {
+  .app-shell {
+    min-height: 100svh;
+    background:
+      radial-gradient(circle at 80% 0%, rgba(64, 163, 91, .14), transparent 29%),
+      radial-gradient(circle at 8% 44%, rgba(29, 96, 113, .12), transparent 31%),
+      #061019;
+    color: #edf4f4;
+    --ink: #edf4f4;
+    --ink-soft: #9cabb4;
+    --paper: #0b1721;
+    --canvas: #061019;
+    --line: #263742;
+    --teal: #67df3f;
+    --teal-soft: rgba(103, 223, 63, .13);
+    --gold: #ff9a1f;
+    --gold-soft: rgba(255, 154, 31, .14);
+    --red: #ff4d52;
+    --red-soft: rgba(255, 77, 82, .14);
+    --night: #07121b;
+    --shadow: 0 18px 42px rgba(0, 0, 0, .28);
+  }
+
+  .app-header {
+    min-height: 62px;
+    padding: 10px 13px;
+    border-bottom-color: rgba(157, 183, 193, .14);
+    background: rgba(6, 16, 25, .86);
+  }
+
+  .product-brand__name small { color: #67df3f; }
+  .context-controls { gap: 5px; min-width: 0; }
+  .context-select {
+    height: 37px;
+    min-width: 0;
+    gap: 4px;
+    padding: 0 7px;
+    border-color: #263742;
+    background: rgba(11, 23, 33, .94);
+  }
+  .context-select svg { width: 14px; height: 14px; }
+  .context-select select { width: 76px; color: #edf4f4; font-size: .68rem; }
+  .context-select:nth-child(2) select { width: 72px; }
+
+  .app-main { min-height: calc(100svh - 62px); padding: 16px 12px 98px; }
+  .screen-stack { gap: 12px; }
+  .pulse-ticket {
+    padding: 19px 18px 17px;
+    border: 1px solid #2a3b45;
+    border-radius: 21px;
+    background:
+      radial-gradient(circle at 86% 16%, rgba(103, 223, 63, .13), transparent 35%),
+      linear-gradient(145deg, #10241e, #08131c 58%, #0a1520);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, .3);
+  }
+  .pulse-ticket::after { display: none; }
+  .pulse-ticket .utility-label { color: #67df3f; font-family: inherit; font-size: .72rem; font-weight: 800; letter-spacing: 0; }
+  .pulse-ticket h2 { font-size: 1.05rem; }
+  .pulse-amount { margin-top: 24px; }
+  .pulse-amount > span { color: #b1c1c5; }
+  .pulse-amount strong { font-size: clamp(2.55rem, 13vw, 4.15rem); }
+  .pulse-divider { margin: 17px 0 12px; background: linear-gradient(90deg, rgba(103,223,63,.38), rgba(145,174,183,.06)); }
+  .status-pill.success { color: #dffff4; background: rgba(103, 223, 63, .16); }
+  .status-pill.current { color: #ffe2ad; background: rgba(255, 154, 31, .16); }
+
+  .metric-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .metric-item {
+    gap: 5px;
+    min-height: 108px;
+    padding: 13px 10px;
+    border-color: #263742;
+    border-radius: 17px;
+    background: linear-gradient(145deg, rgba(14, 29, 40, .97), rgba(8, 19, 28, .97));
+    box-shadow: none;
+  }
+  .metric-item > span:nth-child(2) { font-size: .61rem; line-height: 1.25; }
+  .metric-item strong { font-size: clamp(.92rem, 4vw, 1.2rem); }
+  .metric-icon { color: #67df3f; }
+
+  .content-card {
+    padding: 17px;
+    border-color: #263742;
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(13, 28, 39, .98), rgba(8, 19, 28, .98));
+    box-shadow: none;
+  }
+  .section-heading { margin-bottom: 14px; }
+  .section-heading h2 { font-size: 1.12rem; }
+  .utility-label, .eyebrow { color: #67df3f; font-family: inherit; font-size: .69rem; font-weight: 800; letter-spacing: 0; }
+  .cash-cut-card { background: linear-gradient(145deg, #10251d, #09141d 58%, #0b1821); }
+  .cash-cut-card > .section-heading > svg, .payment-breakdown svg, .sheet-section-title { color: #67df3f; }
+  .equation-part, .equation-result { border-color: #2a3c45; background: rgba(4, 14, 21, .52); }
+  .equation-result { border-color: rgba(103, 223, 63, .35); background: rgba(27, 89, 36, .45); }
+  .payment-breakdown > div { background: rgba(17, 42, 45, .68); }
+  .chart-grid { stroke: #29404a; }
+  .chart-line { stroke: #67df3f; }
+  .chart-dot { fill: #0b1721; stroke: #67df3f; }
+  .chart-dot.latest { fill: #67df3f; stroke: #dfffd7; }
+  .chart-hour { fill: #9cabb4; }
+  .ticket-row { border-bottom-color: #223640; color: #edf4f4; }
+  .ticket-row:hover { background: rgba(103, 223, 63, .06); }
+  .ticket-status-rail { background: #67df3f; }
+  .data-note { background: rgba(133, 163, 171, .09); }
+  .top-product-column { border-color: #2a3c45; background: rgba(4, 14, 21, .38); }
+  .top-product-heading { color: #67df3f; }
+  .top-product-heading > span, .page-badge { background: rgba(145, 174, 183, .12); }
+  .top-product-list li, .detail-list > div, .activity-row { border-color: #223640; }
+  .operation-stat { border: 1px solid rgba(255,255,255,.04); }
+  .danger-soft { color: #ff8186; background: rgba(255, 77, 82, .13); }
+  .gold-soft { color: #ffb24f; background: rgba(255, 154, 31, .13); }
+  .coverage-note { border-color: rgba(255, 178, 79, .34); background: rgba(255, 154, 31, .12); color: #ffd69b; }
+  .inline-alert { border-color: rgba(255, 77, 82, .36); background: rgba(255, 77, 82, .13); color: #ffb3b5; }
+
+  .mobile-nav {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+    border: 0;
+    border-top: 1px solid rgba(157, 183, 193, .15);
+    border-radius: 18px 18px 0 0;
+    background: rgba(5, 15, 23, .97);
+    box-shadow: 0 -10px 34px rgba(0, 0, 0, .24);
+  }
+  .nav-items { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+  .nav-item { min-width: 0; min-height: 57px; border-radius: 13px; color: #a8b5bb; }
+  .nav-item svg { width: 19px; height: 19px; }
+  .nav-item span { overflow: hidden; max-width: 100%; font-size: .56rem; white-space: nowrap; text-overflow: ellipsis; }
+  .nav-item.active { color: #67df3f; background: radial-gradient(circle at 50% 0%, rgba(103, 223, 63, .17), transparent 74%); }
+}
