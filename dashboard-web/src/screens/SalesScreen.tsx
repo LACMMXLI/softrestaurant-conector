@@ -9,7 +9,7 @@ type SalesScreenProps = {
   branchCode: string
   date: string
   shiftId: number | null
-  onOpenTicket: (folio: number) => void
+  onOpenTicket: (folio: number, transient: boolean) => void
   onUnauthorized: () => void
 }
 

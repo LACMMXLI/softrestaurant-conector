@@ -15,6 +15,7 @@ type TicketSheetProps = {
 export function TicketSheet({ branchCode, folio, openAccount = false, onClose, onUnauthorized }: TicketSheetProps) {
   const [detail, setDetail] = useState<TicketDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const isUnpaidTransient = openAccount && detail !== null && !detail.ticket.paid
 
   useEffect(() => {
     const controller = new AbortController()
@@ -51,17 +52,17 @@ export function TicketSheet({ branchCode, folio, openAccount = false, onClose, o
         {detail ? (
           <>
             <header className="sheet-header">
-              <p className="utility-label">{openAccount ? 'Comanda en curso' : 'Rastro del ticket'}</p>
-              <h2 id="ticket-sheet-title">{openAccount ? 'Cuenta' : 'Ticket'} {detail.ticket.checkNumber || detail.ticket.folio}</h2>
+              <p className="utility-label">{isUnpaidTransient ? 'Comanda en curso' : 'Rastro del ticket'}</p>
+              <h2 id="ticket-sheet-title">{isUnpaidTransient ? 'Cuenta' : 'Ticket'} {detail.ticket.checkNumber || detail.ticket.folio}</h2>
               <div className="sheet-ticket-meta">
                 <span>{formatTime(detail.ticket.closedAt ?? detail.ticket.openedAt)}</span>
                 {detail.ticket.table ? <span>Mesa {detail.ticket.table}</span> : null}
-                {detail.ticket.cancelled ? <span className="danger-text"><Ban size={14} /> Cancelado</span> : openAccount ? <span className="transient-badge">Abierta · sin pagar</span> : <span>Pagado</span>}
+                {detail.ticket.cancelled ? <span className="danger-text"><Ban size={14} /> Cancelado</span> : isUnpaidTransient ? <span className="transient-badge">Abierta · sin pagar</span> : openAccount ? <span className="transient-badge">Pagado · turno abierto</span> : <span>Pagado</span>}
               </div>
             </header>
 
             <section className="sheet-total">
-              <span>{openAccount ? 'Total pendiente' : 'Total registrado'}</span>
+              <span>{isUnpaidTransient ? 'Total pendiente' : 'Total registrado'}</span>
               <strong>{formatAmount(detail.ticket.total)}</strong>
               {detail.ticket.tip !== null ? <small>Propina: {formatAmount(detail.ticket.tip)}</small> : null}
             </section>
@@ -89,7 +90,7 @@ export function TicketSheet({ branchCode, folio, openAccount = false, onClose, o
 
             <section className="sheet-section">
               <div className="sheet-section-title"><CreditCard size={18} /><h3>Pagos</h3></div>
-              {detail.payments.length === 0 ? <p className="quiet-empty">{openAccount ? 'Esta cuenta todavía no tiene pagos registrados.' : 'Sin pagos sincronizados.'}</p> : (
+              {detail.payments.length === 0 ? <p className="quiet-empty">{isUnpaidTransient ? 'Esta cuenta todavía no tiene pagos registrados.' : 'Sin pagos sincronizados.'}</p> : (
                 <div className="detail-rows">
                   {detail.payments.map((payment, index) => (
                     <div className="detail-row" key={`${payment.paymentMethodId ?? 'sin-id'}-${index}`}>

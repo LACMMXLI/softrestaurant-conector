@@ -11,7 +11,7 @@ type DashboardScreenProps = {
   loading: boolean
   error: string | null
   onRetry: () => void
-  onOpenTicket: (folio: number) => void
+  onOpenTicket: (folio: number, transient: boolean) => void
   onOpenAccount: (tempFolio: number) => void
   onOpenSales: () => void
 }

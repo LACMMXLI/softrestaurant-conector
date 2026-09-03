@@ -648,7 +648,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                    payload->>'estacion', payload->>'idAreaRestaurant', payload->>'idMesero'
             FROM transient_sales
             WHERE branch_id = $1 AND source_temp_folio = $2
-              AND NOT paid AND NOT cancelled AND closed_at IS NULL
+              AND NOT cancelled
               AND NOT EXISTS (
                   SELECT 1 FROM sales s
                   WHERE s.branch_id = transient_sales.branch_id
@@ -693,7 +693,30 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             }
         }
 
-        return new TicketDetail(ticket, station, restaurantArea, waiterId, null, null, lines, []);
+        var payments = new List<TicketPaymentItem>();
+        await using (var command = dataSource.CreateCommand("""
+            SELECT payment_method, NULLIF(payload->>'descripcionFormaDePago', ''),
+                   NULLIF(payload->>'tipoFormaDePago', '')::integer,
+                   amount, tip, exchange_rate, payload->>'cardBrand'
+            FROM transient_sale_payments
+            WHERE branch_id = $1 AND header_key = $2
+            ORDER BY idempotency_key;
+            """))
+        {
+            command.Parameters.AddWithValue(branch.Value.Id);
+            command.Parameters.AddWithValue(accountKey!);
+            await using var reader = await command.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                payments.Add(new TicketPaymentItem(
+                    ReadNullableString(reader, 0), ReadNullableString(reader, 1),
+                    reader.IsDBNull(2) ? null : reader.GetInt32(2),
+                    ReadNullableDecimal(reader, 3), ReadNullableDecimal(reader, 4),
+                    ReadNullableDecimal(reader, 5), ReadNullableString(reader, 6)));
+            }
+        }
+
+        return new TicketDetail(ticket, station, restaurantArea, waiterId, null, null, lines, payments);
     }
 
     private async Task<DashboardMeta?> GetMetaAsync(

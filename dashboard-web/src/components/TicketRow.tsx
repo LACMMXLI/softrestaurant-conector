@@ -4,7 +4,7 @@ import type { SalesTicket } from '../types'
 
 type TicketRowProps = {
   ticket: SalesTicket
-  onOpen: (folio: number) => void
+  onOpen: (folio: number, transient: boolean) => void
 }
 
 export function TicketRow({ ticket, onOpen }: TicketRowProps) {
@@ -12,9 +12,7 @@ export function TicketRow({ ticket, onOpen }: TicketRowProps) {
     <button
       className="ticket-row"
       type="button"
-      onClick={() => { if (!ticket.transient) onOpen(ticket.folio) }}
-      aria-disabled={ticket.transient}
-      title={ticket.transient ? 'Ticket cobrado del turno abierto; el detalle seguirá disponible al consolidarse en el corte.' : undefined}
+      onClick={() => onOpen(ticket.folio, ticket.transient)}
     >
       <span className="ticket-status-rail" data-state={ticket.cancelled ? 'cancelled' : 'paid'} />
       <span className="ticket-main">
@@ -30,7 +28,7 @@ export function TicketRow({ ticket, onOpen }: TicketRowProps) {
         </span>
       </span>
       <strong>{formatAmount(ticket.total)}</strong>
-      {ticket.transient ? null : <ChevronRight size={18} aria-hidden="true" />}
+      <ChevronRight size={18} aria-hidden="true" />
     </button>
   )
 }

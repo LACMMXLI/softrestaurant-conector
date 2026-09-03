@@ -320,13 +320,13 @@ export function App() {
               loading={dashboardLoading}
               error={dashboardError}
               onRetry={() => setRefreshKey((value) => value + 1)}
-              onOpenTicket={(folio) => setSelectedTicket({ folio, openAccount: false })}
+              onOpenTicket={(folio, transient) => setSelectedTicket({ folio, openAccount: transient })}
               onOpenAccount={(folio) => setSelectedTicket({ folio, openAccount: true })}
               onOpenSales={() => setTab('sales')}
             />
           ) : null}
           {tab === 'sales' ? (
-            <SalesScreen key={`${branchCode}:${shiftId}`} branchCode={branchCode} date={date} shiftId={shiftId} onOpenTicket={(folio) => setSelectedTicket({ folio, openAccount: false })} onUnauthorized={becomeAnonymous} />
+            <SalesScreen key={`${branchCode}:${shiftId}`} branchCode={branchCode} date={date} shiftId={shiftId} onOpenTicket={(folio, transient) => setSelectedTicket({ folio, openAccount: transient })} onUnauthorized={becomeAnonymous} />
           ) : null}
           {tab === 'operations' ? (
             <OperationsScreen
