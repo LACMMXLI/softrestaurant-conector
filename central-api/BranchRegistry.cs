@@ -35,6 +35,36 @@ internal sealed class BranchRegistry(NpgsqlDataSource dataSource)
         reader.GetDateTime(7),
         reader.IsDBNull(8) ? null : reader.GetDateTime(8));
 
+    public async Task<int> CountBranchesAsync(Guid businessId, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("SELECT COUNT(*) FROM branches WHERE business_id = $1;");
+        command.Parameters.AddWithValue(businessId);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(ct));
+    }
+
+    /// <summary>Alta autocontenida con límite de plan. El candado por negocio evita rebasarlo con solicitudes simultáneas.</summary>
+    public async Task<BranchView?> CreateBranchWithinLimitAsync(
+        Guid businessId, string code, string name, string timezone, int maxBranches, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand($"""
+            WITH locked AS (SELECT pg_advisory_xact_lock(hashtext($1::text))),
+            existing AS (
+                SELECT COUNT(*) AS branch_count FROM branches CROSS JOIN locked WHERE business_id = $1
+            )
+            INSERT INTO branches (business_id, code, name, timezone)
+            SELECT $1, $2, $3, $4 FROM existing WHERE branch_count < $5
+            ON CONFLICT (code) DO NOTHING
+            RETURNING {BranchColumns};
+            """);
+        command.Parameters.AddWithValue(businessId);
+        command.Parameters.AddWithValue(code);
+        command.Parameters.AddWithValue(name);
+        command.Parameters.AddWithValue(timezone);
+        command.Parameters.AddWithValue(maxBranches);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        return await reader.ReadAsync(ct) ? ReadBranch(reader) : null;
+    }
+
     /// <summary>Alta de una sucursal nueva dentro de un negocio. Devuelve null si el código ya existe (conflicto).</summary>
     public async Task<BranchView?> CreateBranchAsync(
         Guid businessId, string code, string name, string timezone, CancellationToken ct)

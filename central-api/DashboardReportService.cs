@@ -331,7 +331,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
     }
 
     public async Task<IReadOnlyList<DashboardShift>> GetShiftsAsync(
-        DashboardUser user, string branchCode, CancellationToken ct)
+        DashboardUser user, string branchCode, DateOnly oldestDate, CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""
             SELECT s.source_shift_id,
@@ -342,10 +342,12 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             WHERE b.active = true AND b.code = $1
               AND EXISTS (SELECT 1 FROM business_members bm
                           WHERE bm.user_id = $2 AND bm.business_id = b.business_id)
+              AND (s.closed_at IS NULL OR s.opened_at >= $3)
             ORDER BY (s.closed_at IS NULL) DESC, s.opened_at DESC NULLS LAST, s.source_shift_id DESC;
             """);
         command.Parameters.AddWithValue(branchCode);
         command.Parameters.AddWithValue(user.Id);
+        command.Parameters.AddWithValue(oldestDate.ToDateTime(TimeOnly.MinValue));
         await using var reader = await command.ExecuteReaderAsync(ct);
         var result = new List<DashboardShift>();
         while (await reader.ReadAsync(ct))
@@ -525,6 +527,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         DashboardUser user,
         string branchCode,
         long folio,
+        DateOnly oldestDate,
         CancellationToken ct)
     {
         var branch = await GetBranchIdentityAsync(user, branchCode, ct);
@@ -544,13 +547,14 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                    payload->>'idAreaRestaurant', payload->>'idMesero',
                    payload->>'razonCancelado', payload->>'usuarioCancelo'
             FROM sales
-            WHERE branch_id = $1 AND source_folio = $2
+            WHERE branch_id = $1 AND source_folio = $2 AND business_date >= $3
             ORDER BY updated_at DESC
             LIMIT 1;
             """))
         {
             command.Parameters.AddWithValue(branch.Value.Id);
             command.Parameters.AddWithValue(folio);
+            command.Parameters.AddWithValue(oldestDate.ToDateTime(TimeOnly.MinValue));
             await using var reader = await command.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct)) return null;
             ticket = ReadTicket(reader);

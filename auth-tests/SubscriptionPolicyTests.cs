@@ -44,4 +44,20 @@ public sealed class SubscriptionPolicyTests
     [InlineData(1)] [InlineData(2)] [InlineData(3)] [InlineData(6)]
     public void Only_supported_activation_durations_are_accepted(int months) =>
         Assert.True(SubscriptionPolicy.IsValidDuration(months));
+
+    [Theory]
+    [InlineData("BASIC", 3, 1)]
+    [InlineData("PLUS", 7, 5)]
+    public void Plans_have_their_real_history_and_branch_limits(string plan, int historyDays, int branchLimit)
+    {
+        Assert.Equal(historyDays, SubscriptionPolicy.GetHistoryDays(plan));
+        Assert.Equal(branchLimit, SubscriptionPolicy.GetBranchLimit(plan));
+    }
+
+    [Fact]
+    public void Only_plus_can_use_the_consolidated_dashboard()
+    {
+        Assert.False(SubscriptionPolicy.CanUseConsolidatedDashboard("BASIC"));
+        Assert.True(SubscriptionPolicy.CanUseConsolidatedDashboard("PLUS"));
+    }
 }

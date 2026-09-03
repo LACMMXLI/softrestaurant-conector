@@ -44,13 +44,13 @@ const plans = [
     name: 'Estándar',
     price: '$199',
     description: 'Para tener la operación diaria de una sucursal siempre a la mano.',
-    features: ['1 sucursal', 'Historial de 4 días', 'Ventas y cuentas abiertas', 'Sincronización en vivo'],
+    features: ['1 sucursal', 'Historial de 3 días', 'Ventas y cuentas abiertas', 'Sincronización en vivo'],
   },
   {
     name: 'Plus',
     price: '$499',
     description: 'Para equipos que necesitan más alcance, historial y herramientas de análisis.',
-    features: ['Hasta 5 sucursales', 'Historial de 90 días', 'Analítica y alertas', 'Exportación y soporte prioritario'],
+    features: ['Hasta 5 sucursales', 'Historial de 7 días', 'Dashboard concentrado de sucursales', 'Analítica y alertas', 'Exportación y soporte prioritario'],
     featured: true,
   },
 ]

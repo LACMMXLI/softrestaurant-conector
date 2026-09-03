@@ -7,6 +7,18 @@ internal sealed record CreateBranchSelfServiceRequest(string Code, string Name, 
 
 internal static class WebApiEndpoints
 {
+    private static IResult? ValidateHistoryDate(SubscriptionView subscription, DateOnly date)
+    {
+        var oldestDate = SubscriptionPolicy.GetOldestAvailableDate(subscription.Plan, DateOnly.FromDateTime(DateTime.UtcNow));
+        return date < oldestDate
+            ? Results.Json(new
+            {
+                error = $"El plan {subscription.Plan} permite consultar únicamente los últimos {SubscriptionPolicy.GetHistoryDays(subscription.Plan)} días.",
+                oldestDate
+            }, statusCode: StatusCodes.Status403Forbidden)
+            : null;
+    }
+
     public static void MapDashboardWebApi(this WebApplication app)
     {
         var group = app.MapGroup("/api/web");
@@ -149,6 +161,7 @@ internal static class WebApiEndpoints
             WebAuthService auth,
             BusinessRegistry businesses,
             BranchRegistry branches,
+            SubscriptionRegistry subscriptions,
             CancellationToken ct) =>
         {
             var user = await auth.AuthenticateAsync(context, ct);
@@ -157,6 +170,15 @@ internal static class WebApiEndpoints
             if (role is null) return Results.NotFound();
             if (!BusinessAccess.CanManageBusiness(role))
                 return Results.Json(new { error = "Este rol no puede crear sucursales." }, statusCode: StatusCodes.Status403Forbidden);
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            var branchLimit = SubscriptionPolicy.GetBranchLimit(subscription.Plan);
+            if (await branches.CountBranchesAsync(businessId, ct) >= branchLimit)
+                return Results.Json(new
+                {
+                    error = $"El plan {subscription.Plan} permite hasta {branchLimit} sucursal{(branchLimit == 1 ? string.Empty : "es")}. Actualiza tu plan para agregar otra.",
+                    branchLimit
+                }, statusCode: StatusCodes.Status403Forbidden);
 
             var code = request.Code?.Trim() ?? string.Empty;
             if (!BranchValidation.IsValidCode(code))
@@ -167,7 +189,7 @@ internal static class WebApiEndpoints
             if (!BranchValidation.IsValidTimezone(timezone))
                 return Results.BadRequest(new { error = "timezone inválida: debe ser un identificador IANA reconocido" });
 
-            var created = await branches.CreateBranchAsync(businessId, code, request.Name.Trim(), timezone, ct);
+            var created = await branches.CreateBranchWithinLimitAsync(businessId, code, request.Name.Trim(), timezone, branchLimit, ct);
             return created is null
                 ? Results.Conflict(new { error = "Ya existe una sucursal con ese código" })
                 : Results.Created($"/api/web/branches/{created.Code}", created);
@@ -345,12 +367,17 @@ internal static class WebApiEndpoints
             int? shiftId,
             WebAuthService auth,
             DashboardReportService reports,
+            SubscriptionRegistry subscriptions,
             CancellationToken ct) =>
         {
             var validation = ValidateBranchCode(branchCode);
             if (validation is not null) return validation;
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            var dateValidation = ValidateHistoryDate(subscription, date);
+            if (dateValidation is not null) return dateValidation;
             var dashboard = await reports.GetHomeAsync(user, branchCode, date, shiftId, ct);
             return dashboard is null ? Results.NotFound() : Results.Ok(dashboard);
         });
@@ -363,10 +390,17 @@ internal static class WebApiEndpoints
             DateOnly date,
             WebAuthService auth,
             DashboardReportService reports,
+            SubscriptionRegistry subscriptions,
             CancellationToken ct) =>
         {
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            if (!SubscriptionPolicy.CanUseConsolidatedDashboard(subscription.Plan))
+                return Results.Json(new { error = "El dashboard concentrado de sucursales está disponible con el plan PLUS." }, statusCode: StatusCodes.Status403Forbidden);
+            var dateValidation = ValidateHistoryDate(subscription, date);
+            if (dateValidation is not null) return dateValidation;
             var dashboard = await reports.GetBusinessHomeAsync(user, businessId, date, ct);
             return dashboard is null ? Results.NotFound() : Results.Ok(dashboard);
         });
@@ -376,14 +410,17 @@ internal static class WebApiEndpoints
             string branchCode,
             WebAuthService auth,
             DashboardReportService reports,
+            SubscriptionRegistry subscriptions,
             CancellationToken ct) =>
         {
             var validation = ValidateBranchCode(branchCode);
             if (validation is not null) return validation;
             var user = await auth.AuthenticateAsync(context, ct);
-            return user is null
-                ? Results.Unauthorized()
-                : Results.Ok(await reports.GetShiftsAsync(user, branchCode, ct));
+            if (user is null) return Results.Unauthorized();
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            var oldestDate = SubscriptionPolicy.GetOldestAvailableDate(subscription.Plan, DateOnly.FromDateTime(DateTime.UtcNow));
+            return Results.Ok(await reports.GetShiftsAsync(user, branchCode, oldestDate, ct));
         });
 
         group.MapPost("/branches/{branchCode}/request-sync", async (
@@ -423,6 +460,7 @@ internal static class WebApiEndpoints
             string? search,
             WebAuthService auth,
             DashboardReportService reports,
+            SubscriptionRegistry subscriptions,
             CancellationToken ct) =>
         {
             var validation = ValidateBranchCode(branchCode);
@@ -433,6 +471,10 @@ internal static class WebApiEndpoints
 
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            var dateValidation = ValidateHistoryDate(subscription, date);
+            if (dateValidation is not null) return dateValidation;
             var result = await reports.GetSalesAsync(
                 user, branchCode, date, shiftId, safePage, safePageSize, search, ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
@@ -449,6 +491,7 @@ internal static class WebApiEndpoints
             string? search,
             WebAuthService auth,
             DashboardReportService reports,
+            SubscriptionRegistry subscriptions,
             CancellationToken ct) =>
         {
             var validation = ValidateBranchCode(branchCode);
@@ -462,6 +505,10 @@ internal static class WebApiEndpoints
 
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            var dateValidation = ValidateHistoryDate(subscription, date);
+            if (dateValidation is not null) return dateValidation;
             var result = await reports.GetCashMovementsPageAsync(
                 user, branchCode, date, shiftId, safePage, safePageSize, type, search, ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
@@ -473,6 +520,7 @@ internal static class WebApiEndpoints
             long folio,
             WebAuthService auth,
             DashboardReportService reports,
+            SubscriptionRegistry subscriptions,
             CancellationToken ct) =>
         {
             var validation = ValidateBranchCode(branchCode);
@@ -480,7 +528,10 @@ internal static class WebApiEndpoints
             if (folio <= 0) return Results.BadRequest(new { error = "Folio inválido." });
             var user = await auth.AuthenticateAsync(context, ct);
             if (user is null) return Results.Unauthorized();
-            var ticket = await reports.GetTicketAsync(user, branchCode, folio, ct);
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            var oldestDate = SubscriptionPolicy.GetOldestAvailableDate(subscription.Plan, DateOnly.FromDateTime(DateTime.UtcNow));
+            var ticket = await reports.GetTicketAsync(user, branchCode, folio, oldestDate, ct);
             return ticket is null ? Results.NotFound() : Results.Ok(ticket);
         });
 

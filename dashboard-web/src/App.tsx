@@ -44,6 +44,11 @@ export function App() {
     [branchCode, branches],
   )
   const selectedBusinessId = branchCode.startsWith('all:') ? branchCode.slice(4) : null
+  const historyMinimumDate = useMemo(() => {
+    const today = new Date()
+    today.setUTCDate(today.getUTCDate() - ((subscription?.plan === 'PLUS' ? 7 : 3) - 1))
+    return today.toISOString().slice(0, 10)
+  }, [subscription?.plan])
 
   const becomeAnonymous = useCallback(() => {
     setSessionState('anonymous')
@@ -271,7 +276,7 @@ export function App() {
               <Store size={17} aria-hidden="true" />
               <span className="sr-only">Sucursal</span>
               <select value={branchCode} onChange={(event) => handleBranchChange(event.target.value)}>
-                {businesses.filter((business) => branches.some((branch) => branch.businessId === business.id)).map((business) => (
+                {subscription?.plan === 'PLUS' && businesses.filter((business) => branches.some((branch) => branch.businessId === business.id)).map((business) => (
                   <option value={`all:${business.id}`} key={`all:${business.id}`}>Resumen general · {business.name}</option>
                 ))}
                 {branches.map((branch) => <option value={branch.code} key={branch.code}>{branch.name}</option>)}
@@ -291,7 +296,7 @@ export function App() {
             <label className="context-select context-date">
               <CalendarDays size={16} aria-hidden="true" />
               <span className="sr-only">Fecha</span>
-              <input type="date" value={date} onChange={(event) => {
+              <input type="date" value={date} min={historyMinimumDate} onChange={(event) => {
                 setDate(event.target.value)
                 if (!selectedBusinessId) setShiftId(null)
               }} />

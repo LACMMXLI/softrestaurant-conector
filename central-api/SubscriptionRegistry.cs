@@ -16,8 +16,18 @@ internal sealed record SubscriptionStatusRequest(bool Suspended);
 
 internal static class SubscriptionPolicy
 {
+    public const int BasicHistoryDays = 3;
+    public const int PlusHistoryDays = 7;
+    public const int BasicBranchLimit = 1;
+    public const int PlusBranchLimit = 5;
+
     public static bool IsValidPlan(string? plan) => plan is "BASIC" or "PLUS";
     public static bool IsValidDuration(int months) => months is 1 or 2 or 3 or 6;
+    public static int GetHistoryDays(string plan) => plan == "PLUS" ? PlusHistoryDays : BasicHistoryDays;
+    public static int GetBranchLimit(string plan) => plan == "PLUS" ? PlusBranchLimit : BasicBranchLimit;
+    public static bool CanUseConsolidatedDashboard(string plan) => plan == "PLUS";
+    public static DateOnly GetOldestAvailableDate(string plan, DateOnly today) =>
+        today.AddDays(-(GetHistoryDays(plan) - 1));
 
     public static SubscriptionView Evaluate(
         string plan, DateTime trialEndsAt, DateTime? paidUntil, bool suspended, DateTime utcNow)
