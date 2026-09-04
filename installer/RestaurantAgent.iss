@@ -1,5 +1,5 @@
 #ifndef BuildVersion
-  #define BuildVersion "1.1.1"
+  #define BuildVersion "2.3.0"
 #endif
 #ifndef BuildApiUrl
   #define BuildApiUrl "https://restaurant-agent-api.fatboymexicali.com"
@@ -79,6 +79,7 @@ var
   CredentialsPage: TInputQueryWizardPage;
   DetectedIniPath: string;
   DataRootPath: string;
+  PreserveExistingConfig: Boolean;
 
 function StripQuotes(Value: string): string;
 begin
@@ -159,11 +160,30 @@ begin
   end;
 end;
 
+function ExistingConfigurationIsValid: Boolean;
+var
+  ExistingExe, ExistingConfig: string;
+  ResultCode: Integer;
+begin
+  Result := False;
+  ExistingExe := ExpandConstant('{app}\{#AgentExe}');
+  ExistingConfig := ExpandConstant('{commonappdata}\RestaurantAgentSyncAgent\agent-settings.dpapi');
+  if not FileExists(ExistingExe) or not FileExists(ExistingConfig) then
+    Exit;
+  { Antes de copiar binarios se ejecuta la versión instalada. Solo se preserva DPAPI si
+    confirma que contiene SQL y credencial/identidad utilizables; nunca se reutiliza un
+    archivo ilegible o incompleto. }
+  if Exec(ExistingExe, '--config-status "' + ExistingConfig + '"', '', SW_HIDE,
+    ewWaitUntilTerminated, ResultCode) and (ResultCode = 0) then
+    Result := True;
+end;
+
 procedure InitializeWizard;
 var
   SqlServer, SqlDatabase, DetectionText: string;
 begin
   DataRootPath := ExpandConstant('{commonappdata}\RestaurantAgentSyncAgent');
+  PreserveExistingConfig := ExistingConfigurationIsValid;
 
   DetectRestaurantAgent(SqlServer, SqlDatabase);
   if DetectedIniPath <> '' then
@@ -194,7 +214,9 @@ end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
-  Result := (PageID = CredentialsPage.ID) and
+  Result := PreserveExistingConfig and ((PageID = DatabasePage.ID) or (PageID = CredentialsPage.ID));
+  if not Result then
+    Result := (PageID = CredentialsPage.ID) and
     (DefaultSqlUser <> '') and (DefaultSqlPassword <> '');
 end;
 
@@ -342,22 +364,23 @@ begin
   DataRoot := DataRootPath;
   RegistryPath := 'SYSTEM\CurrentControlSet\Services\' + AgentServiceName;
 
-  // Instalación limpia: crea el directorio de datos y aplica ACL nuevas.
+  // Actualización: conserva config DPAPI, vínculo, credenciales SQL y cola. En instalación
+  // limpia crea el directorio/ACL y protege la configuración capturada por el asistente.
   ForceDirectories(DataRoot);
-
-  IcaclsParams := '"' + DataRoot + '" /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F"';
-
-  if not RunCaptured(ExpandConstant('{sys}\icacls.exe'), IcaclsParams, ResultCode, IcaclsOutput)
-    or (ResultCode <> 0) then
+  if PreserveExistingConfig then
+    ProtectedPath := DataRoot + '\agent-settings.dpapi'
+  else
   begin
-    MsgBox('No se pudieron proteger los permisos de la configuración en:' + #13#10 +
-      DataRoot + #13#10#13#10 +
-      'Código: ' + IntToStr(ResultCode) + #13#10 +
-      IcaclsOutput, mbError, MB_OK);
-    Abort;
+    IcaclsParams := '"' + DataRoot + '" /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F"';
+    if not RunCaptured(ExpandConstant('{sys}\icacls.exe'), IcaclsParams, ResultCode, IcaclsOutput)
+      or (ResultCode <> 0) then
+    begin
+      MsgBox('No se pudieron proteger los permisos de la configuración en:' + #13#10 +
+        DataRoot + #13#10#13#10 + 'Código: ' + IntToStr(ResultCode) + #13#10 + IcaclsOutput, mbError, MB_OK);
+      Abort;
+    end;
+    ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
   end;
-
-  ProtectedPath := ProtectConfiguration(ExePath, DataRoot);
   { sc.exe necesita que el valor completo de binPath sea un argumento entre comillas
     y que las comillas internas de la ruta del ejecutable lleguen escapadas. Sin este
     formato devuelve ERROR_INVALID_COMMAND_LINE (1639) cuando la ruta contiene espacios. }
@@ -416,6 +439,14 @@ begin
     DetectionSummary := 'Detectado desde: ' + DetectedIniPath + NewLine
   else
     DetectionSummary := '';
+
+  if PreserveExistingConfig then
+  begin
+    Result := 'Actualización:' + NewLine +
+      '  Se conservarán la conexión SQL, vínculo, credenciales DPAPI y cola local existentes.' + NewLine +
+      '  Se reemplazarán únicamente los binarios y se reiniciará el servicio.';
+    Exit;
+  end;
 
   Result :=
     'Instalación:' + NewLine +
