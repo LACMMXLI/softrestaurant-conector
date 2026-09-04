@@ -116,7 +116,7 @@ internal static class ExtractionJob
                     SourceFolio = value.FolioCheque,
                     User = value.User,
                     ProductId = value.ProductId,
-                    Description = value.Descripcion,
+                    Description = value.Description,
                     Quantity = value.Quantity,
                     Price = value.Price,
                     Reason = value.Reason,
