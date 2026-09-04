@@ -166,7 +166,10 @@ var
   ResultCode: Integer;
 begin
   Result := False;
-  ExistingExe := ExpandConstant('{app}\{#AgentExe}');
+  { InitializeWizard corre antes de que Inno Setup haya calculado el directorio de la app; la ubicación del
+    producto es fija, por eso para inspeccionar una instalación previa se expande la ruta
+    conocida bajo Program Files. Usar el directorio de la app aquí provocaba el runtime error 15:128. }
+  ExistingExe := ExpandConstant('{autopf64}\Fatboy\RestaurantAgent Sync Agent\{#AgentExe}');
   ExistingConfig := ExpandConstant('{commonappdata}\RestaurantAgentSyncAgent\agent-settings.dpapi');
   if not FileExists(ExistingExe) or not FileExists(ExistingConfig) then
     Exit;
