@@ -1,0 +1,6290 @@
+[
+  {
+    "idProducto": "01001",
+    "descripcion": "001 HAMBURGUESA SANCILLA",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01002",
+    "descripcion": "002 JUNIOR BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01003",
+    "descripcion": "003 DOBLE DOBLE BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01004",
+    "descripcion": "004 CHILCHEESE BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01006",
+    "descripcion": "006 HAWAIIAN BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01007",
+    "descripcion": "007 DOGGYS BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01008",
+    "descripcion": "008 BANDIDO BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01009",
+    "descripcion": "009 GUACAMOLE BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01010",
+    "descripcion": "010 BACON BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01011",
+    "descripcion": "011 CHEYENNE BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01012",
+    "descripcion": "012 YANKEE BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01013",
+    "descripcion": "013 FORAJIDO BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01014",
+    "descripcion": "014 FORASTERO BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01015",
+    "descripcion": "015 TEXANA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01016",
+    "descripcion": "016 TONNYS BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01017",
+    "descripcion": "017 HOT CHIPOTLE",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01018",
+    "descripcion": "018 SPICY BBQ BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01019",
+    "descripcion": "019 LA RANCHERA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01020",
+    "descripcion": "020 LA CHEROKEE 4X4",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01021",
+    "descripcion": "021 AHH...PLEBEES BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01022",
+    "descripcion": "022 VAQUERA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01023",
+    "descripcion": "023 SHERIFF CHICKEN BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01024",
+    "descripcion": "024 HOT CHEETOS CHEESE BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01025",
+    "descripcion": "025 ARRACHERA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01026",
+    "descripcion": "026 MEXICAN BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01027",
+    "descripcion": "027 GRINGA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01028",
+    "descripcion": "028 COMANCHE  BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01029",
+    "descripcion": "029 DIABLA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01030",
+    "descripcion": "030 BUFFALO BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01031",
+    "descripcion": "031 LA PIRATA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01032",
+    "descripcion": "032 LA CENTINELA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01033",
+    "descripcion": "033 LA CALIFORNIA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01034",
+    "descripcion": "034 ARTESANA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01035",
+    "descripcion": "035 MANCHOSA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01036",
+    "descripcion": "036 LA URBANA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01037",
+    "descripcion": "037 BACON LOVERS BURGERS",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01038",
+    "descripcion": "038 LA SHESSY BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01039",
+    "descripcion": "039 LA CUATRERO",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01040",
+    "descripcion": "040 PIZZA BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01041",
+    "descripcion": "041 CRISPY BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01042",
+    "descripcion": "042 CREAM JALAPE\u00D1O BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01043",
+    "descripcion": "043 HAMBURGUESA BONLESS",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01044",
+    "descripcion": "COMBO BAD BOYS",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01045",
+    "descripcion": "HAMBURGUESA * SODA 110",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01046",
+    "descripcion": "CULICHI BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01047",
+    "descripcion": "PROMOCION 2X200",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01048",
+    "descripcion": "PROMOCION 1 PESO",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01049",
+    "descripcion": "BABY BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "0105",
+    "descripcion": "005  LOS ANGELES BURGER",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01050",
+    "descripcion": "0000000 PARA LLEVAR",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01051",
+    "descripcion": "00000000 COMEDOR",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "01052",
+    "descripcion": "PROMOCION 100",
+    "idGrupo": "01",
+    "grupo": "HAMBURGUESAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02003",
+    "descripcion": "HOT DOG  JUMBO",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02004",
+    "descripcion": "CHILICHEESE DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02005",
+    "descripcion": "CALIFORNIA DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02006",
+    "descripcion": "CHICALI DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02007",
+    "descripcion": "POLACO DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02008",
+    "descripcion": "TIJUAS DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02009",
+    "descripcion": "BUBBA DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02010",
+    "descripcion": "MONSTER DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02011",
+    "descripcion": "GUACAMOLE  DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02012",
+    "descripcion": "VAQUERO DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02013",
+    "descripcion": "HOT DOG COSTCO",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02014",
+    "descripcion": "ARGENTINO DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02015",
+    "descripcion": "CACHANILLA DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02016",
+    "descripcion": "POPEYE DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02017",
+    "descripcion": "HAWAIIAN DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02018",
+    "descripcion": "GRINGO DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02019",
+    "descripcion": "AHH PLEBEES DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02020",
+    "descripcion": "PIZZA DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02021",
+    "descripcion": "TOXICO DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02022",
+    "descripcion": "DOGER DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02023",
+    "descripcion": "JALAPENO POPPER DOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02024",
+    "descripcion": "COMBO FAT BOY",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02025",
+    "descripcion": "HOT DOG PROMO",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02026",
+    "descripcion": "PROMO 2 HOT DOG 120",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "02281",
+    "descripcion": "HOTDOG DOGGODOG",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03001",
+    "descripcion": "AROS DE CEBOLLA",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03002",
+    "descripcion": "PALITOS DE QUESO",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03003",
+    "descripcion": "NUGGETS DE POLLO",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03004",
+    "descripcion": "POPPERS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03005",
+    "descripcion": "CHILES RELLENOS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03006",
+    "descripcion": "PALOMITAS DE POLLO",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03007",
+    "descripcion": "PIPO",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03008",
+    "descripcion": "PIPO CON PAPAS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03009",
+    "descripcion": "PALITOS DE PESCADO",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03010",
+    "descripcion": "CAMARONES EMPANIZADOS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03011",
+    "descripcion": "HOT POCKETS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03012",
+    "descripcion": "MINI PIZZAS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03013",
+    "descripcion": "CHIKEN BAKES",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03014",
+    "descripcion": "COSTILLITAS BBQ",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03015",
+    "descripcion": "MINIO WONTONS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03016",
+    "descripcion": "PAPA AL HORNO",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03017",
+    "descripcion": "ENSALADA DE POLLO",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03018",
+    "descripcion": "DUMPLINS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03019",
+    "descripcion": "POPPERS RELLENOS",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "03020",
+    "descripcion": "HAWAIAN CON BONELESS PROMO 120",
+    "idGrupo": "03",
+    "grupo": "SNACK",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04001",
+    "descripcion": "PAPAS FRITAS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04002",
+    "descripcion": "PAPAS PREPARADAS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04003",
+    "descripcion": "PAPAS SAZONADAS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04004",
+    "descripcion": "PAPAS SAZONADAS PREPARADAS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04005",
+    "descripcion": "SALCHIPAP\u00C1S",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04006",
+    "descripcion": "CHILICHEESE FRIES",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04007",
+    "descripcion": "PAPAS VAQUERAS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04008",
+    "descripcion": "PAPANACHOS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04009",
+    "descripcion": "BUBA PAPAS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04010",
+    "descripcion": "AHH...PLEBEES FRIES",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04011",
+    "descripcion": "HOT CHEETOS FRIES",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04012",
+    "descripcion": "PAPONAS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04013",
+    "descripcion": "URBAN FRIES",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04014",
+    "descripcion": "PAPA CHINOLA",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04015",
+    "descripcion": "PAPA PIZZA",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04016",
+    "descripcion": "CHICANAS FRIES",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04017",
+    "descripcion": "CALEXIA FRIES",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04018",
+    "descripcion": "SALCHIBONELESS",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "04019",
+    "descripcion": "PAPA RELLENA",
+    "idGrupo": "04",
+    "grupo": "PAPAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05003",
+    "descripcion": "DORINACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05004",
+    "descripcion": "NACHOS MACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05005",
+    "descripcion": "CHICANOS NACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05006",
+    "descripcion": "BUBBA NACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05007",
+    "descripcion": "TOSTIDOGOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05008",
+    "descripcion": "CHETOS NACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05009",
+    "descripcion": "URBAN NACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "05010",
+    "descripcion": "BONELESS NACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "055002",
+    "descripcion": "SALCHINACHOS",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06001",
+    "descripcion": "TACOS DORADOS DE RES",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06002",
+    "descripcion": "TOSTADAS DE RES",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06003",
+    "descripcion": "SOPES DE DESHEBRADA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06004",
+    "descripcion": "COMBO MEXICANO",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06005",
+    "descripcion": "CHIMICHANGA DE MACHACA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06006",
+    "descripcion": "CHILAKILES",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06007",
+    "descripcion": "SALCHICHIMIGANGA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06008",
+    "descripcion": "QUESADILLA SENCILLA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06009",
+    "descripcion": "SALCHIQUESADILLA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06010",
+    "descripcion": "QUESADILLA DE MACHACA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06011",
+    "descripcion": "GRINGA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06012",
+    "descripcion": "CHETOS BOOM",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06013",
+    "descripcion": "PLATO DE ASADA",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06014",
+    "descripcion": "QUESADILLA CULICHI",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "06015",
+    "descripcion": "GRINGA DE CAMARON",
+    "idGrupo": "06",
+    "grupo": "MEXICAN FOOD",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07001",
+    "descripcion": "TORTA DE",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07002",
+    "descripcion": "TORTA DE JAMON CON QUESO",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07003",
+    "descripcion": "TORTA ESPECIAL",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07004",
+    "descripcion": "TORTA DE PIERNA DE PUERCO CON J Y Q",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07005",
+    "descripcion": "TORTA HAWAIIANA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07006",
+    "descripcion": "TORTA GAVASHONA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07007",
+    "descripcion": "TORTA VAQUERA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07008",
+    "descripcion": "TORTA LA CHINGONA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07009",
+    "descripcion": "AHH...PLEBEES TORTONA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07010",
+    "descripcion": "TORTA BISTECK",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07011",
+    "descripcion": "TORTA DE PASTOR",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07012",
+    "descripcion": "TORTA DE PAVO",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07013",
+    "descripcion": "TORTA DE MILANESA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07014",
+    "descripcion": "TORTA DE MACHACA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07015",
+    "descripcion": "TORTA DE CARNITAS",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07016",
+    "descripcion": "TORTA DE LOMO DE PUERCO",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07017",
+    "descripcion": "TORTA D PIENA DE PUERCO",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07018",
+    "descripcion": "TORTA DE PIERNA ADOBADA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07019",
+    "descripcion": "TORTA CUBANA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07020",
+    "descripcion": "TORTA NORTENA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07021",
+    "descripcion": "TORTA BOSTON",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07022",
+    "descripcion": "TORTA YUCATECA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07023",
+    "descripcion": "TORTA CHICALY",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07024",
+    "descripcion": "TORTA CACHANILLA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07025",
+    "descripcion": "TORTA FRIA",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "07026",
+    "descripcion": "PROMOCION 2X150",
+    "idGrupo": "07",
+    "grupo": "TORTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08001",
+    "descripcion": "BURRITO DE CARNE ASADA",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08002",
+    "descripcion": "BURRITO PASTOR",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08003",
+    "descripcion": "BURRITO CARNITAS DE PUERCO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08004",
+    "descripcion": "BURRITO CHIKEN FAJITAS",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08005",
+    "descripcion": "BURRITO STEAK FAJITAS",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08006",
+    "descripcion": "BURRITO 686",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08007",
+    "descripcion": "CHEESE BURRITO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08008",
+    "descripcion": "BLACK BURRITO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08009",
+    "descripcion": "FAT BOY BURRITO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08010",
+    "descripcion": "AHH...PLEBEES BURROTOTE",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08011",
+    "descripcion": "BURRITO MAR Y TIERRA",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08012",
+    "descripcion": "HOT CHEETOS BURRITO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08013",
+    "descripcion": "BURRITO CAMPECHANO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08014",
+    "descripcion": "TIJUAS BURRITO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08015",
+    "descripcion": "BURRITO 2X150",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08016",
+    "descripcion": "BURRITO 2X150",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08017",
+    "descripcion": "BURRITO BONELESS",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08018",
+    "descripcion": "BURRITO GUARRO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08019",
+    "descripcion": "EXTRA",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08020",
+    "descripcion": "BURRITO BUFFALO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08021",
+    "descripcion": "BURRITO CARNIVORO",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08022",
+    "descripcion": "BURRITO TEMPORADA",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08023",
+    "descripcion": "BURRITO PLEBEES",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08024",
+    "descripcion": "PROMO 220 BURRITOS",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "08025",
+    "descripcion": "BURRITO CUBANA",
+    "idGrupo": "08",
+    "grupo": "BURRITOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "09001",
+    "descripcion": "BONELEES",
+    "idGrupo": "09",
+    "grupo": "BONELLES Y ALISTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "09002",
+    "descripcion": "ALISTAS",
+    "idGrupo": "09",
+    "grupo": "BONELLES Y ALISTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "09003",
+    "descripcion": "BUBBAS",
+    "idGrupo": "09",
+    "grupo": "BONELLES Y ALISTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "09004",
+    "descripcion": "PROMO BONELESS 2X170",
+    "idGrupo": "09",
+    "grupo": "BONELLES Y ALISTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "0923085",
+    "descripcion": "PIZZA BONELESS",
+    "idGrupo": "09",
+    "grupo": "BONELLES Y ALISTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10001",
+    "descripcion": "AVOCADO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10002",
+    "descripcion": "SHRIMP \u0026 CHEESE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10003",
+    "descripcion": "TAMPICO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10004",
+    "descripcion": "MANGO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10005",
+    "descripcion": "CALIFORNIA ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10006",
+    "descripcion": "RAINBOW ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10007",
+    "descripcion": "SUN-SHINE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10008",
+    "descripcion": "NEVADO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10009",
+    "descripcion": "FLAMING HOT ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10010",
+    "descripcion": "SPACY ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10011",
+    "descripcion": "CIELO MAR Y TIERRA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10012",
+    "descripcion": "CORDON BLUE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10013",
+    "descripcion": "2 QUESOS",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10014",
+    "descripcion": "CALEXICO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10015",
+    "descripcion": "TORY ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10016",
+    "descripcion": "BACON ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10017",
+    "descripcion": "TERIYAKI ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10018",
+    "descripcion": "CHIKEN TORY BACON ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10019",
+    "descripcion": "DRAGON ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10020",
+    "descripcion": "TORO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10021",
+    "descripcion": "EBY BACON",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10022",
+    "descripcion": "EL CIELO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10023",
+    "descripcion": "BUBBA ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10024",
+    "descripcion": "GOLOSO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10025",
+    "descripcion": "MANCHOSO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10026",
+    "descripcion": "SUSHI-NGON",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10027",
+    "descripcion": "MEXICALI",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10028",
+    "descripcion": "4 QUESOS",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10029",
+    "descripcion": "METEORO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10030",
+    "descripcion": "CULICHI ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10031",
+    "descripcion": "BACON AND CHESSE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10032",
+    "descripcion": "PIZZA ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10033",
+    "descripcion": "CARIBE ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10034",
+    "descripcion": "BONEELES ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10035",
+    "descripcion": "TOKYO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10036",
+    "descripcion": "SUPER CHESEESE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10037",
+    "descripcion": "EXTRA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10038",
+    "descripcion": "PROMO DE SUSHI CMT",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10039",
+    "descripcion": "COMBO 2 VOLCANO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10040",
+    "descripcion": "CIELO MAR Y TIERRA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10041",
+    "descripcion": "CORDON BLUE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10042",
+    "descripcion": "2 QUESOS",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10043",
+    "descripcion": "CALEXICO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10044",
+    "descripcion": "TORY ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10045",
+    "descripcion": "BACON ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10046",
+    "descripcion": "TERIYAKI ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10047",
+    "descripcion": "CHICKEN TORY BACON",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10048",
+    "descripcion": "DRAGON ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10049",
+    "descripcion": "TORO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10050",
+    "descripcion": "EBY BACON",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10051",
+    "descripcion": "EL CIELO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10052",
+    "descripcion": "BUBA ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10053",
+    "descripcion": "AVOCADO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10054",
+    "descripcion": "SHRIMP AND CHEESE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10055",
+    "descripcion": "TAMPICO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10056",
+    "descripcion": "MANGO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10057",
+    "descripcion": "CALIFORNIA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10058",
+    "descripcion": "RAINBOW ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10059",
+    "descripcion": "SUN SHINE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10060",
+    "descripcion": "NEVADO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10061",
+    "descripcion": "FLAMING HOT",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10062",
+    "descripcion": "SPACY ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10063",
+    "descripcion": "GOLOSO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10064",
+    "descripcion": "MANCHOSO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10065",
+    "descripcion": "SUSHI NGON",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10066",
+    "descripcion": "MEXICALI",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10067",
+    "descripcion": "4 QUESOS",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10068",
+    "descripcion": "METEORO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10069",
+    "descripcion": "CULICHI ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10070",
+    "descripcion": "BACON AND CHESSE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10071",
+    "descripcion": "PIZZA ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10072",
+    "descripcion": "CARIBE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10073",
+    "descripcion": "BONELESS ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10074",
+    "descripcion": "TOKYO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10075",
+    "descripcion": "SUPER CHEESE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10076",
+    "descripcion": "EMPANIZADO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10077",
+    "descripcion": "EXTRA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10078",
+    "descripcion": "AGUACHILE ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10079",
+    "descripcion": "2X1 PROMO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10080",
+    "descripcion": "V8 ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10081",
+    "descripcion": "FLACO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10082",
+    "descripcion": "PROMOCION CALIFORNIA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10083",
+    "descripcion": "2X1 CALIFORNIA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10084",
+    "descripcion": "PICOSO ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10085",
+    "descripcion": "SUSHI 2 X 150",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10086",
+    "descripcion": "PROMOCION ROLLO Y TE $100",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10087",
+    "descripcion": "SUHI MAS TE",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10088",
+    "descripcion": "ROLLOS 100 PESOS",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10089",
+    "descripcion": "ROLLOS 2 X 1",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10090",
+    "descripcion": "MONSTER ROLL",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10091",
+    "descripcion": "EXTRA 25",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10092",
+    "descripcion": "EXTERA 15",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10093",
+    "descripcion": "2 ROLLOS NATURALES X100",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10094",
+    "descripcion": "ROLLO CALIFORNIA * 1 PESO",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10095",
+    "descripcion": "SUSHI 3X200",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10096",
+    "descripcion": "ROLLO 50",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10097",
+    "descripcion": "COMBO TULUM",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10098",
+    "descripcion": "SUSHI CREPA",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10099",
+    "descripcion": "SUSHI PROMO 50",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10100",
+    "descripcion": "ROLLO SUSHI 70",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10101",
+    "descripcion": "SUSHI PROMO 80",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10102",
+    "descripcion": "0001 COMEDOR",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10103",
+    "descripcion": "0001 PARA LLEVAR",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10104",
+    "descripcion": "0001 COMEDOR",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10105",
+    "descripcion": "0001 PARA LLEVAR",
+    "idGrupo": "27",
+    "grupo": "MARISCOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10106",
+    "descripcion": "PARA COMEDOR",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10107",
+    "descripcion": "0001 PARA LLEVAR",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10108",
+    "descripcion": "0001 PARA LLEVAR",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10109",
+    "descripcion": "0001 COMEDOR",
+    "idGrupo": "27",
+    "grupo": "MARISCOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "10110",
+    "descripcion": "PARA COMEDOR",
+    "idGrupo": "10",
+    "grupo": "SUSHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "11001",
+    "descripcion": ".",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11002",
+    "descripcion": ".",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11003",
+    "descripcion": ".",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11004",
+    "descripcion": "SODA COCA 2LTS",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11005",
+    "descripcion": "AGUA NATURAL",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11006",
+    "descripcion": "VASO DESECHABLE",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11007",
+    "descripcion": "JUGOS",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11008",
+    "descripcion": ".",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11009",
+    "descripcion": "COCA COLA   600ML",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11010",
+    "descripcion": "DR PAPPER",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11011",
+    "descripcion": "DR PAPPER CREAM",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11012",
+    "descripcion": "DR PAPPER CHERRY",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11013",
+    "descripcion": "MUNDET MANZANA",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11014",
+    "descripcion": "FANTA NARANJA",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11015",
+    "descripcion": "SANGRIA",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11016",
+    "descripcion": "SPRITE",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11017",
+    "descripcion": "COCA LIGHT",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11018",
+    "descripcion": "FANTA FRESA",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11019",
+    "descripcion": "FRESCA",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11020",
+    "descripcion": "ROOT BEER",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11021",
+    "descripcion": "SQUIRT",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11022",
+    "descripcion": "COCA ZERO",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11023",
+    "descripcion": "COCA 2LT",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11024",
+    "descripcion": "SODA BOTE",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11025",
+    "descripcion": "FUZETE",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11026",
+    "descripcion": "SPRITE 2LTS",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11027",
+    "descripcion": "FANTA DE 2LTS",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11028",
+    "descripcion": "CAPRISUN (JUJITO)",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11029",
+    "descripcion": "MEDIA CVZ",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11030",
+    "descripcion": "CAGUAMA",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "11031",
+    "descripcion": "MONSTER",
+    "idGrupo": "11",
+    "grupo": "SODAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "12001",
+    "descripcion": "CHAROLA URBANA",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12002",
+    "descripcion": "CHAROLA URBANA",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12003",
+    "descripcion": "CHAROLA SIX PACK DOG",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12004",
+    "descripcion": "SOPA COREANA",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12005",
+    "descripcion": "COMBO BAD BOYS",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12006",
+    "descripcion": "COMBO FAT BOY",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12007",
+    "descripcion": "BACON BURGER",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12008",
+    "descripcion": "SPICY BBQ 95",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12009",
+    "descripcion": "AHH PLEBEES 95",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12010",
+    "descripcion": "CHAROLA WESNTER",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12011",
+    "descripcion": "COMBO BAD BOY",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "12012",
+    "descripcion": "CHAROLA URBANA \u002B PAPAS \u002B BONELESS \u002B SODA",
+    "idGrupo": "12",
+    "grupo": "CHAROLAS  Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13001",
+    "descripcion": "TERIYAKI DE POLLO",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13002",
+    "descripcion": "TERIYAKI DE RES",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13003",
+    "descripcion": "TERIYAKY DE ESP\u00C9CIAL",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13004",
+    "descripcion": "TERIYAKI DE CAMARON0",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13005",
+    "descripcion": "TERIYAKI MIXTO",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13006",
+    "descripcion": "YAKIMESHI DE POLLO",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13007",
+    "descripcion": "YAKIMESHI DE RES",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13008",
+    "descripcion": "YAKIMESHI ESPECIAL",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13009",
+    "descripcion": "YAKIMESHI DE CAMARON",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13010",
+    "descripcion": "YAKIMESHI MIXTO",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "13011",
+    "descripcion": "TERIYAKI CON SODA 99",
+    "idGrupo": "13",
+    "grupo": "TERIYAKI / YAKIMESHI",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14001",
+    "descripcion": "SUSHI BOLA DE CAMARON",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14002",
+    "descripcion": "SUSHI BOLA DE RES",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14003",
+    "descripcion": "SUSHI BOLA DE POLLO",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14004",
+    "descripcion": "SUSHI BOLA DE CANGREJO",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14005",
+    "descripcion": "4 SUSHIBOLAS COMBO",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14006",
+    "descripcion": "SUSHI BOLA GRATINADA",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14007",
+    "descripcion": "SUSHIBOLA CMT",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "14008",
+    "descripcion": "PROMO SUSHIBOLAS 3X100",
+    "idGrupo": "14",
+    "grupo": "SUCHIBOLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15001",
+    "descripcion": "GALLETA",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15002",
+    "descripcion": "MOFIN",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15003",
+    "descripcion": "BEBIDA EMPLEADO",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15004",
+    "descripcion": ".",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15005",
+    "descripcion": ".",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15006",
+    "descripcion": "PLATO PARA LLEVAR",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15009",
+    "descripcion": "MEDIA",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15010",
+    "descripcion": "HOT DOG $10",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15011",
+    "descripcion": "PROMO GUACAMOLE BURGER",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15012",
+    "descripcion": "HAMBURGUESA PROMO 25",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15013",
+    "descripcion": "PINS",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15014",
+    "descripcion": "ALITAS PROMO 60",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15015",
+    "descripcion": "GOMITAS",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15016",
+    "descripcion": "SMACH BURGER PROMO 100",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15017",
+    "descripcion": "URBAN NACHOS PROMO 100",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15018",
+    "descripcion": "CHOCO FLAN",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15019",
+    "descripcion": "BONELESS 100",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15020",
+    "descripcion": "SPICY BBQ 100",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15021",
+    "descripcion": "PROMO $100",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15022",
+    "descripcion": "CHAROLA $300",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15025",
+    "descripcion": "GOMITAS CON CHILE",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15026",
+    "descripcion": "SABRITAS",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15027",
+    "descripcion": "PEPINILLO CON CHAMOY",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "15028",
+    "descripcion": "COLITAS DE PUERCO",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "1518013",
+    "descripcion": "PAYS",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "1518018",
+    "descripcion": "EMPANADAS",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16001",
+    "descripcion": ".         0",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16002",
+    "descripcion": "CHAROLA WESTER",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16004",
+    "descripcion": "CHAROLA  DE TERIYAKI 2",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16005",
+    "descripcion": "CHAROLA DE TERIYAKI 3",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16006",
+    "descripcion": "COMBO 3",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16007",
+    "descripcion": "CHAROLA ESPECIAL",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16008",
+    "descripcion": "CHAROLA ROLL",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16009",
+    "descripcion": "CHAROLA  SMART",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16010",
+    "descripcion": "CHAROLA SUCHINGON",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16011",
+    "descripcion": "CHAROLA CONSENTIDA",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16012",
+    "descripcion": "CHAROLA FAMILIAR",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16013",
+    "descripcion": "CHAROLA  GLADIADOR",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16014",
+    "descripcion": "COMBO TORTA Y AGUA",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16015",
+    "descripcion": "COMBO BURRITO Y AGUA",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16016",
+    "descripcion": "CHAROLA WESTER PARA COMER AQUI",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16017",
+    "descripcion": "CHAROLA SMART",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16018",
+    "descripcion": "CHAROLA FATBOY",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16019",
+    "descripcion": "CHAROLA BONELEES",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16020",
+    "descripcion": "COMBO BONELEES, HAMBURGESA , SODA PEPSI",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16021",
+    "descripcion": "CHAROLA  AHHPLEBEES",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16022",
+    "descripcion": "COMBO 1",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16023",
+    "descripcion": "CHAROLA DE TERIYAKI",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16024",
+    "descripcion": "COMBO 2",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16025",
+    "descripcion": "CHAROLA DE BONELEES",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16026",
+    "descripcion": "FAT BOX",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16027",
+    "descripcion": "CHAROLA TORTUGAS",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16029",
+    "descripcion": "CHAROLA LOS ANGELES",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16030",
+    "descripcion": "CHAROLA CRUNCH",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16031",
+    "descripcion": "ROLL BOX",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16032",
+    "descripcion": "CHAROLA 1",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16033",
+    "descripcion": "COMBO EXPREESS",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16034",
+    "descripcion": "COMBO BAD BOYS",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16035",
+    "descripcion": "CHAROLA NETFLIX",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16036",
+    "descripcion": "COMBO TONY WALKER HAMBURGUESA \u002B SODA",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16037",
+    "descripcion": "COMBO WALKER HOTDOG \u002B SODA",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16038",
+    "descripcion": "CHAROLA PROMO WESTERN",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16039",
+    "descripcion": "COMBO JUNIOR",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16040",
+    "descripcion": "COMBO BAD BOY",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16041",
+    "descripcion": "COMBO FAT BOY",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16042",
+    "descripcion": "COMBO YANKE",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16043",
+    "descripcion": "COMBO ESTE",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16044",
+    "descripcion": "COMBO JR",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "16045",
+    "descripcion": "COMBO BURGER CON MEDIA",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "1618012",
+    "descripcion": "CHAROLA BAMBOO",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "17001",
+    "descripcion": "ARIZONA TE NEGRO",
+    "idGrupo": "17",
+    "grupo": "ARIZONAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "17002",
+    "descripcion": "ARIZONA PONCHE",
+    "idGrupo": "17",
+    "grupo": "ARIZONAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "17003",
+    "descripcion": "ARIZONA KIWI CON FRESA",
+    "idGrupo": "17",
+    "grupo": "ARIZONAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "17004",
+    "descripcion": "ARIZONA LIMONADA Y FRESA",
+    "idGrupo": "17",
+    "grupo": "ARIZONAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "17005",
+    "descripcion": "ARIZONA SANDIA",
+    "idGrupo": "17",
+    "grupo": "ARIZONAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "17006",
+    "descripcion": "ARIZONA MANGO",
+    "idGrupo": "17",
+    "grupo": "ARIZONAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "17007",
+    "descripcion": "ARIZONA TE VERDE",
+    "idGrupo": "17",
+    "grupo": "ARIZONAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18001",
+    "descripcion": "LIMONADA ROSA",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18002",
+    "descripcion": "LIMON CON CHIA",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18004",
+    "descripcion": "CEBADA",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18005",
+    "descripcion": "HORCHATA",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18006",
+    "descripcion": "PONCHE",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18007",
+    "descripcion": "JAMAICA",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18008",
+    "descripcion": "LIMON",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18009",
+    "descripcion": "TE",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18010",
+    "descripcion": "LIMONADA CHERRY",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18011",
+    "descripcion": "ROLLO Y TE",
+    "idGrupo": "16",
+    "grupo": "CHAROLAS Y COMBOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "18012",
+    "descripcion": "EXTRA",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "18013",
+    "descripcion": "HOT DOG PROMO 2",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18014",
+    "descripcion": "AGUA LITRO",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18015",
+    "descripcion": "CUCLICHI ROLL",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18016",
+    "descripcion": "LA CHINGONA PROMO",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "18017",
+    "descripcion": "SALSA FATBOY",
+    "idGrupo": "15",
+    "grupo": "VARIOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "18018",
+    "descripcion": "CAPRISUN",
+    "idGrupo": "18",
+    "grupo": "AGUA FRESCAS",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "19001",
+    "descripcion": "DIDI",
+    "idGrupo": "19",
+    "grupo": "DIDI",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "19002",
+    "descripcion": "OLA CLICK",
+    "idGrupo": "19",
+    "grupo": "DIDI",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "19003",
+    "descripcion": "SERVICIO A DOMICILIO",
+    "idGrupo": "19",
+    "grupo": "DIDI",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "21001",
+    "descripcion": "MEDIA",
+    "idGrupo": "21",
+    "grupo": "CERVEZA",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "21002",
+    "descripcion": "CAGUAMA",
+    "idGrupo": "21",
+    "grupo": "CERVEZA",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "21003",
+    "descripcion": "CLAMATO PRE",
+    "idGrupo": "21",
+    "grupo": "CERVEZA",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "21004",
+    "descripcion": "CHAVELA",
+    "idGrupo": "21",
+    "grupo": "CERVEZA",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "21005",
+    "descripcion": "CUBETA",
+    "idGrupo": "21",
+    "grupo": "CERVEZA",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "22001",
+    "descripcion": "COCO",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22002",
+    "descripcion": "MANGO",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22003",
+    "descripcion": "PINA",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22004",
+    "descripcion": "NARANJA",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22005",
+    "descripcion": "FRESA Y VAINILLA",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22006",
+    "descripcion": "CHOCOLATE Y VAINILLA",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22007",
+    "descripcion": "GALLETA",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22008",
+    "descripcion": "CHOCOLATE",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22009",
+    "descripcion": "CAPUCCINO",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "22010",
+    "descripcion": "YOGURT DE FRESA",
+    "idGrupo": "22",
+    "grupo": "NIEVES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23001",
+    "descripcion": "CUCLICHI ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23002",
+    "descripcion": "BURRITO DE ASADA",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23003",
+    "descripcion": "URBANA FAT BOY",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23004",
+    "descripcion": "GUARRO XL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23005",
+    "descripcion": "TORO ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23006",
+    "descripcion": "PIZZA ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23007",
+    "descripcion": "CHEYENE 120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23008",
+    "descripcion": "FLAMING HOT ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23009",
+    "descripcion": "ALITAS PROMO $100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23010",
+    "descripcion": "PROMO DE HOT DOG",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23011",
+    "descripcion": "DOGGYS PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23012",
+    "descripcion": "PIRATA BURGER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23013",
+    "descripcion": "CHAROLA DE BONELESS Y SALCHIPAPAS",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23014",
+    "descripcion": "SPICY ROLL 100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23015",
+    "descripcion": "COMBO GUACAMOLE",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23016",
+    "descripcion": "BLACK BURRITO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23017",
+    "descripcion": "ROLLO PROMO 2X100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23018",
+    "descripcion": "BLACK BURRITO PROMOCION $100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23019",
+    "descripcion": "TORTA MILANESA",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23020",
+    "descripcion": "BONELESS ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23021",
+    "descripcion": "2 SUSHIBOLAS POR $80",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23022",
+    "descripcion": "LA RANCHERA BURGER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23023",
+    "descripcion": "BACON LOVER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23024",
+    "descripcion": "MEXICALI ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23025",
+    "descripcion": "SPYCI BBQ COMBO PROMO 120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23026",
+    "descripcion": "PROMO CMT ENTERO 150",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23027",
+    "descripcion": "BONELEES PROMO 100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23028",
+    "descripcion": "TORTA DE PAVO PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23029",
+    "descripcion": "URBAN NACHOS PROMO.",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23030",
+    "descripcion": "FLAMING HOT ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23031",
+    "descripcion": "GUACAMOLE CON TOCINO Y BONELES PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23032",
+    "descripcion": "CHAROLA 3 PROMOCION",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23033",
+    "descripcion": "CHAROLA URBANA CON BONELEES PROMO 350",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23034",
+    "descripcion": "2 CALIFORNIA PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23035",
+    "descripcion": "HOT CHETOS PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23036",
+    "descripcion": "CHETTOS PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23037",
+    "descripcion": "CHILI CHESE BURGER $120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23038",
+    "descripcion": "NACHOS FAT BOY",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23039",
+    "descripcion": "MANCHOSO ROLL PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23040",
+    "descripcion": "LA NUEVA HAMBURGUESA",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23041",
+    "descripcion": "LA CHINGONA PROMO 120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23042",
+    "descripcion": "BACON AND CHESSE",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23043",
+    "descripcion": "BACON BURGER PROMO 100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23044",
+    "descripcion": "BURRITO  VAQUERO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23045",
+    "descripcion": "BONELESS ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23046",
+    "descripcion": "RUBICON BURGER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23047",
+    "descripcion": "DRAGON ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23048",
+    "descripcion": "DRAGON ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23049",
+    "descripcion": "CHAROLA  FATBOY 4 HAMBURGUESAS BONELES \u002B SALSHIPAPAS",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23050",
+    "descripcion": "BONELESS $80",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23051",
+    "descripcion": "PROMO HAWAIAN \u002B BONDESLES",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23052",
+    "descripcion": "#MEXICAN BURGUER#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23053",
+    "descripcion": "#BANDIDO BURGUER#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23054",
+    "descripcion": "CHAROLA DE ROLLOS PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23055",
+    "descripcion": "CALIFORNIA BURGER 120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23056",
+    "descripcion": "2 SUSHIBOLAS 100  CMT",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23057",
+    "descripcion": "###SPACY BQQ BURGUER \u002B BONELES",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23058",
+    "descripcion": "ROLLO CALIFORNIA 70",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23059",
+    "descripcion": "#RICARDA BURGUER#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23060",
+    "descripcion": "#HAMBURGUESA DOBLE #100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23061",
+    "descripcion": "CALIFORNIA ROLL 50#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23062",
+    "descripcion": "#DOBLE BURGER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23063",
+    "descripcion": "#MEXICALI-ROLL#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23064",
+    "descripcion": "# GUACAMOLE BURGUER-BONELES-PAPAS#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23065",
+    "descripcion": "#BONELESS-ROLL#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23066",
+    "descripcion": "#BANDIDO BURGUER#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23067",
+    "descripcion": "#BURRO ASADA# 100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23068",
+    "descripcion": "LOS ANGELES BURGUER# 120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23069",
+    "descripcion": "### CIELO MAR Y TIERRA $75 ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23070",
+    "descripcion": "#CIELO MAR Y TIERRA70#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23071",
+    "descripcion": "###TORTA DE PAVO EN 100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23072",
+    "descripcion": "#BACOND AND CHEESE# 100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23073",
+    "descripcion": "BONELESSS 120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23074",
+    "descripcion": "#CIELOMARYTIERRA 75#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23075",
+    "descripcion": "CHILLI CHESE BURGUER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23076",
+    "descripcion": "CORDON BLUE",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23077",
+    "descripcion": "### BACON BURGER ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23078",
+    "descripcion": "### DRAGON ROLL ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23079",
+    "descripcion": "##PIRATA BURGUER###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23080",
+    "descripcion": "###BONELESS 80###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23081",
+    "descripcion": "#TORTA ESPECIAL#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23082",
+    "descripcion": "#TORY ROLL 100#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23083",
+    "descripcion": "CHAROLA3#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23084",
+    "descripcion": "CHAROLA BOTANERA",
+    "idGrupo": "09",
+    "grupo": "BONELLES Y ALISTAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23085",
+    "descripcion": "###### YANKE BURGER#####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23086",
+    "descripcion": "#####2 SUSHIBOLAS CMT X$100 #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23087",
+    "descripcion": "#FLAMING HOT ROLL#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23088",
+    "descripcion": "#BIG FAT BUGRGUER 120#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23089",
+    "descripcion": "#### LA GOLOSA BURGER ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23090",
+    "descripcion": "### CULICHI ROLL ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23091",
+    "descripcion": "#SPACY BBQ",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23092",
+    "descripcion": "#2 QUESOS ROLL#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23093",
+    "descripcion": "#### V8 BURGER ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23094",
+    "descripcion": "#CHICANAS FRIESSS#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23095",
+    "descripcion": "LA CHINGONA BURGUER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23096",
+    "descripcion": "BONELES ROLLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23097",
+    "descripcion": "ALITAS 80",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23098",
+    "descripcion": "### LA SOCIA BURGER ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23099",
+    "descripcion": "### COMBINACION FATBOY  ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23100",
+    "descripcion": "### GUACAMOLE BURGER ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23101",
+    "descripcion": "### DRAGON ROLL ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23102",
+    "descripcion": "#SPACY BBQ\u002BBONELESS#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23103",
+    "descripcion": "#PROMOCION 2 CMT ENTERO#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23104",
+    "descripcion": "#DOGGYS BURGUER#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23105",
+    "descripcion": "#LA CONSENTIDA BURGUER#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23107",
+    "descripcion": "# COMBO GUACAMOLE BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23108",
+    "descripcion": "# SPICY BBQ BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23109",
+    "descripcion": "# PROMO BONELES 80 #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23110",
+    "descripcion": "# BLACK BURRITO #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23111",
+    "descripcion": "# MEXICALI ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23112",
+    "descripcion": "#### CARAMELO BURGER ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23113",
+    "descripcion": "#### BONELES ROLL ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23114",
+    "descripcion": "# HOT CHEETOS BURGUER CON BONELES #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23115",
+    "descripcion": "# 2 CALIFORNIA ROLL PROMO #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23116",
+    "descripcion": "# MANCHOSO ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23117",
+    "descripcion": "# WATER BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23118",
+    "descripcion": "### BUFALO BURGER ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23119",
+    "descripcion": "#PANDA BURGER",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23120",
+    "descripcion": "#VASO FAT BOY",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23121",
+    "descripcion": "#FLAMING HOT ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23122",
+    "descripcion": "#CORDON BLUE#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23123",
+    "descripcion": "#DISCADA BURGUER\u002BBONELES#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23124",
+    "descripcion": "BONELESS 80",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23125",
+    "descripcion": "# COPIONA BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23126",
+    "descripcion": "# MANCHOSO ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23127",
+    "descripcion": "# COMBO GUACAMOLE #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23128",
+    "descripcion": "# DRAGON ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23129",
+    "descripcion": "# COMBO DOBLE BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23130",
+    "descripcion": "# BLACK COMBO #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23131",
+    "descripcion": "# MEXICALI ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23132",
+    "descripcion": "# COMBO MI CHINGON BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23133",
+    "descripcion": "#DOBLE BURGUER#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23134",
+    "descripcion": "CHAROLA BONELESS",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23135",
+    "descripcion": "# BACON AND CHEESE #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23136",
+    "descripcion": "#### BIG FAT PROMO ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23137",
+    "descripcion": "ROLLO 80",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23138",
+    "descripcion": "# LA LLORONA BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23139",
+    "descripcion": "# BURRITO ASADA #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23140",
+    "descripcion": "# BACON ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23141",
+    "descripcion": "# CHILICHEESE BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23142",
+    "descripcion": "# CHICANOS NACHOS #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23143",
+    "descripcion": "# EBY BACON #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23144",
+    "descripcion": "# LA BARRIO BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23145",
+    "descripcion": "# ROLLO 100 #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23146",
+    "descripcion": "# DIVORCIADA BURGUER #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23147",
+    "descripcion": "# TORO ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23148",
+    "descripcion": "# LA TRAICIONERA #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23149",
+    "descripcion": "#### LA PANTERA BURGER ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23151",
+    "descripcion": "#### PAPAS BONELES #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23152",
+    "descripcion": "#PAPA BONELESS#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23153",
+    "descripcion": "#COMBO BACON",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23154",
+    "descripcion": "#FLAMING HOT ROLL",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23155",
+    "descripcion": "##### 1 HP #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23156",
+    "descripcion": "##### 1 RP #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23157",
+    "descripcion": "# PAPAS BONELES #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23158",
+    "descripcion": "#### DOBLE DOBLE ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23159",
+    "descripcion": "CALIFORNIA ROLL 70",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23160",
+    "descripcion": "#### ROLLO CMT 70 ######",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23161",
+    "descripcion": "#### BURRITO 100 CARNE ASADA ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23162",
+    "descripcion": "### BONELES 2X1 ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23163",
+    "descripcion": "#### DOGO DOG 70 ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23164",
+    "descripcion": "#### COMBO MUJER SUCHIBOLA Y ROLLO #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23165",
+    "descripcion": "#### PANIKIADO DOG (MONSTER) ######",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23166",
+    "descripcion": "###TOSTI BONELESS###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23167",
+    "descripcion": "# PAPA BONELES #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23168",
+    "descripcion": "# NACHOS FAT BOY #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23169",
+    "descripcion": "CHAROLA FAT BOY SALCHIPAPAS",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23170",
+    "descripcion": "# BONELESS 120 #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23171",
+    "descripcion": "# FLAMING HOT ROLL #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23172",
+    "descripcion": "# BURRITO GUARRO #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23173",
+    "descripcion": "#ROLLOS 80#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23174",
+    "descripcion": "# 2 SUSHI BOLAS 100 #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23175",
+    "descripcion": "###### PAPAS BONELES ######",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23176",
+    "descripcion": "# COMBO LEON #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23177",
+    "descripcion": "# PIZZA BONELESS #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23178",
+    "descripcion": "BURRITO BONELESS",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23179",
+    "descripcion": "CHAROLA URBANA PREPARADA",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23180",
+    "descripcion": "### CHAROLA EXPLOSIVA ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23181",
+    "descripcion": "###### TORTA DE PAVO ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23182",
+    "descripcion": "BLACK BURRITO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23183",
+    "descripcion": "# URBAN FRIES #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23184",
+    "descripcion": "#### CHAROLA BAJA ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23185",
+    "descripcion": "### BURRITO PROMO HOT CHETOS ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23186",
+    "descripcion": "##### BP #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23187",
+    "descripcion": "CHAROLA  DE TERIYAKI 3 PROMO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23188",
+    "descripcion": "# 4 MINI SUSHI BOLAS #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23189",
+    "descripcion": "HOT DOG DIA DEL NI\u00D1O:)",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23190",
+    "descripcion": "# TROMPO NACHOS #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23191",
+    "descripcion": "ROLLO PARA MAMA",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23192",
+    "descripcion": "#### ALITAS #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23193",
+    "descripcion": "#### CHICANOS NACHOS ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23194",
+    "descripcion": "HOTDOGPROMO 2",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23195",
+    "descripcion": "PAPA BONELESS",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23196",
+    "descripcion": "PIZZA BONELES",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23197",
+    "descripcion": "SUSHI CREPA",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23198",
+    "descripcion": "####CHICALI DOG #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23199",
+    "descripcion": "##### TP #####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23200",
+    "descripcion": "#### BUBBAS ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23201",
+    "descripcion": "# TERIYAKI DE POLLO #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23202",
+    "descripcion": "2 CMT POR $120",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23203",
+    "descripcion": "BONELES $100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23204",
+    "descripcion": "ALITAS $100",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23205",
+    "descripcion": "### 2 HOT DOGS REG. $100 ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23206",
+    "descripcion": "#### CHAROLA FATBOY $350 ####",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23207",
+    "descripcion": "#SALCHIBONELESS 120#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23208",
+    "descripcion": "#PROMO $90#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23209",
+    "descripcion": "#CHAROLA FAT BOY$300",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23210",
+    "descripcion": "#PROMO $100#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23211",
+    "descripcion": "### ROLLOS 120 EMPA ###",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23212",
+    "descripcion": "CHAROLA  FATBOY 2 BACON 2 GUACAMOLE \u002B BONELES \u002B PAPAS",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23213",
+    "descripcion": "5 ROLLOS 2 EMP. 3 NAT",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23214",
+    "descripcion": "###### SUSHIBOLA PROMO 100 #######",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23215",
+    "descripcion": "CALIFORNIA 1 PESO!!!",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23216",
+    "descripcion": "2 MEDIA CHICHEO",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23217",
+    "descripcion": "MEDIA TOSTI AGUACHILE",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23218",
+    "descripcion": "TOSTI TORRE",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23219",
+    "descripcion": "TOSTADA DE CEVICHE",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23220",
+    "descripcion": "COCTEL CHICO CAMPECHANO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "23221",
+    "descripcion": "#TORRE DE MI AMA#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23222",
+    "descripcion": "#TOSTADA DE CEVICHE#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23223",
+    "descripcion": "#COCTEL GRANDE#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23224",
+    "descripcion": "#COCTEL CHICO#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23225",
+    "descripcion": "#ROLLO 75#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23226",
+    "descripcion": "RP 75",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23227",
+    "descripcion": "RP 75",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23228",
+    "descripcion": "#NACHOS FAT BOY#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23229",
+    "descripcion": "#COCTEL CHICO#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23230",
+    "descripcion": "#TISTI CEVICHE#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23231",
+    "descripcion": "#TOSTI AGUACHILES#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23232",
+    "descripcion": "#2 TOSTADAS DE CEVICHE#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23233",
+    "descripcion": "#2 COCTELES CHICOS#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23234",
+    "descripcion": "1 MEDIA Y 1 TOSTADA X 200",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23235",
+    "descripcion": "#TORRE MAMA# 150",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23236",
+    "descripcion": "0001 - COPA CHICHEO CON AGUACHILE 150  - 0000",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23237",
+    "descripcion": "002 - TOSTIAGUCHILES JR 150 -002",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23238",
+    "descripcion": "0004 - CHAROLA AMERICANA CON PAPAS $350 0004",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23239",
+    "descripcion": "#2 COCTEELES CHICOS#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23240",
+    "descripcion": "#TOSTI CEVICHE#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23241",
+    "descripcion": "# ROLLO 89 #",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23242",
+    "descripcion": "COMBO DUO 220",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23243",
+    "descripcion": "COMBO MARISCOS 230",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23244",
+    "descripcion": "2 COCTELES CHICOS",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23245",
+    "descripcion": "MOLCAJETE FAT",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23246",
+    "descripcion": "CHILEPI\u00D1A",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23247",
+    "descripcion": "#CHILEPI\u00D1A#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23248",
+    "descripcion": "2 COCTELES MEDIANOS",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23249",
+    "descripcion": "#PROMO BUBAS#",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "23250",
+    "descripcion": "COP\u00C1 GRANDE 230",
+    "idGrupo": "23",
+    "grupo": "## PROMOCIONES ##",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "24001",
+    "descripcion": "EXTRA DE ANGUILA",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24002",
+    "descripcion": "EXTRA DE CHIPOTLE",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24003",
+    "descripcion": "EXTRA DE RANCH",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24004",
+    "descripcion": "EXTRA DE TAMPICO",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24005",
+    "descripcion": "EXTRA DE NEVADO",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24006",
+    "descripcion": "EXTRA DE GRATINADO",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24007",
+    "descripcion": "EXTRA DE BACON",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24008",
+    "descripcion": "EXTRA DE EMPANIZADO",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "24009",
+    "descripcion": "DOMOCILIO",
+    "idGrupo": "24",
+    "grupo": "EXTRAS",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "25001",
+    "descripcion": "CHAROLA BURRO",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25002",
+    "descripcion": "CHAROLA WESTERN",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25003",
+    "descripcion": "CHAROLA ROLLOS",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25004",
+    "descripcion": "CHAROLA NACHOS",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25005",
+    "descripcion": "CHAROLA FAT BOY",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25006",
+    "descripcion": "CHAROLA ROLLOS",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25007",
+    "descripcion": "CHAROLA JR",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25008",
+    "descripcion": "CHAROLA BOTANERA",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25009",
+    "descripcion": "CHAROLA  FUTBOLERA",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25010",
+    "descripcion": "CHAROLA FATGOOL",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "25011",
+    "descripcion": "CHAROLA AMERICANA",
+    "idGrupo": "25",
+    "grupo": "CHAROLAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "26001",
+    "descripcion": "CHOCO FLAN",
+    "idGrupo": "26",
+    "grupo": "POSTRES",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "26002",
+    "descripcion": "CARLOTA DE LIMON",
+    "idGrupo": "26",
+    "grupo": "POSTRES",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "26003",
+    "descripcion": "GELATINA DE GANSITO",
+    "idGrupo": "26",
+    "grupo": "POSTRES",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "26004",
+    "descripcion": "PASTELITO 3 LECHES",
+    "idGrupo": "26",
+    "grupo": "POSTRES",
+    "clasificacion": 3,
+    "activo": true
+  },
+  {
+    "idProducto": "27001",
+    "descripcion": "TOSTI AGUACHILE",
+    "idGrupo": "27",
+    "grupo": "MARISCOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "27002",
+    "descripcion": "BOTANA EL GORDO",
+    "idGrupo": "27",
+    "grupo": "MARISCOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "280",
+    "descripcion": "HOT DOG REGULAR",
+    "idGrupo": "02",
+    "grupo": "HOTDOGS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "28001",
+    "descripcion": "CEVICHE DE PESCADO",
+    "idGrupo": "28",
+    "grupo": "CEVICHE(TOSTADAS)",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "28002",
+    "descripcion": "CEVICHE DE CAMARON",
+    "idGrupo": "28",
+    "grupo": "CEVICHE(TOSTADAS)",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "28003",
+    "descripcion": "CEVICHE MIXTO",
+    "idGrupo": "28",
+    "grupo": "CEVICHE(TOSTADAS)",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "28004",
+    "descripcion": "CEVICHE DE PULPO",
+    "idGrupo": "28",
+    "grupo": "CEVICHE(TOSTADAS)",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "28005",
+    "descripcion": "CEVICHE ESPECIAL FAT BOY",
+    "idGrupo": "28",
+    "grupo": "CEVICHE(TOSTADAS)",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "30001",
+    "descripcion": "COCTEL CHICO DE CAMARON",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30002",
+    "descripcion": "COCTEL CHICO DE PULPO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30003",
+    "descripcion": "COCTEL CHICO DE CALLO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30004",
+    "descripcion": "COCTEL MEDIANO DE CAMARON",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30005",
+    "descripcion": "COCTEL MEDIANO PULPO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30006",
+    "descripcion": "COCTEL MEDIANO DE CALLO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30007",
+    "descripcion": "COCTEL MEDIANO CAMPECHANO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30008",
+    "descripcion": "COCTEL GRANDE CAMARON",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30009",
+    "descripcion": "COCTEL GRANDE PULPO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30010",
+    "descripcion": "COCTEL GRANDE CALLO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "30011",
+    "descripcion": "COCTEL GRANDE CAMPECHANO",
+    "idGrupo": "30",
+    "grupo": "COCTELES",
+    "clasificacion": 1,
+    "activo": true
+  },
+  {
+    "idProducto": "31001",
+    "descripcion": "MEDIA DE CAMARON",
+    "idGrupo": "31",
+    "grupo": "BOTANAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "31002",
+    "descripcion": "MEDIA DE AGUACHILES",
+    "idGrupo": "31",
+    "grupo": "BOTANAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "31003",
+    "descripcion": "MEDIA DE ATUN",
+    "idGrupo": "31",
+    "grupo": "BOTANAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "31004",
+    "descripcion": "MEDIA DE PULPO",
+    "idGrupo": "31",
+    "grupo": "BOTANAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "31005",
+    "descripcion": "MEDIA DE CALLO",
+    "idGrupo": "31",
+    "grupo": "BOTANAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "31006",
+    "descripcion": "BOTANA A LA FAT BOY",
+    "idGrupo": "31",
+    "grupo": "BOTANAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "32001",
+    "descripcion": "ALGO DON",
+    "idGrupo": "32",
+    "grupo": "MOLCAJETES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "32002",
+    "descripcion": "ESPECIAL FATBOY",
+    "idGrupo": "32",
+    "grupo": "MOLCAJETES",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "33001",
+    "descripcion": "MEDIA DOCENA DE OSTION",
+    "idGrupo": "33",
+    "grupo": "CONCHAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "33002",
+    "descripcion": "MEDIA DOCENA DE PATA DE MULA",
+    "idGrupo": "33",
+    "grupo": "CONCHAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "33003",
+    "descripcion": "DOCENA OSTION",
+    "idGrupo": "33",
+    "grupo": "CONCHAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "33004",
+    "descripcion": "DOCENA PATA DE MULA",
+    "idGrupo": "33",
+    "grupo": "CONCHAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "33005",
+    "descripcion": "SHOT DE OSTION",
+    "idGrupo": "33",
+    "grupo": "CONCHAS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "34001",
+    "descripcion": "CLAMATO ESPECIAL PREPARADO",
+    "idGrupo": "34",
+    "grupo": "CLAMATOS",
+    "clasificacion": 2,
+    "activo": true
+  },
+  {
+    "idProducto": "5001",
+    "descripcion": "NACHOS REGULARES",
+    "idGrupo": "05",
+    "grupo": "NACHOS",
+    "clasificacion": 2,
+    "activo": true
+  }
+]

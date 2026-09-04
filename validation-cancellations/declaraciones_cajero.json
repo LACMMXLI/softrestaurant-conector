@@ -1,0 +1,178 @@
+[
+  {
+    "idTurnoInterno": 550286,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 10072.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "550286:VISA:2"
+  },
+  {
+    "idTurnoInterno": 550287,
+    "idFormaDePago": "DLL",
+    "tipo": 1,
+    "importeDeclarado": 50.0000,
+    "tipoDeCambio": 16.5000,
+    "idempotencyKey": "550287:DLL:1"
+  },
+  {
+    "idTurnoInterno": 550287,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 3700.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "550287:EF:1"
+  },
+  {
+    "idTurnoInterno": 550287,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 4509.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "550287:VISA:2"
+  },
+  {
+    "idTurnoInterno": 550288,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 5850.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "550288:EF:1"
+  },
+  {
+    "idTurnoInterno": 550288,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 18245.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "550288:VISA:2"
+  },
+  {
+    "idTurnoInterno": 550288,
+    "idFormaDePago": "DLL",
+    "tipo": 1,
+    "importeDeclarado": 5.0000,
+    "tipoDeCambio": 16.5000,
+    "idempotencyKey": "550288:DLL:1"
+  },
+  {
+    "idTurnoInterno": 560287,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 2150.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "560287:EF:1"
+  },
+  {
+    "idTurnoInterno": 560287,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 6614.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "560287:VISA:2"
+  },
+  {
+    "idTurnoInterno": 560287,
+    "idFormaDePago": "DLL",
+    "tipo": 1,
+    "importeDeclarado": 21.0000,
+    "tipoDeCambio": 16.5000,
+    "idempotencyKey": "560287:DLL:1"
+  },
+  {
+    "idTurnoInterno": 560288,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 6750.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "560288:EF:1"
+  },
+  {
+    "idTurnoInterno": 560288,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 18306.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "560288:VISA:2"
+  },
+  {
+    "idTurnoInterno": 560288,
+    "idFormaDePago": "DLL",
+    "tipo": 1,
+    "importeDeclarado": 41.0000,
+    "tipoDeCambio": 16.5000,
+    "idempotencyKey": "560288:DLL:1"
+  },
+  {
+    "idTurnoInterno": 570287,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 100.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "570287:EF:1"
+  },
+  {
+    "idTurnoInterno": 570287,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 6476.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "570287:VISA:2"
+  },
+  {
+    "idTurnoInterno": 570287,
+    "idFormaDePago": "DLL",
+    "tipo": 1,
+    "importeDeclarado": 136.0000,
+    "tipoDeCambio": 16.5000,
+    "idempotencyKey": "570287:DLL:1"
+  },
+  {
+    "idTurnoInterno": 570288,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 4150.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "570288:EF:1"
+  },
+  {
+    "idTurnoInterno": 570288,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 21273.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "570288:VISA:2"
+  },
+  {
+    "idTurnoInterno": 570288,
+    "idFormaDePago": "DLL",
+    "tipo": 1,
+    "importeDeclarado": 40.0000,
+    "tipoDeCambio": 16.5000,
+    "idempotencyKey": "570288:DLL:1"
+  },
+  {
+    "idTurnoInterno": 580288,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 2720.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "580288:EF:1"
+  },
+  {
+    "idTurnoInterno": 580288,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 1181.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "580288:VISA:2"
+  },
+  {
+    "idTurnoInterno": 580288,
+    "idFormaDePago": "DLL",
+    "tipo": 1,
+    "importeDeclarado": 40.0000,
+    "tipoDeCambio": 16.5000,
+    "idempotencyKey": "580288:DLL:1"
+  }
+]
