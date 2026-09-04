@@ -157,6 +157,10 @@ internal sealed record CancellationItem(
     string? User,
     string? Reason);
 
+internal sealed record ProductCancellationReportItem(string EventKey, DateTime? CancelledAt, long? Folio, long? TempFolio, string? ProductId, string? Description, decimal? Quantity, decimal? UnitPrice, decimal? Amount, string? User, string? Reason, string? ReasonDescription, int? ShiftId, string? Area, string? Company, string AccountStatus, DateTime? OpenedAt, DateTime? ClosedAt, decimal? FinalTotal, int SourceDuplicateCount);
+internal sealed record CancellationMetric(string Label, decimal Amount, decimal Quantity);
+internal sealed record ProductCancellationReport(DashboardMeta Meta, decimal TotalAmount, decimal TotalQuantity, IReadOnlyList<CancellationMetric> ByEmployee, IReadOnlyList<CancellationMetric> TopProducts, IReadOnlyList<CancellationMetric> ByShift, IReadOnlyList<CancellationMetric> ByDay, IReadOnlyList<ProductCancellationReportItem> Items, int Page, int PageSize, bool HasMore);
+
 internal sealed record CashMovementItem(
     long Folio,
     DateTime? Date,
@@ -1186,6 +1190,23 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         if (hasMore) items.RemoveAt(items.Count - 1);
         return new SalesPage(meta, items, page, pageSize, hasMore);
     }
+
+    public async Task<ProductCancellationReport?> GetProductCancellationReportAsync(DashboardUser user, string branchCode, DateOnly from, DateOnly to, int? shiftId, string? userFilter, string? productFilter, int page, int pageSize, CancellationToken ct)
+    {
+        var meta = await GetMetaAsync(user, branchCode, from, null, ct);
+        if (meta is null) return null;
+        var start=from.ToDateTime(TimeOnly.MinValue); var end=to.AddDays(1).ToDateTime(TimeOnly.MinValue);
+        var u=string.IsNullOrWhiteSpace(userFilter)?null:userFilter.Trim(); var p=string.IsNullOrWhiteSpace(productFilter)?null:productFilter.Trim();
+        const string f="branch_id=$1 AND cancelled_at >= $2 AND cancelled_at < $3 AND ($4::integer IS NULL OR source_shift_id=$4) AND ($5::text IS NULL OR COALESCE(cancelled_by,'') ILIKE '%' || $5 || '%') AND ($6::text IS NULL OR COALESCE(product_id,'') ILIKE '%' || $6 || '%' OR COALESCE(description,'') ILIKE '%' || $6 || '%')";
+        async Task<List<CancellationMetric>> Metric(string label, string order) { await using var c=dataSource.CreateCommand($"SELECT {label},COALESCE(SUM(quantity*unit_price),0),COALESCE(SUM(quantity),0) FROM product_cancellation_events WHERE {f} GROUP BY 1 ORDER BY {order} LIMIT 20;"); AddCancellationFilters(c,meta.BranchId,start,end,shiftId,u,p); await using var r=await c.ExecuteReaderAsync(ct); var x=new List<CancellationMetric>(); while(await r.ReadAsync(ct)) x.Add(new(ReadNullableString(r,0)??"No registrado",r.GetDecimal(1),r.GetDecimal(2))); return x; }
+        var employees=Metric("COALESCE(cancelled_by,'No registrado')","2 DESC,3 DESC,1"); var products=Metric("COALESCE(description,product_id,'Sin producto')","2 DESC,3 DESC,1"); var shifts=Metric("COALESCE(source_shift_id::text,'Sin turno')","2 DESC,3 DESC,1"); var days=Metric("to_char(cancelled_at::date,'YYYY-MM-DD')","1 DESC");
+        await using var total=dataSource.CreateCommand($"SELECT COALESCE(SUM(quantity*unit_price),0),COALESCE(SUM(quantity),0) FROM product_cancellation_events WHERE {f};"); AddCancellationFilters(total,meta.BranchId,start,end,shiftId,u,p); await using var tr=await total.ExecuteReaderAsync(ct); await tr.ReadAsync(ct);
+        await using var cmd=dataSource.CreateCommand($"SELECT event_key,cancelled_at,source_folio,source_temp_folio,product_id,description,quantity,unit_price,COALESCE(quantity*unit_price,0),cancelled_by,reason,reason_description,source_shift_id,area_description,company_name,account_opened_at,account_closed_at,account_paid,account_cancelled,account_final_total,source_duplicate_count FROM product_cancellation_events WHERE {f} ORDER BY cancelled_at DESC NULLS LAST,event_key LIMIT $7 OFFSET $8;"); AddCancellationFilters(cmd,meta.BranchId,start,end,shiftId,u,p); cmd.Parameters.AddWithValue(pageSize+1); cmd.Parameters.AddWithValue((page-1)*pageSize);
+        await using var r=await cmd.ExecuteReaderAsync(ct); var items=new List<ProductCancellationReportItem>(); while(await r.ReadAsync(ct)){var cancelled=ReadNullableBool(r,18);var paid=ReadNullableBool(r,17);items.Add(new(r.GetString(0),ReadNullableDateTime(r,1),ReadNullableInt64(r,2),ReadNullableInt64(r,3),ReadNullableString(r,4),ReadNullableString(r,5),ReadNullableDecimal(r,6),ReadNullableDecimal(r,7),ReadNullableDecimal(r,8),ReadNullableString(r,9),ReadNullableString(r,10),ReadNullableString(r,11),ReadNullableInt32(r,12),ReadNullableString(r,13),ReadNullableString(r,14),cancelled==true?"Cuenta cancelada":paid==true?"Cobrada":"Abierta",ReadNullableDateTime(r,15),ReadNullableDateTime(r,16),ReadNullableDecimal(r,19),r.GetInt32(20)));}
+        var more=items.Count>pageSize;if(more)items.RemoveAt(items.Count-1);await Task.WhenAll(employees,products,shifts,days);return new(meta,tr.GetDecimal(0),tr.GetDecimal(1),await employees,await products,await shifts,await days,items,page,pageSize,more);
+    }
+
+    private static void AddCancellationFilters(NpgsqlCommand c,Guid branch,DateTime start,DateTime end,int? shift,string? user,string? product){c.Parameters.AddWithValue(branch);c.Parameters.AddWithValue(start);c.Parameters.AddWithValue(end);c.Parameters.AddWithValue((object?)shift??DBNull.Value);c.Parameters.AddWithValue((object?)user??DBNull.Value);c.Parameters.AddWithValue((object?)product??DBNull.Value);}
 
     private async Task<IReadOnlyList<CancellationItem>> GetCancellationsAsync(
         DashboardMeta meta,

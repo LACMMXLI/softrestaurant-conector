@@ -115,6 +115,11 @@ export const api = {
     if (search.trim()) params.set('search', search.trim())
     return request<CashMovementsPage>(`/api/web/cash-movements?${params}`, { signal })
   },
+  productCancellations: (branchCode: string, from: string, to: string, shiftId: number | null, user: string, product: string, page: number, signal?: AbortSignal) => {
+    const params=new URLSearchParams({ branchCode, from, to, page:String(page), pageSize:'25' })
+    if(shiftId!==null)params.set('shiftId',String(shiftId)); if(user.trim())params.set('user',user.trim()); if(product.trim())params.set('product',product.trim())
+    return request<import('./types').ProductCancellationsReport>(`/api/web/product-cancellations?${params}`,{signal})
+  },
   ticket: (branchCode: string, folio: number, signal?: AbortSignal) =>
     request<TicketDetail>(`/api/web/sales/${encodeURIComponent(branchCode)}/${folio}`, { signal }),
   openAccount: (branchCode: string, tempFolio: number, signal?: AbortSignal) =>

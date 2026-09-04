@@ -85,35 +85,41 @@ internal static class ExtractionJob
 
     public static SyncBatch CreateBatch(ExtractorConfig cfg, ExtractionResult result)
     {
-        var cancellationSummaries = result.Cancellations
+        // `cancela` no tiene PK. La llave es una huella del evento disponible en ambas tablas:
+        // cuando tempcancela se consolida, cheques.foliotempcheques conserva el ancla temporal.
+        // saledetailid se conserva para trazabilidad, pero no forma la llave porque cancela no lo
+        // guarda. Filas idénticas de origen se colapsan y se reporta SourceDuplicateCount.
+        var cancellationEvents = result.Cancellations
+            .GroupBy(CancellationEventKey)
+            .Select(group => ToCancellationEvent(group.Key, group.OrderByDescending(x => x.SourceKind == "HISTORICAL").First(), group.Count()))
+            .OrderBy(x => x.CancelledAt)
+            .ThenBy(x => x.EventKey, StringComparer.Ordinal)
+            .ToList();
+
+        var cancellationSummaries = cancellationEvents
             .GroupBy(x => new
             {
-                Date = (x.Fecha ?? result.Desde).Date,
-                x.FolioCheque,
-                x.Usuario,
-                x.IdProducto,
-                x.Descripcion,
-                x.Cantidad,
-                x.Precio,
-                x.Razon
+                Date = (x.CancelledAt ?? result.Desde).Date,
+                FolioCheque = x.SourceFolio ?? x.SourceTempFolio,
+                x.User, x.ProductId, x.Description, Quantity = x.Quantity, Price = x.UnitPrice, Reason = x.Reason
             })
             .Select(group =>
             {
                 var value = group.Key;
                 var rawKey = string.Join('|',
-                    value.Date.ToString("yyyy-MM-dd"), value.FolioCheque, value.Usuario,
-                    value.IdProducto, value.Descripcion, value.Cantidad, value.Precio, value.Razon);
+                    value.Date.ToString("yyyy-MM-dd"), value.FolioCheque, value.User,
+                    value.ProductId, value.Description, value.Quantity, value.Price, value.Reason);
                 return new CancellationSummary
                 {
                     SnapshotKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawKey))).ToLowerInvariant(),
                     Date = value.Date,
                     SourceFolio = value.FolioCheque,
-                    User = value.Usuario,
-                    ProductId = value.IdProducto,
+                    User = value.User,
+                    ProductId = value.ProductId,
                     Description = value.Descripcion,
-                    Quantity = value.Cantidad,
-                    Price = value.Precio,
-                    Reason = value.Razon,
+                    Quantity = value.Quantity,
+                    Price = value.Price,
+                    Reason = value.Reason,
                     Occurrences = group.Count()
                 };
             })
@@ -142,6 +148,8 @@ internal static class ExtractionJob
             CashierDeclarations = result.CashierDeclarations,
             CashMovements = result.CashMovements,
             Cancellations = cancellationSummaries,
+            TransientCancellationsSnapshotComplete = true,
+            ProductCancellations = cancellationEvents,
             Reconciliation = result.Reconciliation.Checks.Select(x => new ReconciliationCheck
             {
                 Name = x.Nombre,
@@ -151,6 +159,32 @@ internal static class ExtractionJob
             }).ToList()
         };
     }
+
+    private static string CancellationEventKey(CancelledLine value)
+    {
+        var accountAnchor = value.FolioTemporal is > 0 ? $"temp:{value.FolioTemporal}" : $"folio:{value.FolioCheque}";
+        var raw = string.Join('|', accountAnchor, Normalize(value.Comanda), Normalize(value.IdProducto),
+            value.Cantidad?.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture),
+            value.Precio?.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture),
+            value.Fecha?.ToString("yyyy-MM-ddTHH:mm:ss.fff", System.Globalization.CultureInfo.InvariantCulture),
+            Normalize(value.Usuario), Normalize(value.Razon), Normalize(value.IdMotivoCancela));
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))).ToLowerInvariant();
+    }
+
+    private static ProductCancellationEvent ToCancellationEvent(string eventKey, CancelledLine value, int duplicateCount) => new()
+    {
+        EventKey = eventKey, SourceKind = value.SourceKind, CancelledAt = value.Fecha,
+        SourceFolio = value.FolioCheque, SourceTempFolio = value.FolioTemporal, SaleDetailId = value.SaleDetailId,
+        Comanda = value.Comanda, ProductId = value.IdProducto, Description = value.Descripcion,
+        Quantity = value.Cantidad, UnitPrice = value.Precio, User = value.Usuario, Reason = value.Razon,
+        ReasonId = value.IdMotivoCancela, ReasonDescription = value.MotivoDescripcion, ShiftId = value.IdTurno,
+        AreaId = value.IdAreaRestaurant, AreaDescription = value.AreaDescripcion, CompanyId = value.IdEmpresa,
+        CompanyName = value.EmpresaNombre, AccountOpenedAt = value.CuentaAbiertaEn, AccountClosedAt = value.CuentaCerradaEn,
+        AccountPaid = value.CuentaPagada, AccountCancelled = value.CuentaCancelada, AccountFinalTotal = value.TotalFinalCuenta,
+        SourceDuplicateCount = duplicateCount
+    };
+
+    private static string Normalize(string? value) => (value ?? string.Empty).Trim().ToUpperInvariant();
 
     private static async Task WriteJsonAsync<T>(string fileName, T value, string outputDirectory, CancellationToken ct)
     {

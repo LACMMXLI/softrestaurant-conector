@@ -10,11 +10,12 @@ import { DashboardScreen } from './screens/DashboardScreen'
 import { BusinessDashboardScreen } from './screens/BusinessDashboardScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { OperationsScreen } from './screens/OperationsScreen'
+import { ProductCancellationsScreen } from './screens/ProductCancellationsScreen'
 import { SalesScreen } from './screens/SalesScreen'
 import type { BusinessDashboard, BusinessMembership, DashboardBranch, DashboardHome, DashboardShift, DashboardUser, Subscription } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
-type Tab = 'home' | 'sales' | 'operations' | 'businesses' | 'more'
+type Tab = 'home' | 'sales' | 'operations' | 'cancellations' | 'businesses' | 'more'
 type SelectedTicket = { folio: number; openAccount: boolean }
 
 const storedBranchKey = 'sr-dashboard:v1:branch'
@@ -339,6 +340,7 @@ export function App() {
               onUnauthorized={becomeAnonymous}
             />
           ) : null}
+          {tab === 'cancellations' ? <ProductCancellationsScreen branchCode={branchCode} date={date} shiftId={shiftId} onUnauthorized={becomeAnonymous} /> : null}
           {tab === 'businesses' ? <BusinessesScreen onUnauthorized={becomeAnonymous} /> : null}
           {tab === 'more' && currentBranch ? (
             <MoreScreen
@@ -369,6 +371,7 @@ function Navigation({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void 
     { key: 'home', label: 'Inicio', icon: <LayoutDashboard size={20} /> },
     { key: 'sales', label: 'Ventas', icon: <BarChart3 size={20} /> },
     { key: 'operations', label: 'Operación', icon: <ReceiptText size={20} /> },
+    { key: 'cancellations', label: 'Cancelados', icon: <ReceiptText size={20} /> },
     { key: 'businesses', label: 'Negocios', icon: <Building2 size={20} /> },
     { key: 'more', label: 'Más', icon: <Menu size={20} /> },
   ]

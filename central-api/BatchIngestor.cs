@@ -37,6 +37,20 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         }
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Cancellations, CancellationsSql, ct);
 
+        // El histórico es una ventana incremental; los temporales son una fotografía actual.
+        // Así un evento abierto se actualiza al llegar a cancela, sin crear una segunda fila.
+        await using (var deleteHistorical = new NpgsqlCommand("""
+            DELETE FROM product_cancellation_events WHERE branch_id=$1 AND source_kind='HISTORICAL'
+              AND cancelled_at >= $2 AND cancelled_at < $3;
+            """, connection, transaction))
+        { deleteHistorical.Parameters.AddWithValue(branchId); deleteHistorical.Parameters.AddWithValue(batch.RangeStart); deleteHistorical.Parameters.AddWithValue(batch.RangeEnd); await deleteHistorical.ExecuteNonQueryAsync(ct); }
+        if (batch.TransientCancellationsSnapshotComplete)
+        {
+            await using var deleteTransient = new NpgsqlCommand("DELETE FROM product_cancellation_events WHERE branch_id=$1 AND source_kind='TRANSIENT';", connection, transaction);
+            deleteTransient.Parameters.AddWithValue(branchId); await deleteTransient.ExecuteNonQueryAsync(ct);
+        }
+        await ExecuteJsonAsync(connection, transaction, branchId, batch.ProductCancellations, ProductCancellationsSql, ct);
+
         var counts = JsonSerializer.Serialize(new
         {
             products = batch.Products.Count,
@@ -491,5 +505,14 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
             occurrences = excluded.occurrences,
             payload = excluded.payload,
             updated_at = now();
+        """;
+
+    private const string ProductCancellationsSql = """
+        INSERT INTO product_cancellation_events
+          (branch_id,event_key,source_kind,cancelled_at,source_folio,source_temp_folio,sale_detail_id,comanda,product_id,description,quantity,unit_price, cancelled_by,reason,reason_id,reason_description,source_shift_id,area_id,area_description,company_id,company_name,account_opened_at,account_closed_at,account_paid,account_cancelled,account_final_total,source_duplicate_count,payload)
+        SELECT $1,item->>'eventKey',item->>'sourceKind',NULLIF(item->>'cancelledAt','')::timestamp,NULLIF(item->>'sourceFolio','')::bigint,NULLIF(item->>'sourceTempFolio','')::bigint,item->>'saleDetailId',item->>'comanda',item->>'productId',item->>'description',NULLIF(item->>'quantity','')::numeric,NULLIF(item->>'unitPrice','')::numeric,item->>'user',item->>'reason',item->>'reasonId',item->>'reasonDescription',NULLIF(item->>'shiftId','')::integer,item->>'areaId',item->>'areaDescription',item->>'companyId',item->>'companyName',NULLIF(item->>'accountOpenedAt','')::timestamp,NULLIF(item->>'accountClosedAt','')::timestamp,NULLIF(item->>'accountPaid','')::boolean,NULLIF(item->>'accountCancelled','')::boolean,NULLIF(item->>'accountFinalTotal','')::numeric,COALESCE(NULLIF(item->>'sourceDuplicateCount','')::integer,1),item
+        FROM jsonb_array_elements($2::jsonb) item
+        ON CONFLICT (branch_id,event_key) DO UPDATE SET
+          source_kind=excluded.source_kind,cancelled_at=excluded.cancelled_at,source_folio=excluded.source_folio,source_temp_folio=excluded.source_temp_folio,sale_detail_id=COALESCE(excluded.sale_detail_id,product_cancellation_events.sale_detail_id),comanda=excluded.comanda,product_id=excluded.product_id,description=excluded.description,quantity=excluded.quantity,unit_price=excluded.unit_price,cancelled_by=excluded.cancelled_by,reason=excluded.reason,reason_id=excluded.reason_id,reason_description=excluded.reason_description,source_shift_id=excluded.source_shift_id,area_id=excluded.area_id,area_description=excluded.area_description,company_id=excluded.company_id,company_name=excluded.company_name,account_opened_at=excluded.account_opened_at,account_closed_at=excluded.account_closed_at,account_paid=excluded.account_paid,account_cancelled=excluded.account_cancelled,account_final_total=excluded.account_final_total,source_duplicate_count=excluded.source_duplicate_count,payload=excluded.payload,updated_at=now();
         """;
 }

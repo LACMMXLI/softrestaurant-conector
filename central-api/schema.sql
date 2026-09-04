@@ -279,6 +279,43 @@ CREATE TABLE IF NOT EXISTS cancellation_summaries (
 );
 CREATE INDEX IF NOT EXISTS ix_cancellations_branch_date ON cancellation_summaries(branch_id, cancellation_date);
 
+-- Migración aditiva: hechos de PRODUCTOS CANCELADOS. A diferencia del resumen legado,
+-- conserva una llave de evento estable, el origen temporal/histórico y el estado de la cuenta.
+CREATE TABLE IF NOT EXISTS product_cancellation_events (
+    branch_id uuid NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+    event_key text NOT NULL,
+    source_kind text NOT NULL CHECK (source_kind IN ('HISTORICAL', 'TRANSIENT')),
+    cancelled_at timestamp NULL,
+    source_folio bigint NULL,
+    source_temp_folio bigint NULL,
+    sale_detail_id text NULL,
+    comanda text NULL,
+    product_id text NULL,
+    description text NULL,
+    quantity numeric(18,4) NULL,
+    unit_price numeric(18,4) NULL,
+    cancelled_by text NULL,
+    reason text NULL,
+    reason_id text NULL,
+    reason_description text NULL,
+    source_shift_id integer NULL,
+    area_id text NULL,
+    area_description text NULL,
+    company_id text NULL,
+    company_name text NULL,
+    account_opened_at timestamp NULL,
+    account_closed_at timestamp NULL,
+    account_paid boolean NULL,
+    account_cancelled boolean NULL,
+    account_final_total numeric(18,4) NULL,
+    source_duplicate_count integer NOT NULL DEFAULT 1,
+    payload jsonb NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (branch_id, event_key)
+);
+CREATE INDEX IF NOT EXISTS ix_product_cancellations_branch_time ON product_cancellation_events(branch_id, cancelled_at DESC);
+CREATE INDEX IF NOT EXISTS ix_product_cancellations_branch_shift ON product_cancellation_events(branch_id, source_shift_id);
+
 CREATE TABLE IF NOT EXISTS app_users (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     email text NOT NULL,

@@ -251,17 +251,79 @@ internal static class Queries
 
     public const string Cancela = """
         SELECT
+            'HISTORICAL' AS sourceKind,
             ca.foliocheque,
+            c.foliotempcheques AS folioTemporal,
+            CAST(NULL AS varchar(250)) AS saledetailid,
+            ca.comanda,
             ca.fecha,
             ca.usuario,
             ca.clave AS idproducto,
             p.descripcion,
             ca.cantidad,
             ca.precio,
-            ca.razon
+            ca.razon,
+            CONVERT(varchar(max), ca.idmotivocancela) AS idmotivocancela,
+            mc.descripcion AS motivoDescripcion,
+            c.idturno,
+            c.idarearestaurant,
+            ar.descripcion AS areaDescripcion,
+            c.idempresa,
+            e.nombre AS empresaNombre,
+            c.fecha AS cuentaAbiertaEn,
+            c.cierre AS cuentaCerradaEn,
+            c.pagado AS cuentaPagada,
+            c.cancelado AS cuentaCancelada,
+            c.total AS totalFinalCuenta
         FROM dbo.cancela AS ca
+        LEFT JOIN dbo.cheques AS c ON c.folio = ca.foliocheque
         LEFT JOIN dbo.productos AS p ON p.idproducto = ca.clave
+        LEFT JOIN dbo.motivoscancelacion AS mc ON mc.idmotivocancela = CONVERT(varchar(5), ca.idmotivocancela)
+        LEFT JOIN dbo.areasrestaurant AS ar ON ar.idarearestaurant = c.idarearestaurant
+        LEFT JOIN dbo.empresas AS e ON e.idempresa = c.idempresa
         WHERE ca.fecha >= @Desde AND ca.fecha < @Hasta
+        ORDER BY ca.fecha;
+        """;
+
+    // tempcancela es estado operativo: no se filtra por fecha porque una cancelación de una
+    // cuenta aún abierta debe permanecer visible aunque el turno continúe otro día. El agente
+    // manda este conjunto como snapshot completo y la API retira solo las observaciones
+    // transitorias que ya no existan.
+    public const string TempCancela = """
+        SELECT
+            'TRANSIENT' AS sourceKind,
+            CAST(NULL AS bigint) AS foliocheque,
+            t.folio AS folioTemporal,
+            ca.saledetailid,
+            ca.comanda,
+            ca.fecha,
+            ca.usuario,
+            ca.clave AS idproducto,
+            p.descripcion,
+            ca.cantidad,
+            ca.precio,
+            ca.razon,
+            CONVERT(varchar(max), ca.idmotivocancela) AS idmotivocancela,
+            mc.descripcion AS motivoDescripcion,
+            COALESCE(NULLIF(t.idturno, 0), open_shift.idturno) AS idturno,
+            t.idarearestaurant,
+            ar.descripcion AS areaDescripcion,
+            t.idempresa,
+            e.nombre AS empresaNombre,
+            t.fecha AS cuentaAbiertaEn,
+            t.cierre AS cuentaCerradaEn,
+            t.pagado AS cuentaPagada,
+            t.cancelado AS cuentaCancelada,
+            t.total AS totalFinalCuenta
+        FROM dbo.tempcancela AS ca
+        LEFT JOIN dbo.tempcheques AS t ON t.folio = ca.foliocheque
+        OUTER APPLY (SELECT TOP (1) s.idturno FROM dbo.turnos s WHERE s.cierre IS NULL
+            AND s.apertura <= COALESCE(t.fecha, GETDATE()) AND s.idestacion = t.estacion
+            ORDER BY s.apertura DESC, s.idturnointerno DESC) AS open_shift
+        LEFT JOIN dbo.productos AS p ON p.idproducto = ca.clave
+        LEFT JOIN dbo.motivoscancelacion AS mc ON mc.idmotivocancela = CONVERT(varchar(5), ca.idmotivocancela)
+        LEFT JOIN dbo.areasrestaurant AS ar ON ar.idarearestaurant = t.idarearestaurant
+        LEFT JOIN dbo.empresas AS e ON e.idempresa = t.idempresa
         ORDER BY ca.fecha;
         """;
 

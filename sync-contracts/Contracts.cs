@@ -231,7 +231,11 @@ public sealed record CashMovement
 
 public sealed record CancelledLine
 {
+    public required string SourceKind { get; init; }
     public long? FolioCheque { get; init; }
+    public long? FolioTemporal { get; init; }
+    public string? SaleDetailId { get; init; }
+    public string? Comanda { get; init; }
     public DateTime? Fecha { get; init; }
     public string? Usuario { get; init; }
     public string? IdProducto { get; init; }
@@ -239,4 +243,16 @@ public sealed record CancelledLine
     public decimal? Cantidad { get; init; }
     public decimal? Precio { get; init; }
     public string? Razon { get; init; }
+    public string? IdMotivoCancela { get; init; }
+    public string? MotivoDescripcion { get; init; }
+    public int? IdTurno { get; init; }
+    public string? IdAreaRestaurant { get; init; }
+    public string? AreaDescripcion { get; init; }
+    public string? IdEmpresa { get; init; }
+    public string? EmpresaNombre { get; init; }
+    public DateTime? CuentaAbiertaEn { get; init; }
+    public DateTime? CuentaCerradaEn { get; init; }
+    public bool? CuentaPagada { get; init; }
+    public bool? CuentaCancelada { get; init; }
+    public decimal? TotalFinalCuenta { get; init; }
 }

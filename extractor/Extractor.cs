@@ -233,9 +233,18 @@ internal sealed class Extractor(string connectionString, DateTime desde, DateTim
     public async Task<List<CancelledLine>> ExtractCancellationsAsync(CancellationToken ct)
     {
         var result = new List<CancelledLine>();
-        await ForEachRowAsync(Queries.Cancela, r => result.Add(new CancelledLine
+        await ForEachRowAsync(Queries.Cancela, r => result.Add(ReadCancellation(r)), ct);
+        await ForEachRowAsync(Queries.TempCancela, r => result.Add(ReadCancellation(r)), ct);
+        return result;
+    }
+
+    private static CancelledLine ReadCancellation(RowReader r) => new()
         {
+            SourceKind = r.GetStringOrNull("sourceKind")!,
             FolioCheque = r.GetInt64OrNull("foliocheque"),
+            FolioTemporal = r.GetInt64OrNull("folioTemporal"),
+            SaleDetailId = r.GetStringOrNull("saledetailid"),
+            Comanda = r.GetStringOrNull("comanda"),
             Fecha = r.GetDateTimeOrNull("fecha"),
             Usuario = r.GetStringOrNull("usuario"),
             IdProducto = r.GetStringOrNull("idproducto"),
@@ -243,9 +252,16 @@ internal sealed class Extractor(string connectionString, DateTime desde, DateTim
             Cantidad = r.GetDecimalOrNull("cantidad"),
             Precio = r.GetDecimalOrNull("precio"),
             Razon = r.GetStringOrNull("razon"),
-        }), ct);
-        return result;
-    }
+            IdMotivoCancela = r.GetStringOrNull("idmotivocancela"),
+            MotivoDescripcion = r.GetStringOrNull("motivoDescripcion"),
+            IdTurno = r.GetInt32OrNull("idturno"),
+            IdAreaRestaurant = r.GetStringOrNull("idarearestaurant"),
+            AreaDescripcion = r.GetStringOrNull("areaDescripcion"),
+            IdEmpresa = r.GetStringOrNull("idempresa"), EmpresaNombre = r.GetStringOrNull("empresaNombre"),
+            CuentaAbiertaEn = r.GetDateTimeOrNull("cuentaAbiertaEn"), CuentaCerradaEn = r.GetDateTimeOrNull("cuentaCerradaEn"),
+            CuentaPagada = r.GetBoolOrNull("cuentaPagada"), CuentaCancelada = r.GetBoolOrNull("cuentaCancelada"),
+            TotalFinalCuenta = r.GetDecimalOrNull("totalFinalCuenta"),
+        };
 
     public async Task<ControlTotals> ExtractControlTotalsAsync(CancellationToken ct)
     {
