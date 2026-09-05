@@ -1,0 +1,41 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "nombre": "tickets_validos",
+      "extraido": 103,
+      "control": 103,
+      "match": true
+    },
+    {
+      "nombre": "venta_valida",
+      "extraido": 30465.0000,
+      "control": 30465.0000,
+      "match": true
+    },
+    {
+      "nombre": "propina_valida",
+      "extraido": 0.0000,
+      "control": 0.0000,
+      "match": true
+    },
+    {
+      "nombre": "tickets_cancelados",
+      "extraido": 4,
+      "control": 4,
+      "match": true
+    },
+    {
+      "nombre": "lineas",
+      "extraido": 419,
+      "control": 419,
+      "match": true
+    },
+    {
+      "nombre": "filas_pago",
+      "extraido": 104,
+      "control": 104,
+      "match": true
+    }
+  ]
+}

@@ -55,6 +55,12 @@ public sealed record ProductCancellationEvent
     public bool? AccountPaid { get; init; }
     public bool? AccountCancelled { get; init; }
     public decimal? AccountFinalTotal { get; init; }
+    /// <summary>Cuenta/mesa de origen, incluso cuando SoftRestaurant nunca generó un cheque.</summary>
+    public string? AccountLabel { get; init; }
+    /// <summary>LINKED_TO_CHECK, LINKED_TO_ACTIVE_TEMP_ACCOUNT, ACCOUNT_DELETED_BEFORE_CHECK o UNRESOLVED_HISTORICAL.</summary>
+    public required string CorrelationStatus { get; init; }
+    /// <summary>Hora del evento de bitácora usado como evidencia de la correlación, si existe.</summary>
+    public DateTime? CorrelationEventAt { get; init; }
     public int SourceDuplicateCount { get; init; } = 1;
 }
 

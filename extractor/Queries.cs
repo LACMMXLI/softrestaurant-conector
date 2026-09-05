@@ -252,7 +252,7 @@ internal static class Queries
     public const string Cancela = """
         SELECT
             'HISTORICAL' AS sourceKind,
-            ca.foliocheque,
+            NULLIF(ca.foliocheque, 0) AS foliocheque,
             c.foliotempcheques AS folioTemporal,
             CAST(NULL AS varchar(250)) AS saledetailid,
             ca.comanda,
@@ -274,9 +274,40 @@ internal static class Queries
             c.cierre AS cuentaCerradaEn,
             c.pagado AS cuentaPagada,
             c.cancelado AS cuentaCancelada,
-            c.total AS totalFinalCuenta
+            c.total AS totalFinalCuenta,
+            account.cuentaReferencia,
+            CASE
+                WHEN c.folio IS NOT NULL THEN 'LINKED_TO_CHECK'
+                WHEN deletedAccount.fecha IS NOT NULL THEN 'ACCOUNT_DELETED_BEFORE_CHECK'
+                ELSE 'UNRESOLVED_HISTORICAL'
+            END AS estadoCorrelacion,
+            cancellationLog.fecha AS eventoCorrelacionEn
         FROM dbo.cancela AS ca
-        LEFT JOIN dbo.cheques AS c ON c.folio = ca.foliocheque
+        OUTER APPLY (
+            SELECT NULLIF(LTRIM(RTRIM(CASE WHEN CHARINDEX('Mesa:', ca.razon) > 0
+                THEN SUBSTRING(ca.razon, CHARINDEX('Mesa:', ca.razon) + 5, 100) END)), '') AS cuentaReferencia
+        ) AS account
+        OUTER APPLY (
+            SELECT TOP (1) b.fecha
+            FROM dbo.bitacorasistema AS b
+            WHERE ca.foliocheque = 0
+              AND account.cuentaReferencia IS NOT NULL
+              AND b.evento = 'Comedor - Cancelación de productos'
+              AND b.valores LIKE '%Cuenta: ' + account.cuentaReferencia + '%'
+              AND ABS(DATEDIFF(second, ca.fecha, b.fecha)) <= 2
+            ORDER BY ABS(DATEDIFF(millisecond, ca.fecha, b.fecha)), b.fecha
+        ) AS cancellationLog
+        OUTER APPLY (
+            SELECT TOP (1) b.fecha
+            FROM dbo.bitacorasistema AS b
+            WHERE cancellationLog.fecha IS NOT NULL
+              AND b.evento = 'Eliminación de cuenta'
+              AND b.valores LIKE '%Cuenta: ' + account.cuentaReferencia + '%'
+              AND b.fecha >= cancellationLog.fecha
+              AND b.fecha < DATEADD(minute, 10, cancellationLog.fecha)
+            ORDER BY b.fecha
+        ) AS deletedAccount
+        LEFT JOIN dbo.cheques AS c ON c.folio = NULLIF(ca.foliocheque, 0)
         LEFT JOIN dbo.productos AS p ON p.idproducto = ca.clave
         LEFT JOIN dbo.motivoscancelacion AS mc ON mc.idmotivocancela = CONVERT(varchar(5), ca.idmotivocancela)
         LEFT JOIN dbo.areasrestaurant AS ar ON ar.idarearestaurant = c.idarearestaurant
@@ -314,7 +345,11 @@ internal static class Queries
             t.cierre AS cuentaCerradaEn,
             t.pagado AS cuentaPagada,
             t.cancelado AS cuentaCancelada,
-            t.total AS totalFinalCuenta
+            t.total AS totalFinalCuenta,
+            t.mesa AS cuentaReferencia,
+            CASE WHEN t.folio IS NOT NULL THEN 'LINKED_TO_ACTIVE_TEMP_ACCOUNT'
+                 ELSE 'UNRESOLVED_TRANSIENT' END AS estadoCorrelacion,
+            CAST(NULL AS datetime) AS eventoCorrelacionEn
         FROM dbo.tempcancela AS ca
         LEFT JOIN dbo.tempcheques AS t ON t.folio = ca.foliocheque
         OUTER APPLY (SELECT TOP (1) s.idturno FROM dbo.turnos s WHERE s.cierre IS NULL

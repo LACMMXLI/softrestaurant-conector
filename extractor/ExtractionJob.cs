@@ -181,6 +181,8 @@ internal static class ExtractionJob
         AreaId = value.IdAreaRestaurant, AreaDescription = value.AreaDescripcion, CompanyId = value.IdEmpresa,
         CompanyName = value.EmpresaNombre, AccountOpenedAt = value.CuentaAbiertaEn, AccountClosedAt = value.CuentaCerradaEn,
         AccountPaid = value.CuentaPagada, AccountCancelled = value.CuentaCancelada, AccountFinalTotal = value.TotalFinalCuenta,
+        AccountLabel = value.CuentaReferencia, CorrelationStatus = value.EstadoCorrelacion,
+        CorrelationEventAt = value.EventoCorrelacionEn,
         SourceDuplicateCount = duplicateCount
     };
 

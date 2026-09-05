@@ -1,0 +1,18 @@
+[
+  {
+    "idTurnoInterno": 190166,
+    "idFormaDePago": "EF",
+    "tipo": 1,
+    "importeDeclarado": 1300.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "190166:EF:1"
+  },
+  {
+    "idTurnoInterno": 190166,
+    "idFormaDePago": "VISA",
+    "tipo": 2,
+    "importeDeclarado": 11039.0000,
+    "tipoDeCambio": 1.0000,
+    "idempotencyKey": "190166:VISA:2"
+  }
+]

@@ -186,7 +186,7 @@ export type CancellationItem = {
 }
 
 export type CancellationMetric = { label: string; amount: number; quantity: number }
-export type ProductCancellation = { eventKey: string; cancelledAt: string | null; folio: number | null; tempFolio: number | null; productId: string | null; description: string | null; quantity: number | null; unitPrice: number | null; amount: number | null; user: string | null; reason: string | null; reasonDescription: string | null; shiftId: number | null; area: string | null; company: string | null; accountStatus: string; openedAt: string | null; closedAt: string | null; finalTotal: number | null; sourceDuplicateCount: number }
+export type ProductCancellation = { eventKey: string; sourceKind: 'HISTORICAL' | 'TRANSIENT'; cancelledAt: string | null; folio: number | null; tempFolio: number | null; productId: string | null; description: string | null; quantity: number | null; unitPrice: number | null; amount: number | null; user: string | null; reason: string | null; reasonDescription: string | null; shiftId: number | null; area: string | null; company: string | null; accountLabel: string | null; correlationStatus: string; accountStatus: string; correlationEventAt: string | null; openedAt: string | null; closedAt: string | null; finalTotal: number | null; sourceDuplicateCount: number }
 export type ProductCancellationsReport = { totalAmount: number; totalQuantity: number; byEmployee: CancellationMetric[]; topProducts: CancellationMetric[]; byShift: CancellationMetric[]; byDay: CancellationMetric[]; items: ProductCancellation[]; page: number; pageSize: number; hasMore: boolean }
 
 export type CashMovementItem = {

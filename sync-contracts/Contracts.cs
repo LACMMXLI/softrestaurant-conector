@@ -255,4 +255,7 @@ public sealed record CancelledLine
     public bool? CuentaPagada { get; init; }
     public bool? CuentaCancelada { get; init; }
     public decimal? TotalFinalCuenta { get; init; }
+    public string? CuentaReferencia { get; init; }
+    public required string EstadoCorrelacion { get; init; }
+    public DateTime? EventoCorrelacionEn { get; init; }
 }

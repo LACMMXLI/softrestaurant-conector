@@ -308,6 +308,9 @@ CREATE TABLE IF NOT EXISTS product_cancellation_events (
     account_paid boolean NULL,
     account_cancelled boolean NULL,
     account_final_total numeric(18,4) NULL,
+    account_label text NULL,
+    correlation_status text NOT NULL DEFAULT 'UNRESOLVED_HISTORICAL',
+    correlation_event_at timestamp NULL,
     source_duplicate_count integer NOT NULL DEFAULT 1,
     payload jsonb NOT NULL,
     updated_at timestamptz NOT NULL DEFAULT now(),
@@ -315,6 +318,23 @@ CREATE TABLE IF NOT EXISTS product_cancellation_events (
 );
 CREATE INDEX IF NOT EXISTS ix_product_cancellations_branch_time ON product_cancellation_events(branch_id, cancelled_at DESC);
 CREATE INDEX IF NOT EXISTS ix_product_cancellations_branch_shift ON product_cancellation_events(branch_id, source_shift_id);
+
+-- Migración aditiva para instalaciones que ya tenían la tabla antes de la correlación de cuentas.
+ALTER TABLE product_cancellation_events ADD COLUMN IF NOT EXISTS account_label text NULL;
+ALTER TABLE product_cancellation_events ADD COLUMN IF NOT EXISTS correlation_status text NOT NULL DEFAULT 'UNRESOLVED_HISTORICAL';
+ALTER TABLE product_cancellation_events ADD COLUMN IF NOT EXISTS correlation_event_at timestamp NULL;
+
+-- Los lotes anteriores enviaban el valor sentinela 0 como si fuera un folio. No es un
+-- cheque válido: se normaliza para que los reportes no muestren "Cuenta 0" ni la llamen abierta.
+UPDATE product_cancellation_events
+SET source_folio = NULL,
+    account_label = COALESCE(account_label,
+        NULLIF(BTRIM(SUBSTRING(reason FROM 'Mesa:[[:space:]]*(.*)$')), '')),
+    correlation_status = CASE
+        WHEN source_kind = 'TRANSIENT' THEN 'UNRESOLVED_TRANSIENT'
+        ELSE 'UNRESOLVED_HISTORICAL'
+    END
+WHERE source_folio = 0;
 
 CREATE TABLE IF NOT EXISTS app_users (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

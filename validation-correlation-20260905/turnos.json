@@ -1,0 +1,18 @@
+[
+  {
+    "workspaceId": "3a5123f5-eb24-4bac-bf4a-6b492dbbfa0e",
+    "idTurnoInterno": 190166,
+    "idTurno": 240,
+    "idEstacion": "DESKTOP-L8QJAJ1",
+    "apertura": "2026-05-28T01:45:39",
+    "cierre": "2026-05-29T01:58:34",
+    "cajero": "JOSEPH",
+    "fondo": 0.0000,
+    "efectivo": 1300.0000,
+    "tarjeta": 11039.0000,
+    "vales": 0.0000,
+    "credito": 0.0000,
+    "procesado": true,
+    "idempotencyKey": "3a5123f5-eb24-4bac-bf4a-6b492dbbfa0e"
+  }
+]

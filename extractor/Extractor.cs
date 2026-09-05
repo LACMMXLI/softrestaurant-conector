@@ -261,6 +261,9 @@ internal sealed class Extractor(string connectionString, DateTime desde, DateTim
             CuentaAbiertaEn = r.GetDateTimeOrNull("cuentaAbiertaEn"), CuentaCerradaEn = r.GetDateTimeOrNull("cuentaCerradaEn"),
             CuentaPagada = r.GetBoolOrNull("cuentaPagada"), CuentaCancelada = r.GetBoolOrNull("cuentaCancelada"),
             TotalFinalCuenta = r.GetDecimalOrNull("totalFinalCuenta"),
+            CuentaReferencia = r.GetStringOrNull("cuentaReferencia"),
+            EstadoCorrelacion = r.GetStringOrNull("estadoCorrelacion") ?? "UNRESOLVED_HISTORICAL",
+            EventoCorrelacionEn = r.GetDateTimeOrNull("eventoCorrelacionEn"),
         };
 
     public async Task<ControlTotals> ExtractControlTotalsAsync(CancellationToken ct)
