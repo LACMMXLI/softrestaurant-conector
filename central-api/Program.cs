@@ -472,10 +472,32 @@ app.MapPost("/api/admin/branches/{branchCode}/replace-device", async (
 
 app.MapPost("/api/ingestion/batches", async (
     HttpContext context,
-    SyncBatch batch,
     BatchIngestor ingestor,
     CancellationToken ct) =>
 {
+    // Do not let minimal-API parameter binding turn malformed or version-skewed agent
+    // payloads into an opaque empty 400. A branch can then identify the incompatible
+    // field without discarding its offline outbox, while the server retains its strict
+    // contract before any database work is attempted.
+    SyncBatch? batch;
+    try
+    {
+        batch = await context.Request.ReadFromJsonAsync<SyncBatch>(cancellationToken: ct);
+    }
+    catch (System.Text.Json.JsonException ex)
+    {
+        app.Logger.LogWarning(ex,
+            "Lote de sincronización inválido (path={JsonPath}, connectorId={ConnectorId})",
+            ex.Path, context.Request.Headers["X-Connector-Id"].ToString());
+        return Results.BadRequest(new
+        {
+            error = "El lote contiene un valor incompatible.",
+            field = ex.Path
+        });
+    }
+
+    if (batch is null)
+        return Results.BadRequest(new { error = "El cuerpo del lote está vacío." });
     if (string.IsNullOrWhiteSpace(batch.BatchId) || string.IsNullOrWhiteSpace(batch.BranchCode))
         return Results.BadRequest(new { error = "batchId y branchCode son obligatorios" });
     if (batch.RangeEnd <= batch.RangeStart)
