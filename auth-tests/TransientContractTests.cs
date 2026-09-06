@@ -56,6 +56,20 @@ public sealed class TransientContractTests
     }
 
     [Fact]
+    public void Legacy_product_cancellation_without_correlation_metadata_is_preserved_as_unknown()
+    {
+        var cancellation = JsonSerializer.Deserialize<ProductCancellationEvent>("""
+            {
+              "eventKey":"legacy-cancellation-1",
+              "sourceKind":"HISTORICAL"
+            }
+            """, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(cancellation);
+        Assert.Equal("UNSPECIFIED_LEGACY", cancellation.CorrelationStatus);
+    }
+
+    [Fact]
     public void Paid_transient_ticket_is_collected_sale_not_open_account()
     {
         var ticket = new TransientSaleHeader
