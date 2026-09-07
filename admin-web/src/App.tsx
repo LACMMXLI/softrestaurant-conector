@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { LogOut, ShieldCheck } from 'lucide-react'
+import { Building2, LogOut, ShieldCheck, UsersRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { LoginScreen } from './components/LoginScreen'
 import { BranchDetailScreen } from './screens/BranchDetailScreen'
@@ -164,7 +164,8 @@ export function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <button className="sidebar-brand" type="button" onClick={() => setView({ name: 'branches' })}>
-          <ShieldCheck size={22} /><span>Admin SaaS</span>
+          <span className="sidebar-brand-mark"><ShieldCheck size={19} /></span>
+          <span><small>SoftRestaurant</small>Control de plataforma</span>
         </button>
 
         <nav className="sidebar-nav">
@@ -173,14 +174,16 @@ export function App() {
             className={view.name === 'branches' || view.name === 'branch-detail' ? 'nav-item active' : 'nav-item'}
             onClick={() => setView({ name: 'branches' })}
           >
-            Sucursales
+            <Building2 size={18} aria-hidden="true" />
+            <span>Sucursales</span>
           </button>
           <button
             type="button"
             className={view.name === 'users' || view.name === 'user-detail' ? 'nav-item active' : 'nav-item'}
             onClick={() => setView({ name: 'users' })}
           >
-            Usuarios
+            <UsersRound size={18} aria-hidden="true" />
+            <span>Usuarios</span>
           </button>
         </nav>
 
@@ -240,6 +243,25 @@ export function App() {
           />
         ) : null}
       </main>
+
+      <nav className="mobile-nav" aria-label="Navegación principal">
+        <button
+          type="button"
+          className={view.name === 'branches' || view.name === 'branch-detail' ? 'mobile-nav-item active' : 'mobile-nav-item'}
+          onClick={() => setView({ name: 'branches' })}
+        >
+          <Building2 size={20} aria-hidden="true" />
+          <span>Sucursales</span>
+        </button>
+        <button
+          type="button"
+          className={view.name === 'users' || view.name === 'user-detail' ? 'mobile-nav-item active' : 'mobile-nav-item'}
+          onClick={() => setView({ name: 'users' })}
+        >
+          <UsersRound size={20} aria-hidden="true" />
+          <span>Usuarios</span>
+        </button>
+      </nav>
     </div>
   )
 }

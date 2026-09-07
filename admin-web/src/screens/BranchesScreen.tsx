@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Plus, Store, X } from 'lucide-react'
+import { ChevronRight, Clock3, Plus, Store, X } from 'lucide-react'
 import { api, ApiError } from '../api'
 import type { Branch, Business } from '../types'
 
@@ -59,7 +59,11 @@ export function BranchesScreen({
     <div className="panel-stack">
       <section className="panel-card" aria-labelledby="branches-title">
         <div className="panel-card-header">
-          <h2 id="branches-title">Sucursales</h2>
+          <div>
+            <p className="section-kicker">Operación conectada</p>
+            <h1 id="branches-title">Sucursales</h1>
+            <p className="panel-hint">Administra el estado y conexión de cada punto de venta.</p>
+          </div>
           <button
             className="secondary-button"
             type="button"
@@ -127,39 +131,18 @@ export function BranchesScreen({
         ) : branches.length === 0 ? (
           <p className="panel-hint">Todavía no hay sucursales dadas de alta.</p>
         ) : (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Sucursal</th>
-                  <th>Código</th>
-                  <th>Zona horaria</th>
-                  <th>Estado</th>
-                  <th>Última sincronización</th>
-                </tr>
-              </thead>
-              <tbody>
-                {branches.map((branch) => (
-                  <tr
-                    key={branch.code}
-                    className="table-row-clickable"
-                    onClick={() => onOpenBranch(branch.code)}
-                  >
-                    <td>
-                      <span className="table-cell-icon"><Store size={15} aria-hidden="true" />{branch.name}</span>
-                    </td>
-                    <td><code>{branch.code}</code></td>
-                    <td>{branch.timezone}</td>
-                    <td>
-                      <span className={branch.active ? 'status-pill status-ok' : 'status-pill status-off'}>
-                        {branch.active ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </td>
-                    <td>{branch.lastSyncAt ? new Date(branch.lastSyncAt).toLocaleString('es-MX') : 'Nunca'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="management-list" role="list">
+            {branches.map((branch) => (
+              <button key={branch.code} className="management-row" type="button" onClick={() => onOpenBranch(branch.code)}>
+                <span className="row-icon"><Store size={19} aria-hidden="true" /></span>
+                <span className="management-row-main">
+                  <span className="management-row-title">{branch.name}</span>
+                  <span className="management-row-meta"><code>{branch.code}</code><span>{branch.timezone}</span></span>
+                  <span className="management-row-sync"><Clock3 size={13} aria-hidden="true" />{branch.lastSyncAt ? `Sincronizó ${new Date(branch.lastSyncAt).toLocaleString('es-MX')}` : 'Aún no sincroniza'}</span>
+                </span>
+                <span className="management-row-side"><span className={branch.active ? 'status-pill status-ok' : 'status-pill status-off'}>{branch.active ? 'Activa' : 'Inactiva'}</span><ChevronRight size={18} aria-hidden="true" /></span>
+              </button>
+            ))}
           </div>
         )}
       </section>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Plus, UserRound, X } from 'lucide-react'
+import { Building2, ChevronRight, Plus, ShieldCheck, UserRound, X } from 'lucide-react'
 import { api, ApiError } from '../api'
 import { ROLE_LABELS, ROLES } from '../types'
 import type { Role, UserDetail, UserSummary } from '../types'
@@ -58,7 +58,11 @@ export function UsersScreen({
     <div className="panel-stack">
       <section className="panel-card" aria-labelledby="users-title">
         <div className="panel-card-header">
-          <h2 id="users-title">Usuarios</h2>
+          <div>
+            <p className="section-kicker">Acceso de plataforma</p>
+            <h1 id="users-title">Usuarios</h1>
+            <p className="panel-hint">Define quién puede entrar y a qué negocios tiene acceso.</p>
+          </div>
           <button className="secondary-button" type="button" onClick={() => setFormOpen((open) => !open)}>
             {formOpen ? <X size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
             <span>{formOpen ? 'Cancelar' : 'Nuevo usuario'}</span>
@@ -125,34 +129,18 @@ export function UsersScreen({
         ) : users.length === 0 ? (
           <p className="panel-hint">Todavía no hay usuarios dados de alta.</p>
         ) : (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Usuario</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Negocios</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="table-row-clickable" onClick={() => onOpenUser(user.id)}>
-                    <td>
-                      <span className="table-cell-icon"><UserRound size={15} aria-hidden="true" />{user.displayName}</span>
-                      <div className="table-cell-subtext">{user.email}</div>
-                    </td>
-                    <td>{ROLE_LABELS[user.role]}</td>
-                    <td>
-                      <span className={user.active ? 'status-pill status-ok' : 'status-pill status-off'}>
-                        {user.active ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td>{user.businessCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="management-list" role="list">
+            {users.map((user) => (
+              <button key={user.id} className="management-row" type="button" onClick={() => onOpenUser(user.id)}>
+                <span className="row-icon"><UserRound size={19} aria-hidden="true" /></span>
+                <span className="management-row-main">
+                  <span className="management-row-title">{user.displayName}</span>
+                  <span className="management-row-email">{user.email}</span>
+                  <span className="management-row-meta"><span>{user.role === 'SUPERADMIN' ? <ShieldCheck size={13} aria-hidden="true" /> : null}{ROLE_LABELS[user.role]}</span><span><Building2 size={13} aria-hidden="true" />{user.businessCount} {user.businessCount === 1 ? 'negocio' : 'negocios'}</span></span>
+                </span>
+                <span className="management-row-side"><span className={user.active ? 'status-pill status-ok' : 'status-pill status-off'}>{user.active ? 'Activo' : 'Inactivo'}</span><ChevronRight size={18} aria-hidden="true" /></span>
+              </button>
+            ))}
           </div>
         )}
       </section>
