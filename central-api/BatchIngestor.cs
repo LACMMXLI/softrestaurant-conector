@@ -458,19 +458,34 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         """;
 
     private const string CashMovementsSql = """
+        WITH incoming AS (
+            SELECT item FROM jsonb_array_elements($2::jsonb) AS item
+        )
         INSERT INTO cash_movements
             (branch_id, idempotency_key, source_folio, source_shift_id, movement_date, movement_type,
-             amount, cancelled, payload)
+             amount, cancelled, payload, expense_category_id, expense_category_source)
         SELECT $1,
-               item->>'idempotencyKey',
-               (item->>'folio')::bigint,
-               NULLIF(item->>'idTurno', '')::integer,
-               NULLIF(item->>'fecha', '')::timestamp,
-               (item->>'tipo')::integer,
-               NULLIF(item->>'importe', '')::numeric,
-               COALESCE((item->>'cancelado')::boolean, false),
-               item
-        FROM jsonb_array_elements($2::jsonb) AS item
+               incoming.item->>'idempotencyKey',
+               (incoming.item->>'folio')::bigint,
+               NULLIF(incoming.item->>'idTurno', '')::integer,
+               NULLIF(incoming.item->>'fecha', '')::timestamp,
+               (incoming.item->>'tipo')::integer,
+               NULLIF(incoming.item->>'importe', '')::numeric,
+               COALESCE((incoming.item->>'cancelado')::boolean, false),
+               incoming.item,
+               CASE WHEN (incoming.item->>'tipo')::integer = 1 THEN matched.category_id END,
+               CASE WHEN (incoming.item->>'tipo')::integer = 1 AND matched.category_id IS NOT NULL THEN 'AUTOMATIC' END
+        FROM incoming
+        LEFT JOIN LATERAL (
+            SELECT rule.category_id
+            FROM branches b
+            JOIN expense_categories category ON category.business_id = b.business_id AND category.active
+            JOIN expense_category_keywords rule ON rule.category_id = category.id
+            WHERE b.id = $1
+              AND COALESCE(incoming.item->>'concepto', '') ILIKE '%' || rule.keyword || '%'
+            ORDER BY rule.priority, category.display_order, length(rule.keyword) DESC, category.name
+            LIMIT 1
+        ) matched ON true
         ON CONFLICT (branch_id, idempotency_key) DO UPDATE
         SET source_folio = excluded.source_folio,
             source_shift_id = excluded.source_shift_id,
@@ -479,6 +494,10 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
             amount = excluded.amount,
             cancelled = excluded.cancelled,
             payload = excluded.payload,
+            expense_category_id = CASE WHEN cash_movements.expense_category_source = 'MANUAL'
+                THEN cash_movements.expense_category_id ELSE excluded.expense_category_id END,
+            expense_category_source = CASE WHEN cash_movements.expense_category_source = 'MANUAL'
+                THEN 'MANUAL' ELSE excluded.expense_category_source END,
             updated_at = now();
         """;
 

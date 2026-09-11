@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { api, ApiError } from '../api'
 import { EmptyState } from '../components/EmptyState'
 import { formatAmount, formatTime } from '../format'
-import type { CashMovementsPage, DashboardHome, ExpenseSummary } from '../types'
+import type { CashMovementsPage, DashboardHome, ExpenseCategory, ExpenseSummary } from '../types'
 
 type OperationsScreenProps = {
   branchCode: string
@@ -11,10 +11,11 @@ type OperationsScreenProps = {
   shiftId: number | null
   data: DashboardHome | null
   loading: boolean
+  canManageExpenses: boolean
   onUnauthorized: () => void
 }
 
-export function OperationsScreen({ branchCode, date, shiftId, data, loading, onUnauthorized }: OperationsScreenProps) {
+export function OperationsScreen({ branchCode, date, shiftId, data, loading, canManageExpenses, onUnauthorized }: OperationsScreenProps) {
   const [search, setSearch] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [type, setType] = useState<number | null>(null)
@@ -23,6 +24,10 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
   const [movementsLoading, setMovementsLoading] = useState(true)
   const [expenseSummary, setExpenseSummary] = useState<ExpenseSummary | null>(null)
   const [expensesLoading, setExpensesLoading] = useState(true)
+  const [categories, setCategories] = useState<ExpenseCategory[]>([])
+  const [editingExpense, setEditingExpense] = useState<string | null>(null)
+  const [quickRule, setQuickRule] = useState({ name: '', keyword: '' })
+  const [classificationVersion, setClassificationVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -42,7 +47,7 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
         if (!controller.signal.aborted) setMovementsLoading(false)
       })
     return () => controller.abort()
-  }, [branchCode, date, onUnauthorized, page, shiftId, submittedSearch, type])
+  }, [branchCode, classificationVersion, date, onUnauthorized, page, shiftId, submittedSearch, type])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -55,7 +60,35 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
       })
       .finally(() => { if (!controller.signal.aborted) setExpensesLoading(false) })
     return () => controller.abort()
-  }, [branchCode, date, onUnauthorized, shiftId])
+  }, [branchCode, classificationVersion, date, onUnauthorized, shiftId])
+
+  useEffect(() => {
+    if (!canManageExpenses) { setCategories([]); return }
+    const controller = new AbortController()
+    api.expenseCategories(branchCode, controller.signal)
+      .then(next => { if (!controller.signal.aborted) setCategories(next) })
+      .catch((reason: unknown) => { if (reason instanceof ApiError && reason.status === 401) onUnauthorized() })
+    return () => controller.abort()
+  }, [branchCode, canManageExpenses, classificationVersion, onUnauthorized])
+
+  async function assignCategory(idempotencyKey: string, categoryId: string) {
+    try {
+      await api.assignExpenseCategory(branchCode, idempotencyKey, categoryId)
+      setEditingExpense(null)
+      setClassificationVersion(value => value + 1)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'No fue posible corregir la categoría.') }
+  }
+
+  async function createQuickRule(item: CashMovementsPage['items'][number], event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    try {
+      const category = await api.createExpenseCategory(branchCode, { name: quickRule.name, displayOrder: 100, rules: [{ keyword: quickRule.keyword, priority: 100 }] })
+      await api.assignExpenseCategory(branchCode, item.idempotencyKey, category.id)
+      setQuickRule({ name: '', keyword: '' })
+      setEditingExpense(null)
+      setClassificationVersion(value => value + 1)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'No fue posible crear la regla.') }
+  }
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -152,13 +185,15 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
           <>
             <div className="activity-list">
               {result.items.map((item) => (
-                <article className="activity-row" key={item.folio}>
+                <article className="activity-row expense-movement-row" key={item.idempotencyKey}>
                   <span className={item.type === 1 ? 'activity-icon out' : 'activity-icon in'}>
                     {item.type === 1 ? <ArrowUpFromLine size={18} /> : <ArrowDownToLine size={18} />}
                   </span>
                   <div>
                     <strong>{item.concept || (item.type === 1 ? 'Salida sin concepto' : 'Entrada sin concepto')}</strong>
                     <p>{formatTime(item.date)} · Folio {item.folio}{item.reference ? ` · ${item.reference}` : ''}</p>
+                    {item.type === 1 ? <div className="expense-movement-category"><span className={item.category ? 'expense-category-tag' : 'expense-category-tag unclassified'}>{item.category || 'Sin clasificar'}{item.categorySource === 'MANUAL' ? ' · manual' : ''}</span>{canManageExpenses ? <button className="text-button" type="button" onClick={() => { setEditingExpense(editingExpense === item.idempotencyKey ? null : item.idempotencyKey); setQuickRule({ name: '', keyword: item.concept || '' }) }}>Corregir</button> : null}</div> : null}
+                    {canManageExpenses && item.type === 1 && editingExpense === item.idempotencyKey ? <div className="expense-correction-panel"><label>Asignar categoría<select value={item.categoryId ?? ''} onChange={event => { if (event.target.value) void assignCategory(item.idempotencyKey, event.target.value) }}><option value="">Selecciona una categoría</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>{!item.category ? <form onSubmit={event => void createQuickRule(item, event)}><label>Nueva categoría<input value={quickRule.name} onChange={event => setQuickRule(current => ({ ...current, name: event.target.value }))} placeholder="Ej. Viáticos" required /></label><label>Palabra clave<input value={quickRule.keyword} onChange={event => setQuickRule(current => ({ ...current, keyword: event.target.value }))} placeholder="Ej. DIDI" required /></label><button className="secondary-button" type="submit">Crear regla y asignar</button></form> : <button className="text-button" type="button" onClick={() => void api.resetExpenseCategory(branchCode, item.idempotencyKey).then(() => setClassificationVersion(value => value + 1))}>Volver a automático</button>}</div> : null}
                   </div>
                   <b>{formatAmount(item.amount)}</b>
                 </article>

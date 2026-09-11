@@ -9,6 +9,8 @@ import type {
   DashboardSession,
   CashMovementsPage,
   ExpenseSummary,
+  ExpenseCategory,
+  ExpenseCategoryInput,
   ConnectorInstallation,
   SalesPage,
   TicketDetail,
@@ -121,6 +123,18 @@ export const api = {
     if (shiftId !== null) params.set('shiftId', String(shiftId))
     return request<ExpenseSummary>(`/api/web/expenses/summary?${params}`, { signal })
   },
+  expenseCategories: (branchCode: string, signal?: AbortSignal) =>
+    request<ExpenseCategory[]>(`/api/web/expenses/categories?branchCode=${encodeURIComponent(branchCode)}`, { signal }),
+  createExpenseCategory: (branchCode: string, input: ExpenseCategoryInput) =>
+    request<ExpenseCategory>('/api/web/expenses/categories?branchCode=' + encodeURIComponent(branchCode), { method: 'POST', body: JSON.stringify(input) }),
+  updateExpenseCategory: (branchCode: string, categoryId: string, input: ExpenseCategoryInput) =>
+    request<ExpenseCategory>(`/api/web/expenses/categories/${encodeURIComponent(categoryId)}?branchCode=${encodeURIComponent(branchCode)}`, { method: 'PUT', body: JSON.stringify(input) }),
+  deleteExpenseCategory: (branchCode: string, categoryId: string) =>
+    request<void>(`/api/web/expenses/categories/${encodeURIComponent(categoryId)}?branchCode=${encodeURIComponent(branchCode)}`, { method: 'DELETE' }),
+  assignExpenseCategory: (branchCode: string, idempotencyKey: string, categoryId: string) =>
+    request<void>(`/api/web/expenses/movements/${encodeURIComponent(idempotencyKey)}/category?branchCode=${encodeURIComponent(branchCode)}`, { method: 'PUT', body: JSON.stringify({ categoryId }) }),
+  resetExpenseCategory: (branchCode: string, idempotencyKey: string) =>
+    request<void>(`/api/web/expenses/movements/${encodeURIComponent(idempotencyKey)}/category?branchCode=${encodeURIComponent(branchCode)}`, { method: 'DELETE' }),
   productCancellations: (branchCode: string, from: string, to: string, shiftId: number | null, user: string, product: string, page: number, signal?: AbortSignal) => {
     const params=new URLSearchParams({ branchCode, from, to, page:String(page), pageSize:'25' })
     if(shiftId!==null)params.set('shiftId',String(shiftId)); if(user.trim())params.set('user',user.trim()); if(product.trim())params.set('product',product.trim())

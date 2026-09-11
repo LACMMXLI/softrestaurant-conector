@@ -12,10 +12,11 @@ import { MoreScreen } from './screens/MoreScreen'
 import { OperationsScreen } from './screens/OperationsScreen'
 import { ProductCancellationsScreen } from './screens/ProductCancellationsScreen'
 import { SalesScreen } from './screens/SalesScreen'
+import { ExpenseCategoriesScreen } from './screens/ExpenseCategoriesScreen'
 import type { BusinessDashboard, BusinessMembership, DashboardBranch, DashboardHome, DashboardShift, DashboardUser, Subscription } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
-type Tab = 'home' | 'sales' | 'operations' | 'cancellations' | 'businesses' | 'more'
+type Tab = 'home' | 'sales' | 'operations' | 'cancellations' | 'businesses' | 'more' | 'expense-categories'
 type SelectedTicket = { folio: number; openAccount: boolean }
 
 const storedBranchKey = 'sr-dashboard:v1:branch'
@@ -45,6 +46,7 @@ export function App() {
     [branchCode, branches],
   )
   const selectedBusinessId = branchCode.startsWith('all:') ? branchCode.slice(4) : null
+  const isCurrentBusinessOwner = currentBranch !== null && businesses.some((business) => business.id === currentBranch.businessId && business.role === 'OWNER')
   const historyMinimumDate = useMemo(() => {
     const today = new Date()
     today.setUTCDate(today.getUTCDate() - ((subscription?.plan === 'PLUS' ? 7 : 3) - 1))
@@ -337,11 +339,13 @@ export function App() {
               shiftId={shiftId}
               data={dashboard}
               loading={dashboardLoading}
+              canManageExpenses={isCurrentBusinessOwner}
               onUnauthorized={becomeAnonymous}
             />
           ) : null}
           {tab === 'cancellations' ? <ProductCancellationsScreen branchCode={branchCode} date={date} shiftId={shiftId} onUnauthorized={becomeAnonymous} /> : null}
           {tab === 'businesses' ? <BusinessesScreen onUnauthorized={becomeAnonymous} /> : null}
+          {tab === 'expense-categories' && currentBranch ? <ExpenseCategoriesScreen branchCode={currentBranch.code} canManage={isCurrentBusinessOwner} onUnauthorized={becomeAnonymous} /> : null}
           {tab === 'more' && currentBranch ? (
             <MoreScreen
               user={user}
@@ -349,6 +353,8 @@ export function App() {
               dashboard={dashboard}
               onLogout={handleLogout}
               onBranchUpdated={updateBranch}
+              onOpenExpenseCategories={() => setTab('expense-categories')}
+              canManageExpenses={isCurrentBusinessOwner}
               onUnauthorized={becomeAnonymous}
             />
           ) : null}

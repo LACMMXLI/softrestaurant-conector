@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Database, LogOut, RefreshCw, Server, ShieldCheck, UserRound } from 'lucide-react'
+import { Database, LogOut, RefreshCw, Server, Settings2, ShieldCheck, Tag, UserRound } from 'lucide-react'
 import { StatusPill } from '../components/StatusPill'
 import { timeAgo } from '../format'
 import { api, ApiError } from '../api'
@@ -11,10 +11,12 @@ type MoreScreenProps = {
   dashboard: DashboardHome | null
   onLogout: () => Promise<void>
   onBranchUpdated: (branch: DashboardBranch) => void
+  onOpenExpenseCategories: () => void
+  canManageExpenses: boolean
   onUnauthorized: () => void
 }
 
-export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated, onUnauthorized }: MoreScreenProps) {
+export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated, onOpenExpenseCategories, canManageExpenses, onUnauthorized }: MoreScreenProps) {
   const [requestingSync, setRequestingSync] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
 
@@ -76,6 +78,13 @@ export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated,
             : 'Pide al agente de esta sucursal que sincronice en cuanto pueda.'}
         </p>
         {syncError ? <p className="form-error" role="alert">{syncError}</p> : null}
+      </section>
+
+      <section className="content-card settings-card">
+        <div className="section-heading horizontal"><div><p className="utility-label">Configuración</p><h2>Categorías de gastos</h2></div><Settings2 size={20} /></div>
+        <p className="panel-hint">Define palabras clave y prioridades para clasificar automáticamente las salidas de todas las sucursales.</p>
+        <button className="secondary-button" type="button" onClick={onOpenExpenseCategories} disabled={!canManageExpenses}><Tag size={16} /> Administrar categorías</button>
+        {!canManageExpenses ? <p className="panel-hint">Solo el OWNER del negocio puede modificar estas reglas.</p> : null}
       </section>
 
       <button className="logout-button" type="button" onClick={() => void onLogout()}>

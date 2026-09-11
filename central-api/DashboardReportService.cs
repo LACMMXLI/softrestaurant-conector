@@ -26,7 +26,10 @@ internal sealed record BusinessBranchContribution(
 internal sealed record BusinessDashboardResponse(
     Guid BusinessId, string BusinessName, DateOnly Date, string Coverage,
     int IncludedBranches, int TotalBranches, BusinessDashboardSummary Summary,
-    IReadOnlyList<BusinessBranchContribution> Branches, TopProducts TopProducts);
+    IReadOnlyList<BusinessBranchContribution> Branches, TopProducts TopProducts,
+    BusinessExpenseSummary Expenses);
+
+internal sealed record BusinessExpenseSummary(decimal Total, IReadOnlyList<ExpenseCategoryTotal> Categories);
 
 internal sealed record DashboardMeta(
     Guid BranchId,
@@ -163,12 +166,16 @@ internal sealed record CancellationMetric(string Label, decimal Amount, decimal 
 internal sealed record ProductCancellationReport(DashboardMeta Meta, decimal TotalAmount, decimal TotalQuantity, IReadOnlyList<CancellationMetric> ByEmployee, IReadOnlyList<CancellationMetric> TopProducts, IReadOnlyList<CancellationMetric> ByShift, IReadOnlyList<CancellationMetric> ByDay, IReadOnlyList<ProductCancellationReportItem> Items, int Page, int PageSize, bool HasMore);
 
 internal sealed record CashMovementItem(
+    string IdempotencyKey,
     long Folio,
     DateTime? Date,
     int Type,
     decimal? Amount,
     string? Concept,
-    string? Reference);
+    string? Reference,
+    Guid? CategoryId,
+    string? Category,
+    string? CategorySource);
 
 internal sealed record DashboardHomeResponse(
     DashboardMeta Meta,
@@ -315,9 +322,37 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         } while (await reader.ReadAsync(ct));
         branches = branches.Select(x => x with { ParticipationPercent = sales > 0 ? Math.Round(x.Sales / sales * 100m, 1) : 0 }).OrderByDescending(x => x.Sales).ToList();
         var products = await GetBusinessTopProductsAsync(user, businessId, start, end, ct);
+        var expenses = await GetBusinessExpenseSummaryAsync(user, businessId, start, end, ct);
         var coverage = included == 0 ? "missing" : included == total ? "complete" : "partial";
         return new BusinessDashboardResponse(businessId, name, date, coverage, included, total,
-            new BusinessDashboardSummary(tickets, sales, tickets > 0 ? sales/tickets : 0, tips, cancelledTickets, cancelledLines, cashIn, cashOut, cashSales, cardSales, otherSales), branches, products);
+            new BusinessDashboardSummary(tickets, sales, tickets > 0 ? sales/tickets : 0, tips, cancelledTickets, cancelledLines, cashIn, cashOut, cashSales, cardSales, otherSales), branches, products, expenses);
+    }
+
+    private async Task<BusinessExpenseSummary> GetBusinessExpenseSummaryAsync(DashboardUser user, Guid businessId, DateTime start, DateTime end, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            WITH eligible AS (
+                SELECT b.id FROM branches b
+                WHERE b.business_id = $1 AND b.active
+                  AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id = b.business_id AND bm.user_id = $2)
+                  AND EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id = b.id AND sb.reconciliation_ok AND sb.range_start <= $3 AND sb.range_end >= $4)
+            )
+            SELECT COALESCE(category.name, 'Sin clasificar'), COALESCE(SUM(cm.amount), 0), COUNT(*)
+            FROM cash_movements cm
+            JOIN eligible e ON e.id = cm.branch_id
+            LEFT JOIN expense_categories category ON category.id = cm.expense_category_id
+            WHERE cm.movement_date >= $3 AND cm.movement_date < $4 AND cm.movement_type = 1 AND NOT cm.cancelled
+            GROUP BY category.name
+            ORDER BY CASE WHEN category.name IS NULL THEN 1 ELSE 0 END, category.name;
+            """);
+        command.Parameters.AddWithValue(businessId);
+        command.Parameters.AddWithValue(user.Id);
+        command.Parameters.AddWithValue(start);
+        command.Parameters.AddWithValue(end);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var categories = new List<ExpenseCategoryTotal>();
+        while (await reader.ReadAsync(ct)) categories.Add(new ExpenseCategoryTotal(reader.GetString(0), reader.GetDecimal(1), reader.GetInt64(2)));
+        return new BusinessExpenseSummary(categories.Sum(item => item.Total), categories);
     }
 
     private async Task<TopProducts> GetBusinessTopProductsAsync(DashboardUser user, Guid businessId, DateTime start, DateTime end, CancellationToken ct)
@@ -536,39 +571,27 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         string branchCode,
         DateOnly date,
         int? shiftId,
-        ExpenseCategoryService categories,
         CancellationToken ct)
     {
         var meta = await GetMetaAsync(user, branchCode, date, shiftId, ct);
         if (meta is null) return null;
-        await categories.GetAsync(meta.BusinessId, ct);
         if (!meta.CanShowData) return new ExpenseSummary(meta, 0, []);
 
         var start = meta.Date.ToDateTime(TimeOnly.MinValue);
         await using var command = dataSource.CreateCommand("""
-            SELECT COALESCE(match.category_name, 'Sin categoría'),
+            SELECT COALESCE(category.name, 'Sin clasificar'),
                    COALESCE(SUM(cm.amount), 0),
                    COUNT(*)
             FROM cash_movements cm
-            LEFT JOIN LATERAL (
-                SELECT c.name AS category_name
-                FROM expense_categories c
-                JOIN expense_category_keywords k ON k.category_id = c.id
-                WHERE c.business_id = $1
-                  AND c.active
-                  AND COALESCE(cm.payload->>'concepto', '') ILIKE '%' || k.keyword || '%'
-                ORDER BY c.display_order, length(k.keyword) DESC, c.name
-                LIMIT 1
-            ) match ON true
-            WHERE cm.branch_id = $2
-              AND (($5::integer IS NULL AND cm.movement_date >= $3 AND cm.movement_date < $4)
-                   OR ($5::integer IS NOT NULL AND COALESCE(cm.source_shift_id, NULLIF(cm.payload->>'idTurno', '')::integer) = $5))
+            LEFT JOIN expense_categories category ON category.id = cm.expense_category_id
+            WHERE cm.branch_id = $1
+              AND (($4::integer IS NULL AND cm.movement_date >= $2 AND cm.movement_date < $3)
+                   OR ($4::integer IS NOT NULL AND COALESCE(cm.source_shift_id, NULLIF(cm.payload->>'idTurno', '')::integer) = $4))
               AND cm.movement_type = 1
               AND NOT cm.cancelled
-            GROUP BY match.category_name
-            ORDER BY CASE WHEN match.category_name IS NULL THEN 1 ELSE 0 END, match.category_name;
+            GROUP BY category.name
+            ORDER BY CASE WHEN category.name IS NULL THEN 1 ELSE 0 END, category.name;
             """);
-        command.Parameters.AddWithValue(meta.BusinessId);
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(start.AddDays(1));
@@ -1331,19 +1354,20 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var start = meta.Date.ToDateTime(TimeOnly.MinValue);
         var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
         await using var command = dataSource.CreateCommand("""
-            SELECT source_folio, movement_date, movement_type, amount,
-                   payload->>'concepto', payload->>'referencia'
-            FROM cash_movements
-            WHERE branch_id = $1
-              AND (($8::integer IS NULL AND movement_date >= $2 AND movement_date < $3)
-                   OR ($8::integer IS NOT NULL AND COALESCE(source_shift_id, NULLIF(payload->>'idTurno', '')::integer) = $8))
-              AND NOT cancelled
-              AND ($4::integer IS NULL OR movement_type = $4)
+            SELECT cm.idempotency_key, cm.source_folio, cm.movement_date, cm.movement_type, cm.amount,
+                   cm.payload->>'concepto', cm.payload->>'referencia', cm.expense_category_id, category.name, cm.expense_category_source
+            FROM cash_movements cm
+            LEFT JOIN expense_categories category ON category.id = cm.expense_category_id
+            WHERE cm.branch_id = $1
+              AND (($8::integer IS NULL AND cm.movement_date >= $2 AND cm.movement_date < $3)
+                   OR ($8::integer IS NOT NULL AND COALESCE(cm.source_shift_id, NULLIF(cm.payload->>'idTurno', '')::integer) = $8))
+              AND NOT cm.cancelled
+              AND ($4::integer IS NULL OR cm.movement_type = $4)
               AND ($5::text IS NULL
-                   OR source_folio::text ILIKE '%' || $5 || '%'
-                   OR COALESCE(payload->>'concepto', '') ILIKE '%' || $5 || '%'
-                   OR COALESCE(payload->>'referencia', '') ILIKE '%' || $5 || '%')
-            ORDER BY movement_date DESC NULLS LAST, source_folio DESC
+                   OR cm.source_folio::text ILIKE '%' || $5 || '%'
+                   OR COALESCE(cm.payload->>'concepto', '') ILIKE '%' || $5 || '%'
+                   OR COALESCE(cm.payload->>'referencia', '') ILIKE '%' || $5 || '%')
+            ORDER BY cm.movement_date DESC NULLS LAST, cm.source_folio DESC
             LIMIT $6 OFFSET $7;
             """);
         command.Parameters.AddWithValue(meta.BranchId);
@@ -1359,12 +1383,16 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         while (await reader.ReadAsync(ct))
         {
             items.Add(new CashMovementItem(
-                reader.GetInt64(0),
-                ReadNullableDateTime(reader, 1),
-                reader.GetInt32(2),
-                ReadNullableDecimal(reader, 3),
-                ReadNullableString(reader, 4),
-                ReadNullableString(reader, 5)));
+                reader.GetString(0),
+                reader.GetInt64(1),
+                ReadNullableDateTime(reader, 2),
+                reader.GetInt32(3),
+                ReadNullableDecimal(reader, 4),
+                ReadNullableString(reader, 5),
+                ReadNullableString(reader, 6),
+                reader.IsDBNull(7) ? null : reader.GetGuid(7),
+                ReadNullableString(reader, 8),
+                ReadNullableString(reader, 9)));
         }
         var hasMore = items.Count > pageSize;
         if (hasMore) items.RemoveAt(items.Count - 1);

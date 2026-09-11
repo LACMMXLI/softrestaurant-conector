@@ -87,6 +87,7 @@ export type BusinessDashboard = {
   }
   branches: Array<{ code: string; name: string; tickets: number; sales: number; averageTicket: number; participationPercent: number; coverage: string }>
   topProducts: { foods: TopProductItem[]; beverages: TopProductItem[] }
+  expenses: ExpenseSummary
 }
 
 export type DashboardMeta = {
@@ -191,12 +192,16 @@ export type ProductCancellation = { eventKey: string; sourceKind: 'HISTORICAL' |
 export type ProductCancellationsReport = { totalAmount: number; totalQuantity: number; byEmployee: CancellationMetric[]; topProducts: CancellationMetric[]; byShift: CancellationMetric[]; byDay: CancellationMetric[]; items: ProductCancellation[]; page: number; pageSize: number; hasMore: boolean }
 
 export type CashMovementItem = {
+  idempotencyKey: string
   folio: number
   date: string | null
   type: number
   amount: number | null
   concept: string | null
   reference: string | null
+  categoryId: string | null
+  category: string | null
+  categorySource: 'AUTOMATIC' | 'MANUAL' | null
 }
 
 export type DashboardHome = {
@@ -249,6 +254,10 @@ export type ExpenseSummary = {
   total: number
   categories: ExpenseCategoryTotal[]
 }
+
+export type ExpenseCategoryRule = { keyword: string; priority: number }
+export type ExpenseCategory = { id: string; name: string; displayOrder: number; rules: ExpenseCategoryRule[] }
+export type ExpenseCategoryInput = { name: string; displayOrder: number; rules: ExpenseCategoryRule[] }
 
 export type TicketDetail = {
   ticket: SalesTicket

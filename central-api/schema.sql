@@ -440,53 +440,32 @@ CREATE TABLE IF NOT EXISTS business_members (
 );
 CREATE INDEX IF NOT EXISTS ix_business_members_user ON business_members(user_id);
 
--- Catálogo editable de gastos. Las palabras clave son datos, no reglas embebidas en la API;
--- se copian al negocio cuando éste consulta por primera vez su resumen de gastos.
-CREATE TABLE IF NOT EXISTS expense_category_templates (
-    name text PRIMARY KEY,
-    display_order integer NOT NULL
-);
-CREATE TABLE IF NOT EXISTS expense_category_keyword_templates (
-    category_name text NOT NULL REFERENCES expense_category_templates(name) ON DELETE CASCADE,
-    keyword text NOT NULL,
-    PRIMARY KEY (category_name, keyword)
-);
-INSERT INTO expense_category_templates (name, display_order) VALUES
-    ('Viáticos', 10),
-    ('Insumos y proveedores', 20),
-    ('Nómina', 30),
-    ('Anticipos', 40)
-ON CONFLICT (name) DO NOTHING;
-INSERT INTO expense_category_keyword_templates (category_name, keyword) VALUES
-    ('Viáticos', 'DIDI'),
-    ('Insumos y proveedores', 'PAN'),
-    ('Insumos y proveedores', 'AGUA'),
-    ('Insumos y proveedores', 'COCA'),
-    ('Nómina', 'NÓMINA'),
-    ('Nómina', 'NOMINA'),
-    ('Anticipos', 'ADELANTO'),
-    ('Anticipos', 'PRÉSTAMO'),
-    ('Anticipos', 'PRESTAMO')
-ON CONFLICT (category_name, keyword) DO NOTHING;
-
+-- Catálogo propiedad del negocio. No hay categorías ni palabras clave predefinidas: el OWNER
+-- define las reglas y su prioridad desde Configuración.
 CREATE TABLE IF NOT EXISTS expense_categories (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     business_id uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
     name text NOT NULL,
     display_order integer NOT NULL DEFAULT 100,
-    template_name text NULL REFERENCES expense_category_templates(name) ON DELETE SET NULL,
     active boolean NOT NULL DEFAULT true,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (business_id, name)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS ux_expense_categories_business_template
-    ON expense_categories (business_id, template_name) WHERE template_name IS NOT NULL;
 CREATE TABLE IF NOT EXISTS expense_category_keywords (
     category_id uuid NOT NULL REFERENCES expense_categories(id) ON DELETE CASCADE,
     keyword text NOT NULL,
+    priority integer NOT NULL DEFAULT 100,
     PRIMARY KEY (category_id, keyword)
 );
+ALTER TABLE expense_category_keywords ADD COLUMN IF NOT EXISTS priority integer NOT NULL DEFAULT 100;
+
+-- La categoría queda materializada al importar para que las reglas vigentes se apliquen una
+-- sola vez. Una corrección MANUAL nunca se reemplaza con una re-sincronización.
+ALTER TABLE cash_movements ADD COLUMN IF NOT EXISTS expense_category_id uuid NULL REFERENCES expense_categories(id) ON DELETE SET NULL;
+ALTER TABLE cash_movements ADD COLUMN IF NOT EXISTS expense_category_source text NULL
+    CHECK (expense_category_source IN ('AUTOMATIC', 'MANUAL'));
+CREATE INDEX IF NOT EXISTS ix_cash_movements_expense_category ON cash_movements(expense_category_id);
 
 -- Transición legacy -> SaaS. El orden es deliberado: primero se asigna el negocio y se
 -- copian los permisos usando OWNER/MANAGER/VIEWER; solo después se convierte app_users.role
