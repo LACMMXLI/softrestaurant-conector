@@ -101,19 +101,20 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
         </div>
       </section>
 
-      <section className="content-card" aria-labelledby="expenses-title">
-        <div className="section-heading horizontal">
+      <section className="expense-strip" aria-labelledby="expenses-title">
+        <div className="expense-strip-heading">
           <div><p className="utility-label">Gasto clasificado</p><h2 id="expenses-title">Resumen de gastos</h2></div>
           <strong>{formatAmount(expenseSummary?.total ?? null)}</strong>
         </div>
         {expensesLoading ? <div className="skeleton list-skeleton" aria-label="Cargando resumen de gastos" /> : null}
         {!expensesLoading && expenseSummary?.categories.length === 0 ? <p className="quiet-empty">No hay salidas de caja para este día y turno.</p> : null}
         {expenseSummary && expenseSummary.categories.length > 0 ? (
-          <div className="activity-list">
+          <div className="expense-category-strip" role="list" aria-label="Gasto por categoría">
             {expenseSummary.categories.map((item) => (
-              <article className="activity-row" key={item.category}>
-                <div><strong>{item.category}</strong><p>{item.movementCount} salida{item.movementCount === 1 ? '' : 's'} clasificada{item.movementCount === 1 ? '' : 's'}</p></div>
+              <article className="expense-category" key={item.category} role="listitem">
+                <span>{item.category}</span>
                 <b>{formatAmount(item.total)}</b>
+                <small>{item.movementCount} salida{item.movementCount === 1 ? '' : 's'}</small>
               </article>
             ))}
           </div>

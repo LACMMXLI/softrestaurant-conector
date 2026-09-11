@@ -416,6 +416,19 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
 .operation-stat { display: grid; gap: 6px; padding: 16px; border-radius: 17px; }
 .operation-stat svg { margin-bottom: 5px; }
 .operation-stat > span { font-size: .72rem; }
+
+/* Resumen compacto: una franja de lectura rápida, no otra lista de movimientos. */
+.expense-strip { padding: 16px 18px; border: 1px solid rgba(16,35,44,.07); border-radius: 18px; background: var(--paper); box-shadow: var(--shadow); }
+.expense-strip-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.expense-strip-heading .utility-label { margin-bottom: 3px; }
+.expense-strip-heading h2 { font-size: 1rem; }
+.expense-strip-heading > strong { flex: none; font-size: 1.1rem; letter-spacing: -.04em; }
+.expense-category-strip { display: flex; gap: 0; margin-top: 13px; overflow-x: auto; scrollbar-width: thin; }
+.expense-category { min-width: 128px; display: grid; gap: 3px; padding: 0 14px; border-left: 1px solid var(--line); }
+.expense-category:first-child { padding-left: 0; border-left: 0; }
+.expense-category > span { overflow: hidden; color: var(--ink-soft); font-size: .66rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.expense-category > b { font-size: .86rem; letter-spacing: -.025em; }
+.expense-category > small { color: var(--ink-soft); font-size: .61rem; }
 .operation-stat strong { font-size: 1.42rem; letter-spacing: -0.05em; }
 .operation-stat small { color: var(--ink-soft); font-size: .68rem; line-height: 1.4; }
 .danger-soft { background: var(--red-soft); color: #8e3232; }
@@ -686,8 +699,8 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
   .operational-card { grid-column: 8 / -1; }
   .tickets-card { grid-column: 1 / -1; }
   .operation-grid.full { grid-column: 1 / 5; grid-template-columns: 1fr; align-content: start; }
-  .operation-grid.full + .content-card { grid-column: 5 / -1; }
-  .operation-grid.full + .content-card + .content-card { grid-column: 5 / -1; }
+  .operation-grid.full + .expense-strip { grid-column: 5 / -1; }
+  .expense-strip + .content-card { grid-column: 5 / -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1111,6 +1124,11 @@ html { scroll-behavior: smooth; }
   .top-product-heading > span, .page-badge { background: rgba(145, 174, 183, .12); }
   .top-product-list li, .detail-list > div, .activity-row { border-color: #223640; }
   .operation-stat { border: 1px solid rgba(255,255,255,.04); }
+  .expense-strip { border-color: #263742; background: linear-gradient(105deg, rgba(13, 29, 40, .98), rgba(8, 19, 28, .98)); box-shadow: none; }
+  .expense-strip-heading h2 { font-size: 1rem; }
+  .expense-strip-heading > strong { color: #edf4f4; }
+  .expense-category { min-width: 122px; border-left-color: #263742; }
+  .expense-category > span, .expense-category > small { color: #9cabb4; }
   .danger-soft { color: #ff8186; background: rgba(255, 77, 82, .13); }
   .gold-soft { color: #ffb24f; background: rgba(255, 154, 31, .13); }
   .coverage-note { border-color: rgba(255, 178, 79, .34); background: rgba(255, 154, 31, .12); color: #ffd69b; }
