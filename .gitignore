@@ -29,6 +29,7 @@ admin-web/dist/
 **/data/
 /control.ini
 /validation-tempcheques/
+/dashboard-mobile
 
 # Estado local de ejecucion
 .runtime/

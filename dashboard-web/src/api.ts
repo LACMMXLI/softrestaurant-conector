@@ -8,6 +8,7 @@ import type {
   DashboardShift,
   DashboardSession,
   CashMovementsPage,
+  ExpenseSummary,
   ConnectorInstallation,
   SalesPage,
   TicketDetail,
@@ -114,6 +115,11 @@ export const api = {
     if (type !== null) params.set('type', String(type))
     if (search.trim()) params.set('search', search.trim())
     return request<CashMovementsPage>(`/api/web/cash-movements?${params}`, { signal })
+  },
+  expenseSummary: (branchCode: string, date: string, shiftId: number | null, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ branchCode, date })
+    if (shiftId !== null) params.set('shiftId', String(shiftId))
+    return request<ExpenseSummary>(`/api/web/expenses/summary?${params}`, { signal })
   },
   productCancellations: (branchCode: string, from: string, to: string, shiftId: number | null, user: string, product: string, page: number, signal?: AbortSignal) => {
     const params=new URLSearchParams({ branchCode, from, to, page:String(page), pageSize:'25' })

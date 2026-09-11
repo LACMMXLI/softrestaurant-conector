@@ -30,6 +30,7 @@ internal sealed record BusinessDashboardResponse(
 
 internal sealed record DashboardMeta(
     Guid BranchId,
+    Guid BusinessId,
     string BranchCode,
     string BranchName,
     string Timezone,
@@ -192,6 +193,9 @@ internal sealed record CashMovementsPage(
     int Page,
     int PageSize,
     bool HasMore);
+
+internal sealed record ExpenseCategoryTotal(string Category, decimal Total, long MovementCount);
+internal sealed record ExpenseSummary(DashboardMeta Meta, decimal Total, IReadOnlyList<ExpenseCategoryTotal> Categories);
 
 internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOptions options)
 {
@@ -527,6 +531,55 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         return await GetCashMovementItemsAsync(meta, page, pageSize, type, search, ct);
     }
 
+    public async Task<ExpenseSummary?> GetExpenseSummaryAsync(
+        DashboardUser user,
+        string branchCode,
+        DateOnly date,
+        int? shiftId,
+        ExpenseCategoryService categories,
+        CancellationToken ct)
+    {
+        var meta = await GetMetaAsync(user, branchCode, date, shiftId, ct);
+        if (meta is null) return null;
+        await categories.GetAsync(meta.BusinessId, ct);
+        if (!meta.CanShowData) return new ExpenseSummary(meta, 0, []);
+
+        var start = meta.Date.ToDateTime(TimeOnly.MinValue);
+        await using var command = dataSource.CreateCommand("""
+            SELECT COALESCE(match.category_name, 'Sin categoría'),
+                   COALESCE(SUM(cm.amount), 0),
+                   COUNT(*)
+            FROM cash_movements cm
+            LEFT JOIN LATERAL (
+                SELECT c.name AS category_name
+                FROM expense_categories c
+                JOIN expense_category_keywords k ON k.category_id = c.id
+                WHERE c.business_id = $1
+                  AND c.active
+                  AND COALESCE(cm.payload->>'concepto', '') ILIKE '%' || k.keyword || '%'
+                ORDER BY c.display_order, length(k.keyword) DESC, c.name
+                LIMIT 1
+            ) match ON true
+            WHERE cm.branch_id = $2
+              AND (($5::integer IS NULL AND cm.movement_date >= $3 AND cm.movement_date < $4)
+                   OR ($5::integer IS NOT NULL AND COALESCE(cm.source_shift_id, NULLIF(cm.payload->>'idTurno', '')::integer) = $5))
+              AND cm.movement_type = 1
+              AND NOT cm.cancelled
+            GROUP BY match.category_name
+            ORDER BY CASE WHEN match.category_name IS NULL THEN 1 ELSE 0 END, match.category_name;
+            """);
+        command.Parameters.AddWithValue(meta.BusinessId);
+        command.Parameters.AddWithValue(meta.BranchId);
+        command.Parameters.AddWithValue(start);
+        command.Parameters.AddWithValue(start.AddDays(1));
+        command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var totals = new List<ExpenseCategoryTotal>();
+        while (await reader.ReadAsync(ct))
+            totals.Add(new ExpenseCategoryTotal(reader.GetString(0), reader.GetDecimal(1), reader.GetInt64(2)));
+        return new ExpenseSummary(meta, totals.Sum(item => item.Total), totals);
+    }
+
     public async Task<TicketDetail?> GetTicketAsync(
         DashboardUser user,
         string branchCode,
@@ -733,7 +786,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var start = date.ToDateTime(TimeOnly.MinValue);
         var end = start.AddDays(1);
         await using var command = dataSource.CreateCommand("""
-            SELECT b.id, b.code, b.name, b.timezone, b.last_sync_at,
+            SELECT b.business_id, b.id, b.code, b.name, b.timezone, b.last_sync_at,
                    sb.id, sb.range_start, sb.range_end, sb.reconciliation_ok,
                    selected_shift.source_shift_id, selected_shift.shift_number, selected_shift.is_open
             FROM branches b
@@ -770,19 +823,20 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using var reader = await command.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct)) return null;
 
-        var lastSyncAt = ReadNullableDateTime(reader, 4);
-        var batchId = ReadNullableString(reader, 5);
-        var rangeStart = ReadNullableDateTime(reader, 6);
-        var rangeEnd = ReadNullableDateTime(reader, 7);
-        var reconciliationOk = ReadNullableBool(reader, 8);
+        var lastSyncAt = ReadNullableDateTime(reader, 5);
+        var batchId = ReadNullableString(reader, 6);
+        var rangeStart = ReadNullableDateTime(reader, 7);
+        var rangeEnd = ReadNullableDateTime(reader, 8);
+        var reconciliationOk = ReadNullableBool(reader, 9);
         var coverage = GetCoverage(date, batchId, rangeStart, rangeEnd, reconciliationOk);
-        int? selectedShiftId = reader.IsDBNull(9) ? null : reader.GetInt32(9);
-        int? selectedShiftNumber = reader.IsDBNull(10) ? null : reader.GetInt32(10);
+        int? selectedShiftId = reader.IsDBNull(10) ? null : reader.GetInt32(10);
+        int? selectedShiftNumber = reader.IsDBNull(11) ? null : reader.GetInt32(11);
         return new DashboardMeta(
+            reader.GetGuid(1),
             reader.GetGuid(0),
-            reader.GetString(1),
             reader.GetString(2),
             reader.GetString(3),
+            reader.GetString(4),
             date,
             lastSyncAt,
             batchId,
@@ -794,7 +848,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             reconciliationOk == true && coverage is "complete" or "partial",
             shiftId,
             ResolveBusinessShiftNumber(selectedShiftId, selectedShiftNumber),
-            !reader.IsDBNull(11) && reader.GetBoolean(11));
+            !reader.IsDBNull(12) && reader.GetBoolean(12));
     }
 
     internal static int? ResolveBusinessShiftNumber(int? sourceShiftId, int? payloadShiftNumber) =>

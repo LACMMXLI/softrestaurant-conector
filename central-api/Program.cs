@@ -25,6 +25,7 @@ builder.Services.AddSingleton<WebAuthService>();
 builder.Services.AddSingleton<UserRegistry>();
 builder.Services.AddSingleton<SubscriptionRegistry>();
 builder.Services.AddSingleton<DashboardReportService>();
+builder.Services.AddSingleton<ExpenseCategoryService>();
 builder.Services.AddRateLimiter(options =>
 {
     // Misma política para login, autorregistro y emisión de credenciales de dispositivo

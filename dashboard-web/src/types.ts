@@ -91,6 +91,7 @@ export type BusinessDashboard = {
 
 export type DashboardMeta = {
   branchId: string
+  businessId: string
   branchCode: string
   branchName: string
   timezone: string
@@ -235,6 +236,18 @@ export type CashMovementsPage = {
   page: number
   pageSize: number
   hasMore: boolean
+}
+
+export type ExpenseCategoryTotal = {
+  category: string
+  total: number
+  movementCount: number
+}
+
+export type ExpenseSummary = {
+  meta: DashboardMeta
+  total: number
+  categories: ExpenseCategoryTotal[]
 }
 
 export type TicketDetail = {

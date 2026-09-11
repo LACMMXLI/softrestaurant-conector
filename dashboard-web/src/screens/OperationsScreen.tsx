@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { api, ApiError } from '../api'
 import { EmptyState } from '../components/EmptyState'
 import { formatAmount, formatTime } from '../format'
-import type { CashMovementsPage, DashboardHome } from '../types'
+import type { CashMovementsPage, DashboardHome, ExpenseSummary } from '../types'
 
 type OperationsScreenProps = {
   branchCode: string
@@ -21,6 +21,8 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
   const [page, setPage] = useState(1)
   const [result, setResult] = useState<CashMovementsPage | null>(null)
   const [movementsLoading, setMovementsLoading] = useState(true)
+  const [expenseSummary, setExpenseSummary] = useState<ExpenseSummary | null>(null)
+  const [expensesLoading, setExpensesLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -41,6 +43,19 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
       })
     return () => controller.abort()
   }, [branchCode, date, onUnauthorized, page, shiftId, submittedSearch, type])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setExpensesLoading(true)
+    api.expenseSummary(branchCode, date, shiftId, controller.signal)
+      .then((nextSummary) => { if (!controller.signal.aborted) setExpenseSummary(nextSummary) })
+      .catch((reason: unknown) => {
+        if (reason instanceof ApiError && reason.status === 401) onUnauthorized()
+        else if (!(reason instanceof DOMException)) setError(reason instanceof Error ? reason.message : 'No fue posible cargar el resumen de gastos.')
+      })
+      .finally(() => { if (!controller.signal.aborted) setExpensesLoading(false) })
+    return () => controller.abort()
+  }, [branchCode, date, onUnauthorized, shiftId])
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -84,6 +99,25 @@ export function OperationsScreen({ branchCode, date, shiftId, data, loading, onU
           <span>Entradas de caja</span>
           <strong>{formatAmount(data.summary.cashIn)}</strong>
         </div>
+      </section>
+
+      <section className="content-card" aria-labelledby="expenses-title">
+        <div className="section-heading horizontal">
+          <div><p className="utility-label">Gasto clasificado</p><h2 id="expenses-title">Resumen de gastos</h2></div>
+          <strong>{formatAmount(expenseSummary?.total ?? null)}</strong>
+        </div>
+        {expensesLoading ? <div className="skeleton list-skeleton" aria-label="Cargando resumen de gastos" /> : null}
+        {!expensesLoading && expenseSummary?.categories.length === 0 ? <p className="quiet-empty">No hay salidas de caja para este día y turno.</p> : null}
+        {expenseSummary && expenseSummary.categories.length > 0 ? (
+          <div className="activity-list">
+            {expenseSummary.categories.map((item) => (
+              <article className="activity-row" key={item.category}>
+                <div><strong>{item.category}</strong><p>{item.movementCount} salida{item.movementCount === 1 ? '' : 's'} clasificada{item.movementCount === 1 ? '' : 's'}</p></div>
+                <b>{formatAmount(item.total)}</b>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="content-card movements-card">

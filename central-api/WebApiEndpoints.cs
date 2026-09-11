@@ -514,6 +514,117 @@ internal static class WebApiEndpoints
             return result is null ? Results.NotFound() : Results.Ok(result);
         });
 
+        group.MapGet("/expenses/summary", async (
+            HttpContext context,
+            string branchCode,
+            DateOnly date,
+            int? shiftId,
+            WebAuthService auth,
+            DashboardReportService reports,
+            ExpenseCategoryService categories,
+            SubscriptionRegistry subscriptions,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var subscription = await subscriptions.GetAsync(user.Id, ct);
+            if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
+            var dateValidation = ValidateHistoryDate(subscription, date);
+            if (dateValidation is not null) return dateValidation;
+            var result = await reports.GetExpenseSummaryAsync(user, branchCode, date, shiftId, categories, ct);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        });
+
+        group.MapGet("/expenses/categories", async (
+            HttpContext context,
+            string branchCode,
+            WebAuthService auth,
+            BranchRegistry branches,
+            BusinessRegistry businesses,
+            ExpenseCategoryService categories,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var branch = await branches.GetBranchAsync(branchCode, ct);
+            if (branch is null || await businesses.GetMemberRoleAsync(branch.BusinessId, user.Id, ct) is null) return Results.NotFound();
+            return Results.Ok(await categories.GetAsync(branch.BusinessId, ct));
+        });
+
+        group.MapPost("/expenses/categories", async (
+            HttpContext context,
+            string branchCode,
+            ExpenseCategoryInput input,
+            WebAuthService auth,
+            BranchRegistry branches,
+            BusinessRegistry businesses,
+            ExpenseCategoryService categories,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var branch = await branches.GetBranchAsync(branchCode, ct);
+            if (branch is null) return Results.NotFound();
+            var role = await businesses.GetMemberRoleAsync(branch.BusinessId, user.Id, ct);
+            if (!BusinessAccess.CanManageBusiness(role)) return Results.Json(new { error = "Este rol no puede configurar categorías de gastos." }, statusCode: StatusCodes.Status403Forbidden);
+            try { return Results.Created("/api/web/expenses/categories", await categories.CreateAsync(branch.BusinessId, input, ct)); }
+            catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
+        });
+
+        group.MapPut("/expenses/categories/{categoryId:guid}", async (
+            HttpContext context,
+            string branchCode,
+            Guid categoryId,
+            ExpenseCategoryInput input,
+            WebAuthService auth,
+            BranchRegistry branches,
+            BusinessRegistry businesses,
+            ExpenseCategoryService categories,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var branch = await branches.GetBranchAsync(branchCode, ct);
+            if (branch is null) return Results.NotFound();
+            var role = await businesses.GetMemberRoleAsync(branch.BusinessId, user.Id, ct);
+            if (!BusinessAccess.CanManageBusiness(role)) return Results.Json(new { error = "Este rol no puede configurar categorías de gastos." }, statusCode: StatusCodes.Status403Forbidden);
+            try
+            {
+                var updated = await categories.UpdateAsync(branch.BusinessId, categoryId, input, ct);
+                return updated is null ? Results.NotFound() : Results.Ok(updated);
+            }
+            catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
+        });
+
+        group.MapDelete("/expenses/categories/{categoryId:guid}", async (
+            HttpContext context,
+            string branchCode,
+            Guid categoryId,
+            WebAuthService auth,
+            BranchRegistry branches,
+            BusinessRegistry businesses,
+            ExpenseCategoryService categories,
+            CancellationToken ct) =>
+        {
+            var validation = ValidateBranchCode(branchCode);
+            if (validation is not null) return validation;
+            var user = await auth.AuthenticateAsync(context, ct);
+            if (user is null) return Results.Unauthorized();
+            var branch = await branches.GetBranchAsync(branchCode, ct);
+            if (branch is null) return Results.NotFound();
+            var role = await businesses.GetMemberRoleAsync(branch.BusinessId, user.Id, ct);
+            if (!BusinessAccess.CanManageBusiness(role)) return Results.Json(new { error = "Este rol no puede configurar categorías de gastos." }, statusCode: StatusCodes.Status403Forbidden);
+            return await categories.DeleteAsync(branch.BusinessId, categoryId, ct) ? Results.NoContent() : Results.NotFound();
+        });
+
         group.MapGet("/product-cancellations", async (HttpContext context, string branchCode, DateOnly from, DateOnly to, int? shiftId, string? user, string? product, int? page, int? pageSize, WebAuthService auth, DashboardReportService reports, SubscriptionRegistry subscriptions, CancellationToken ct) =>
         {
             var validation=ValidateBranchCode(branchCode); if(validation is not null)return validation;
