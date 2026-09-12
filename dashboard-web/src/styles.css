@@ -1185,3 +1185,110 @@ html { scroll-behavior: smooth; }
   .nav-item span { overflow: hidden; max-width: 100%; font-size: .52rem; white-space: nowrap; text-overflow: ellipsis; }
   .nav-item.active { color: #67df3f; background: radial-gradient(circle at 50% 0%, rgba(103, 223, 63, .17), transparent 74%); }
 }
+
+/* Teléfonos reales: los controles y los resúmenes dejan de conservar proporciones
+   de tableta. Estas reglas cubren todas las pantallas del dashboard, incluido el
+   consolidado del OWNER, sin alterar sus datos ni sus acciones. */
+@media (max-width: 540px) {
+  html, body, #root { max-width: 100%; overflow-x: clip; }
+
+  .app-header {
+    align-items: center;
+    flex-wrap: wrap;
+    min-height: 0;
+    padding: 9px 12px 10px;
+  }
+
+  .mobile-brand .product-brand__name { display: none; }
+  .mobile-brand .product-brand__mark { width: 36px; height: 36px; border-radius: 11px; }
+
+  .context-controls {
+    width: calc(100% - 44px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    gap: 6px;
+  }
+
+  .context-select,
+  .context-date {
+    width: 100%;
+    height: 36px;
+    min-width: 0;
+    padding: 0 7px;
+  }
+
+  .context-select select,
+  .context-select:nth-child(2) select,
+  .context-date input {
+    width: 100%;
+    min-width: 0;
+    font-size: .66rem;
+  }
+
+  .context-date { grid-column: 1 / -1; }
+  .app-main { min-height: calc(100svh - 108px); padding: 14px 12px 94px; }
+  .screen-title { padding-top: 4px; }
+  .screen-title h1 { font-size: clamp(1.75rem, 9vw, 2.35rem); }
+
+  .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metric-strip > :last-child { grid-column: 1 / -1; }
+  .metric-item { min-height: 96px; padding: 12px; }
+  .metric-item > span:nth-child(2) { font-size: .64rem; }
+
+  .content-card { padding: 15px; border-radius: 18px; }
+  .section-heading.horizontal,
+  .expense-strip-heading,
+  .pagination-row { align-items: flex-start; flex-wrap: wrap; }
+  .page-badge { margin-left: 0; }
+
+  .payment-breakdown { grid-template-columns: 1fr; gap: 7px; }
+  .payment-breakdown > div {
+    grid-template-columns: 21px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+  }
+  .payment-breakdown > div strong { text-align: right; }
+
+  .operation-grid,
+  .operation-grid.full { grid-template-columns: 1fr; }
+  .operation-stat { grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; }
+  .operation-stat small { grid-column: 2 / -1; }
+
+  .business-hero { grid-template-columns: 1fr; gap: 10px; padding: 20px 17px; }
+  .business-hero > strong { font-size: clamp(2rem, 11vw, 2.7rem); }
+  .business-hero > small { grid-column: auto; text-align: left; }
+  .business-operations { grid-template-columns: 1fr; }
+
+  .branch-share { grid-template-columns: 1fr; gap: 7px; }
+  .branch-share > strong { justify-items: start; grid-template-columns: auto auto; align-items: baseline; gap: 7px; }
+  .branch-share em { margin-top: 0; }
+
+  .search-form { min-height: 0; flex-wrap: wrap; padding: 7px 10px; }
+  .search-form input { flex: 1 1 130px; min-width: 0; }
+  .search-form .secondary-button { flex: 1 1 100%; justify-content: center; }
+  .search-form > svg { margin-right: 2px; }
+
+  .expense-config-row { grid-template-columns: 34px minmax(0, 1fr) 38px; gap: 8px; }
+  .expense-config-row .secondary-button { grid-column: 2; justify-self: start; }
+  .detail-list > div { align-items: flex-start; gap: 10px; }
+  .detail-list dd { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 390px) {
+  .context-controls { width: calc(100% - 42px); gap: 5px; }
+  .context-select, .context-date { padding-inline: 6px; }
+  .context-select svg, .context-date svg { display: none; }
+  .pulse-ticket { padding: 17px 15px 15px; }
+  .pulse-topline, .pulse-foot { gap: 9px; }
+  .pulse-amount strong { font-size: clamp(2.25rem, 12vw, 3.25rem); }
+  .content-card, .expense-strip { padding: 14px; }
+  .ticket-row { grid-template-columns: 4px minmax(0, 1fr) auto; gap: 8px; }
+  .ticket-row > svg { display: none; }
+  .transient-row { grid-template-columns: 4px minmax(0, 1fr) auto; }
+  .activity-row { grid-template-columns: 38px minmax(0, 1fr); }
+  .activity-row b { grid-column: 2; justify-self: start; }
+  .filter-chips { gap: 6px; }
+  .filter-chips button { padding-inline: 10px; }
+  .pagination-row .secondary-button { flex: 1 1 0; padding-inline: 10px; }
+}
