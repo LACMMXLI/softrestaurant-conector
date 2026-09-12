@@ -16,7 +16,7 @@ type Plan = {
 const PLANS: Plan[] = [
   {
     key: 'basic',
-    name: 'Basic',
+    name: 'Estándar',
     price: '$199',
     period: 'MXN / mes',
     features: [
@@ -36,10 +36,22 @@ const PLANS: Plan[] = [
     highlight: true,
     features: [
       'Hasta 5 sucursales',
-      'Historial extendido de hasta 7 días',
+      'Historial extendido de hasta 30 días',
       'Analítica avanzada: tendencias, productos top y comparativos entre sucursales',
       'Alertas automáticas de diferencias de caja y cancelaciones inusuales',
       'Exportación de reportes a Excel y PDF',
+      'Soporte prioritario',
+    ],
+  },
+  {
+    key: 'unlimited',
+    name: 'Ilimitado',
+    price: 'Consulta',
+    period: 'MXN / mes',
+    features: [
+      'Hasta 5 sucursales',
+      'Todo el historial disponible desde la sincronización',
+      'Dashboard concentrado, analítica y exportaciones',
       'Soporte prioritario',
     ],
   },

@@ -39,13 +39,14 @@ export type UserSummary = {
 }
 
 export type Subscription = {
-  plan: 'BASIC' | 'PLUS'
+  plan: 'BASIC' | 'PLUS' | 'UNLIMITED'
   status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'SUSPENDED'
   trialEndsAt: string
   paidUntil: string | null
   suspended: boolean
   canAccessContent: boolean
   trialDaysRemaining: number
+  historyDays: number | null
 }
 
 export type UserBusiness = {

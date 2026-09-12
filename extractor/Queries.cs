@@ -217,7 +217,11 @@ internal static class Queries
             t.credito,
             t.procesado
         FROM dbo.turnos AS t
-        WHERE t.apertura >= @Desde AND t.apertura < @Hasta
+        -- La ventana móvil sirve para corrección incremental; no es una política de retención.
+        -- También se relee todo turno que haya cerrado durante la ventana, aunque haya abierto
+        -- antes, para que un turno prolongado llegue cerrado a la central.
+        WHERE (t.apertura >= @Desde AND t.apertura < @Hasta)
+           OR (t.cierre >= @Desde AND t.cierre < @Hasta)
         ORDER BY t.idturnointerno;
         """;
 
@@ -230,7 +234,8 @@ internal static class Queries
             dc.tipodecambio
         FROM dbo.declaracioncajero AS dc
         INNER JOIN dbo.turnos AS t ON t.idturnointerno = dc.idturnointerno
-        WHERE t.apertura >= @Desde AND t.apertura < @Hasta
+        WHERE (t.apertura >= @Desde AND t.apertura < @Hasta)
+           OR (t.cierre >= @Desde AND t.cierre < @Hasta)
         ORDER BY dc.idturnointerno;
         """;
 

@@ -19,6 +19,9 @@ internal sealed class BatchIngestor(NpgsqlDataSource dataSource)
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Payments, PaymentsSql, ct);
         if (batch.TransientSnapshotComplete)
             await ApplyTransientSnapshotAsync(connection, transaction, branchId, batch, ct);
+        // Los turnos son hechos históricos permanentes por sucursal. No se poda esta tabla al
+        // re-sincronizar una ventana móvil; el ON CONFLICT de ShiftsSql solo actualiza el mismo
+        // turno recibido desde SoftRestaurant.
         await ExecuteJsonAsync(connection, transaction, branchId, batch.Shifts, ShiftsSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.CashierDeclarations, DeclarationsSql, ct);
         await ExecuteJsonAsync(connection, transaction, branchId, batch.CashMovements, CashMovementsSql, ct);

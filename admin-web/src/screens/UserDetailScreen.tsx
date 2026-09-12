@@ -35,7 +35,7 @@ export function UserDetailScreen({
   const [businessToAdd, setBusinessToAdd] = useState('')
   const [businessRoleToAdd, setBusinessRoleToAdd] = useState<BusinessRole>('VIEWER')
   const [businessBusy, setBusinessBusy] = useState<string | null>(null)
-  const [subscriptionPlan, setSubscriptionPlan] = useState<'BASIC' | 'PLUS'>(user.subscription.plan)
+  const [subscriptionPlan, setSubscriptionPlan] = useState<'BASIC' | 'PLUS' | 'UNLIMITED'>(user.subscription.plan)
   const [subscriptionMonths, setSubscriptionMonths] = useState<1 | 2 | 3 | 6>(1)
   const [subscriptionBusy, setSubscriptionBusy] = useState(false)
 
@@ -232,16 +232,17 @@ export function UserDetailScreen({
       <section className="panel-card" aria-labelledby="user-subscription-title">
         <h2 id="user-subscription-title">Plan y activación</h2>
         <p className="panel-hint">
-          Estado: <strong>{user.subscription.status}</strong> · Plan {user.subscription.plan === 'PLUS' ? 'Plus' : 'Basic'} ·
+          Estado: <strong>{user.subscription.status}</strong> · Plan {user.subscription.plan === 'UNLIMITED' ? 'Ilimitado' : user.subscription.plan === 'PLUS' ? 'Plus' : 'Estándar'} ·
           {user.subscription.paidUntil
             ? ` vigente hasta ${new Date(user.subscription.paidUntil).toLocaleDateString('es-MX')}`
             : ` prueba hasta ${new Date(user.subscription.trialEndsAt).toLocaleDateString('es-MX')}`}
         </p>
         <form className="inline-form" onSubmit={handleActivateSubscription}>
           <label>Plan
-            <select value={subscriptionPlan} onChange={(event) => setSubscriptionPlan(event.target.value as 'BASIC' | 'PLUS')}>
-              <option value="BASIC">Basic / normal</option>
-              <option value="PLUS">Plus / avanzada</option>
+            <select value={subscriptionPlan} onChange={(event) => setSubscriptionPlan(event.target.value as 'BASIC' | 'PLUS' | 'UNLIMITED')}>
+              <option value="BASIC">Estándar · historial de 3 días</option>
+              <option value="PLUS">Plus · historial de 30 días</option>
+              <option value="UNLIMITED">Ilimitado · todo el historial</option>
             </select>
           </label>
           <label>Periodo

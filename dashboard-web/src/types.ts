@@ -8,13 +8,15 @@ export type DashboardUser = {
 }
 
 export type Subscription = {
-  plan: 'BASIC' | 'PLUS'
+  plan: 'BASIC' | 'PLUS' | 'UNLIMITED'
   status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'SUSPENDED'
   trialEndsAt: string
   paidUntil: string | null
   suspended: boolean
   canAccessContent: boolean
   trialDaysRemaining: number
+  // null significa que el servidor autoriza todo el historial almacenado.
+  historyDays: number | null
 }
 
 export type DashboardSession = { user: DashboardUser; expiresAt?: string; subscription: Subscription }

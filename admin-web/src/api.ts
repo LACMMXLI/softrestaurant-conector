@@ -109,7 +109,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ active }),
     }),
-  activateSubscription: (id: string, plan: 'BASIC' | 'PLUS', months: 1 | 2 | 3 | 6) =>
+  activateSubscription: (id: string, plan: 'BASIC' | 'PLUS' | 'UNLIMITED', months: 1 | 2 | 3 | 6) =>
     request<Subscription>(`/api/admin/users/${id}/subscription/activate`, {
       method: 'POST',
       body: JSON.stringify({ plan, months }),

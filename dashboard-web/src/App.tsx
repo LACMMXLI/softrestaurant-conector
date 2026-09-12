@@ -48,10 +48,12 @@ export function App() {
   const selectedBusinessId = branchCode.startsWith('all:') ? branchCode.slice(4) : null
   const isCurrentBusinessOwner = currentBranch !== null && businesses.some((business) => business.id === currentBranch.businessId && business.role === 'OWNER')
   const historyMinimumDate = useMemo(() => {
+    if (subscription?.historyDays === null) return undefined
+    if (subscription?.historyDays === undefined) return undefined
     const today = new Date()
-    today.setUTCDate(today.getUTCDate() - ((subscription?.plan === 'PLUS' ? 7 : 3) - 1))
+    today.setUTCDate(today.getUTCDate() - (subscription.historyDays - 1))
     return today.toISOString().slice(0, 10)
-  }, [subscription?.plan])
+  }, [subscription?.historyDays])
 
   const becomeAnonymous = useCallback(() => {
     setSessionState('anonymous')
@@ -236,7 +238,7 @@ export function App() {
           <p>{suspended
             ? 'El administrador suspendió temporalmente esta cuenta. Tus negocios, sucursales e historial permanecen guardados.'
             : 'La prueba gratuita de 15 días o el periodo contratado ya venció. Tus datos no se eliminaron, pero no pueden visualizarse hasta renovar.'}</p>
-          <div className="subscription-wall-plan">Plan {subscription.plan === 'PLUS' ? 'Plus' : 'Basic'}</div>
+          <div className="subscription-wall-plan">Plan {subscription.plan === 'UNLIMITED' ? 'Ilimitado' : subscription.plan === 'PLUS' ? 'Plus' : 'Estándar'}</div>
           <p>Comunícate directamente con el administrador para registrar tu pago o solicitar una activación.</p>
           <button className="primary-button" type="button" onClick={() => void handleLogout()}><LogOut size={17} /> Cerrar sesión</button>
         </section>
@@ -279,7 +281,7 @@ export function App() {
               <Store size={17} aria-hidden="true" />
               <span className="sr-only">Sucursal</span>
               <select value={branchCode} onChange={(event) => handleBranchChange(event.target.value)}>
-                {subscription?.plan === 'PLUS' && businesses.filter((business) => branches.some((branch) => branch.businessId === business.id)).map((business) => (
+                {(subscription?.plan === 'PLUS' || subscription?.plan === 'UNLIMITED') && businesses.filter((business) => branches.some((branch) => branch.businessId === business.id)).map((business) => (
                   <option value={`all:${business.id}`} key={`all:${business.id}`}>Resumen general · {business.name}</option>
                 ))}
                 {branches.map((branch) => <option value={branch.code} key={branch.code}>{branch.name}</option>)}

@@ -11,10 +11,10 @@ internal static class WebApiEndpoints
     private static IResult? ValidateHistoryDate(SubscriptionView subscription, DateOnly date)
     {
         var oldestDate = SubscriptionPolicy.GetOldestAvailableDate(subscription.Plan, DateOnly.FromDateTime(DateTime.UtcNow));
-        return date < oldestDate
+        return oldestDate is not null && date < oldestDate.Value
             ? Results.Json(new
             {
-                error = $"El plan {subscription.Plan} permite consultar únicamente los últimos {SubscriptionPolicy.GetHistoryDays(subscription.Plan)} días.",
+                error = $"El plan {subscription.Plan} permite consultar únicamente los últimos {subscription.HistoryDays} días.",
                 oldestDate
             }, statusCode: StatusCodes.Status403Forbidden)
             : null;
@@ -663,7 +663,7 @@ internal static class WebApiEndpoints
             if(user?.Length>100 || product?.Length>100)return Results.BadRequest(new { error="Los filtros admiten máximo 100 caracteres." });
             var current=await auth.AuthenticateAsync(context,ct);if(current is null)return Results.Unauthorized();
             var subscription=await subscriptions.GetAsync(current.Id,ct);if(subscription is null || !subscription.CanAccessContent)return Results.Unauthorized();
-            var min=SubscriptionPolicy.GetOldestAvailableDate(subscription.Plan,DateOnly.FromDateTime(DateTime.UtcNow)); if(from<min)return Results.BadRequest(new { error="El rango solicitado no está disponible en tu plan." });
+            var min=SubscriptionPolicy.GetOldestAvailableDate(subscription.Plan,DateOnly.FromDateTime(DateTime.UtcNow)); if(min is not null && from<min.Value)return Results.BadRequest(new { error="El rango solicitado no está disponible en tu plan." });
             var result=await reports.GetProductCancellationReportAsync(current,branchCode,from,to,shiftId,user,product,Math.Max(page??1,1),Math.Clamp(pageSize??25,1,50),ct); return result is null?Results.NotFound():Results.Ok(result);
         });
 

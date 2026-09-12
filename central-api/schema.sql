@@ -356,13 +356,10 @@ ALTER TABLE app_users ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz NOT NUL
 ALTER TABLE app_users ADD COLUMN IF NOT EXISTS paid_until timestamptz NULL;
 ALTER TABLE app_users ADD COLUMN IF NOT EXISTS subscription_suspended boolean NOT NULL DEFAULT false;
 ALTER TABLE app_users ADD COLUMN IF NOT EXISTS subscription_updated_at timestamptz NOT NULL DEFAULT now();
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'app_users_subscription_plan_check') THEN
-        ALTER TABLE app_users ADD CONSTRAINT app_users_subscription_plan_check
-            CHECK (subscription_plan IN ('BASIC', 'PLUS'));
-    END IF;
-END $$;
+-- Migración idempotente de catálogo: no toca datos ni la retención de hechos.
+ALTER TABLE app_users DROP CONSTRAINT IF EXISTS app_users_subscription_plan_check;
+ALTER TABLE app_users ADD CONSTRAINT app_users_subscription_plan_check
+    CHECK (subscription_plan IN ('BASIC', 'PLUS', 'UNLIMITED'));
 
 DO $$
 BEGIN

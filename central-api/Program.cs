@@ -270,7 +270,7 @@ app.MapPost("/api/admin/users/{id:guid}/subscription/activate", async (
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
     var plan = request.Plan?.Trim().ToUpperInvariant() ?? string.Empty;
     if (!SubscriptionPolicy.IsValidPlan(plan))
-        return Results.BadRequest(new { error = "Plan inválido: use BASIC o PLUS." });
+        return Results.BadRequest(new { error = "Plan inválido: use BASIC, PLUS o UNLIMITED." });
     if (!SubscriptionPolicy.IsValidDuration(request.Months))
         return Results.BadRequest(new { error = "Duración inválida: use 1, 2, 3 o 6 meses." });
     var result = await subscriptions.ActivateAsync(id, plan, request.Months, ct);

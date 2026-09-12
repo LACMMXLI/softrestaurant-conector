@@ -47,11 +47,20 @@ public sealed class SubscriptionPolicyTests
 
     [Theory]
     [InlineData("BASIC", 3, 1)]
-    [InlineData("PLUS", 7, 5)]
+    [InlineData("PLUS", 30, 5)]
     public void Plans_have_their_real_history_and_branch_limits(string plan, int historyDays, int branchLimit)
     {
         Assert.Equal(historyDays, SubscriptionPolicy.GetHistoryDays(plan));
         Assert.Equal(branchLimit, SubscriptionPolicy.GetBranchLimit(plan));
+    }
+
+    [Fact]
+    public void Unlimited_plan_can_consult_all_stored_history()
+    {
+        Assert.True(SubscriptionPolicy.IsValidPlan("UNLIMITED"));
+        Assert.Null(SubscriptionPolicy.GetHistoryDays("UNLIMITED"));
+        Assert.Null(SubscriptionPolicy.GetOldestAvailableDate("UNLIMITED", DateOnly.FromDateTime(Now)));
+        Assert.True(SubscriptionPolicy.CanUseConsolidatedDashboard("UNLIMITED"));
     }
 
     [Fact]

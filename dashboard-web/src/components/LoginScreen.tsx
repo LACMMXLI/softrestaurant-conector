@@ -50,8 +50,14 @@ const plans = [
     name: 'Plus',
     price: '$499',
     description: 'Para equipos que necesitan más alcance, historial y herramientas de análisis.',
-    features: ['Hasta 5 sucursales', 'Historial de 7 días', 'Dashboard concentrado de sucursales', 'Analítica y alertas', 'Exportación y soporte prioritario'],
+    features: ['Hasta 5 sucursales', 'Historial de 30 días', 'Dashboard concentrado de sucursales', 'Analítica y alertas', 'Exportación y soporte prioritario'],
     featured: true,
+  },
+  {
+    name: 'Ilimitado',
+    price: 'Consulta',
+    description: 'Para negocios que requieren consultar todo el historial disponible desde que iniciaron sincronización.',
+    features: ['Hasta 5 sucursales', 'Todo el historial disponible', 'Dashboard concentrado', 'Analítica, exportación y soporte prioritario'],
   },
 ]
 
