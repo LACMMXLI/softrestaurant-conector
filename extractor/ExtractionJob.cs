@@ -28,9 +28,11 @@ internal static class ExtractionJob
         WriteIndented = true
     };
 
-    public static async Task<ExtractionResult> RunAsync(ExtractorConfig cfg, CancellationToken ct)
+    public static async Task<ExtractionResult> RunAsync(ExtractorConfig cfg, CancellationToken ct, DateTime? recoveryDesde = null)
     {
         var (desde, hasta) = cfg.GetRunRange();
+        if (recoveryDesde is { } checkpoint && checkpoint.Date < desde)
+            desde = checkpoint.Date;
         var extractor = new Extractor(cfg.BuildConnectionString(), desde, hasta);
         Directory.CreateDirectory(cfg.OutputDirectory);
 

@@ -20,7 +20,11 @@ internal sealed class AgentRunService(ExtractorConfig config, AgentLog? log = nu
             await FlushAsync(outbox, client, ct);
         }
 
-        var result = await ExtractionJob.RunAsync(config, ct);
+        // La ventana móvil conserva solapamiento para correcciones recientes. El punto de
+        // control en SQLite cubre además cualquier periodo en que el servicio estuvo apagado:
+        // así el plan comercial nunca interviene en qué cierres se capturan o se conservan.
+        var recoveryDesde = outbox is null ? null : await outbox.GetLastExtractedUntilAsync(ct);
+        var result = await ExtractionJob.RunAsync(config, ct, recoveryDesde);
         if (outbox is not null && client is not null)
         {
             if (!result.Reconciliation.Ok)
@@ -32,6 +36,9 @@ internal sealed class AgentRunService(ExtractorConfig config, AgentLog? log = nu
             {
                 var batch = ExtractionJob.CreateBatch(config, result);
                 await outbox.EnqueueAsync(batch, ct);
+                // Solo se avanza después de guardar el lote durablemente. Si se corta la luz
+                // antes de este punto, se reextrae el intervalo; la ingesta es idempotente.
+                await outbox.SetLastExtractedUntilAsync(result.Hasta, ct);
                 Console.WriteLine($"Lote {batch.BatchId} guardado en la cola local.");
                 log?.Info($"Lote {batch.BatchId} guardado en la cola local.");
                 await FlushAsync(outbox, client, ct);

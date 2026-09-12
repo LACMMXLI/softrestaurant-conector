@@ -27,7 +27,36 @@ internal sealed class SyncOutbox(string databasePath)
                 last_error TEXT NULL,
                 next_attempt_at_utc TEXT NULL
             );
+            CREATE TABLE IF NOT EXISTS sync_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
             """;
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task<DateTime?> GetLastExtractedUntilAsync(CancellationToken ct)
+    {
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(ct);
+        var command = connection.CreateCommand();
+        command.CommandText = "SELECT value FROM sync_state WHERE key = 'last_extracted_until_utc';";
+        var value = await command.ExecuteScalarAsync(ct) as string;
+        return DateTime.TryParse(value, null, System.Globalization.DateTimeStyles.RoundtripKind, out var parsed)
+            ? parsed
+            : null;
+    }
+
+    public async Task SetLastExtractedUntilAsync(DateTime until, CancellationToken ct)
+    {
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync(ct);
+        var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO sync_state (key, value) VALUES ('last_extracted_until_utc', $value)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+            """;
+        command.Parameters.AddWithValue("$value", until.ToUniversalTime().ToString("O"));
         await command.ExecuteNonQueryAsync(ct);
     }
 
