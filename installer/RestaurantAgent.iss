@@ -304,11 +304,27 @@ begin
 end;
 
 procedure StopAndDeleteService;
+var
+  I: Integer;
 begin
+  { En una instalación limpia no hay ningún servicio que detener. En una actualización,
+    este paso ocurre antes de copiar los binarios: así Windows no deja bloqueado el
+    ejecutable anterior y el servicio se recrea después apuntando a la nueva versión,
+    sin tocar la configuración ni la cola que viven en ProgramData. }
+  if not RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\' + AgentServiceName) then
+    Exit;
+
   RunSc('detener el servicio', 'stop "' + AgentServiceName + '"', True);
   Sleep(1200);
   RunSc('eliminar el servicio anterior', 'delete "' + AgentServiceName + '"', True);
-  Sleep(500);
+  { sc.exe borra la entrada de servicio de forma diferida. Esperar a que desaparezca
+    evita que la creación posterior falle con ERROR_SERVICE_MARKED_FOR_DELETE. }
+  for I := 1 to 40 do
+  begin
+    if not RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\' + AgentServiceName) then
+      Exit;
+    Sleep(250);
+  end;
 end;
 
 function ProtectConfiguration(const ExePath, DataRoot: string): string;
@@ -420,7 +436,11 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-  if CurStep = ssPostInstall then
+  { ssInstall ocurre antes de que [Files] reemplace los binarios. Esto hace que el
+    mismo ejecutable funcione como instalador limpio o como actualizador en sitio. }
+  if CurStep = ssInstall then
+    StopAndDeleteService
+  else if CurStep = ssPostInstall then
     ConfigureAndStartService;
 end;
 
