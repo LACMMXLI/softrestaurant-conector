@@ -23,11 +23,14 @@ internal sealed record BusinessBranchContribution(
     string Code, string Name, long Tickets, decimal Sales, decimal AverageTicket,
     decimal ParticipationPercent, string Coverage);
 
+internal sealed record BusinessOpenShift(
+    string BranchCode, string BranchName, int Number, string? Cashier, DateTime? OpenedAt);
+
 internal sealed record BusinessDashboardResponse(
-    Guid BusinessId, string BusinessName, DateOnly Date, string Coverage,
+    Guid BusinessId, string BusinessName, DateOnly From, DateOnly To, string Coverage,
     int IncludedBranches, int TotalBranches, BusinessDashboardSummary Summary,
     IReadOnlyList<BusinessBranchContribution> Branches, TopProducts TopProducts,
-    BusinessExpenseSummary Expenses);
+    BusinessExpenseSummary Expenses, IReadOnlyList<BusinessOpenShift> OpenShifts);
 
 internal sealed record BusinessExpenseSummary(decimal Total, IReadOnlyList<ExpenseCategoryTotal> Categories);
 
@@ -249,24 +252,28 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
     }
 
     /// <summary>
-    /// Consolidado calculado directamente sobre los hechos sincronizados. Solo incorpora una
-    /// sucursal cuando su lote conciliado cubre por completo la fecha solicitada; así una
-    /// ausencia de sincronización nunca se presenta como venta cero.
+    /// Consolidado calculado directamente sobre los hechos sincronizados. La cobertura se
+    /// conserva como señal de conciliación, pero nunca oculta cortes o ventas ya almacenadas.
     /// </summary>
     public async Task<BusinessDashboardResponse?> GetBusinessHomeAsync(
-        DashboardUser user, Guid businessId, DateOnly date, CancellationToken ct)
+        DashboardUser user, Guid businessId, DateOnly from, DateOnly to, CancellationToken ct)
     {
-        var start = date.ToDateTime(TimeOnly.MinValue);
-        var end = start.AddDays(1);
+        var start = from.ToDateTime(TimeOnly.MinValue);
+        var end = to.AddDays(1).ToDateTime(TimeOnly.MinValue);
         await using var command = dataSource.CreateCommand("""
             WITH scoped_branches AS (
                 SELECT b.id, b.code, b.name,
-                       EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id = b.id
-                         AND sb.reconciliation_ok AND sb.range_start <= $3 AND sb.range_end >= $4) AS covered
+                       NOT EXISTS (
+                         SELECT 1
+                         FROM generate_series($3::date, ($4::date - 1), interval '1 day') AS day_range(day)
+                         WHERE NOT EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id = b.id
+                           AND sb.reconciliation_ok AND sb.range_start <= day_range.day
+                           AND sb.range_end >= day_range.day + interval '1 day')
+                       ) AS covered
                 FROM branches b
                 WHERE b.business_id = $1 AND b.active
                   AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id = b.business_id AND bm.user_id = $2)
-            ), eligible AS (SELECT * FROM scoped_branches WHERE covered),
+            ), eligible AS (SELECT * FROM scoped_branches),
             sales_by_branch AS (
                 SELECT e.id, COUNT(s.*) FILTER (WHERE s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL) tickets,
                        COALESCE(SUM(s.total) FILTER (WHERE s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL), 0) sales,
@@ -294,10 +301,10 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 FROM cancellation_summaries cs JOIN eligible e ON e.id=cs.branch_id
                 WHERE cs.cancellation_date=$3::date GROUP BY cs.branch_id
             )
-            SELECT b.name, (SELECT COUNT(*) FROM scoped_branches), (SELECT COUNT(*) FROM eligible),
+            SELECT b.name, (SELECT COUNT(*) FROM scoped_branches), (SELECT COUNT(*) FROM scoped_branches WHERE covered),
                    e.code, e.name, COALESCE(sb.tickets,0), COALESCE(sb.sales,0), COALESCE(sb.tips,0), COALESCE(sb.cancelled_tickets,0),
                    COALESCE(c.cancelled_lines,0), COALESCE(m.cash_in,0), COALESCE(m.cash_out,0),
-                   COALESCE(p.cash_sales,0), COALESCE(p.card_sales,0), COALESCE(p.other_sales,0)
+                   COALESCE(p.cash_sales,0), COALESCE(p.card_sales,0), COALESCE(p.other_sales,0), e.covered
             FROM businesses b LEFT JOIN eligible e ON true
             LEFT JOIN sales_by_branch sb ON sb.id=e.id LEFT JOIN payments p ON p.branch_id=e.id
             LEFT JOIN movements m ON m.branch_id=e.id LEFT JOIN cancellations c ON c.branch_id=e.id
@@ -318,14 +325,32 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             tickets += branchTickets; sales += branchSales; tips += reader.GetDecimal(7); cancelledTickets += reader.GetInt64(8); cancelledLines += reader.GetInt64(9);
             cashIn += reader.GetDecimal(10); cashOut += reader.GetDecimal(11); cashSales += reader.GetDecimal(12); cardSales += reader.GetDecimal(13); otherSales += reader.GetDecimal(14);
             branches.Add(new BusinessBranchContribution(reader.GetString(3), reader.GetString(4), branchTickets, branchSales,
-                branchTickets > 0 ? branchSales / branchTickets : 0, 0, "complete"));
+                branchTickets > 0 ? branchSales / branchTickets : 0, 0, reader.GetBoolean(15) ? "complete" : "pending"));
         } while (await reader.ReadAsync(ct));
         branches = branches.Select(x => x with { ParticipationPercent = sales > 0 ? Math.Round(x.Sales / sales * 100m, 1) : 0 }).OrderByDescending(x => x.Sales).ToList();
         var products = await GetBusinessTopProductsAsync(user, businessId, start, end, ct);
         var expenses = await GetBusinessExpenseSummaryAsync(user, businessId, start, end, ct);
+        var openShifts = await GetBusinessOpenShiftsAsync(user, businessId, ct);
         var coverage = included == 0 ? "missing" : included == total ? "complete" : "partial";
-        return new BusinessDashboardResponse(businessId, name, date, coverage, included, total,
-            new BusinessDashboardSummary(tickets, sales, tickets > 0 ? sales/tickets : 0, tips, cancelledTickets, cancelledLines, cashIn, cashOut, cashSales, cardSales, otherSales), branches, products, expenses);
+        return new BusinessDashboardResponse(businessId, name, from, to, coverage, included, total,
+            new BusinessDashboardSummary(tickets, sales, tickets > 0 ? sales/tickets : 0, tips, cancelledTickets, cancelledLines, cashIn, cashOut, cashSales, cardSales, otherSales), branches, products, expenses, openShifts);
+    }
+
+    private async Task<IReadOnlyList<BusinessOpenShift>> GetBusinessOpenShiftsAsync(DashboardUser user, Guid businessId, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            SELECT b.code, b.name, COALESCE(NULLIF(s.payload->>'idTurno', '')::integer, s.source_shift_id),
+                   s.payload->>'cajero', s.opened_at
+            FROM shifts s JOIN branches b ON b.id = s.branch_id
+            WHERE b.business_id = $1 AND b.active AND s.closed_at IS NULL
+              AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id = b.business_id AND bm.user_id = $2)
+            ORDER BY s.opened_at DESC NULLS LAST, b.name;
+            """);
+        command.Parameters.AddWithValue(businessId); command.Parameters.AddWithValue(user.Id);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var shifts = new List<BusinessOpenShift>();
+        while (await reader.ReadAsync(ct)) shifts.Add(new BusinessOpenShift(reader.GetString(0), reader.GetString(1), reader.GetInt32(2), ReadNullableString(reader, 3), ReadNullableDateTime(reader, 4)));
+        return shifts;
     }
 
     private async Task<BusinessExpenseSummary> GetBusinessExpenseSummaryAsync(DashboardUser user, Guid businessId, DateTime start, DateTime end, CancellationToken ct)
@@ -335,7 +360,6 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 SELECT b.id FROM branches b
                 WHERE b.business_id = $1 AND b.active
                   AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id = b.business_id AND bm.user_id = $2)
-                  AND EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id = b.id AND sb.reconciliation_ok AND sb.range_start <= $3 AND sb.range_end >= $4)
             )
             SELECT COALESCE(category.name, 'Sin clasificar'), COALESCE(SUM(cm.amount), 0), COUNT(*)
             FROM cash_movements cm
@@ -359,7 +383,6 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
     {
         await using var command = dataSource.CreateCommand("""
             WITH eligible AS (SELECT b.id FROM branches b WHERE b.business_id=$1 AND b.active AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id=b.business_id AND bm.user_id=$2)
-              AND EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id=b.id AND sb.reconciliation_ok AND sb.range_start <= $3 AND sb.range_end >= $4)),
             totals AS (SELECT COALESCE(NULLIF(p.description,''),NULLIF(l.payload->>'descripcionProducto',''),l.product_id) product_name, MAX(p.group_name) group_name,p.classification,
               SUM(l.quantity) quantity,SUM(GREATEST(l.quantity*l.price-COALESCE(NULLIF(l.payload->>'descuento','')::numeric,0),0)) sales
               FROM sale_lines l JOIN eligible e ON e.id=l.branch_id JOIN products p ON p.branch_id=l.branch_id AND p.product_id=l.product_id

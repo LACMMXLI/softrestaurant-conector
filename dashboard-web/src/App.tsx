@@ -29,6 +29,7 @@ export function App() {
   const [businesses, setBusinesses] = useState<BusinessMembership[]>([])
   const [branchCode, setBranchCode] = useState('')
   const [date, setDate] = useState('')
+  const [rangeEnd, setRangeEnd] = useState('')
   const [shifts, setShifts] = useState<DashboardShift[]>([])
   const [shiftId, setShiftId] = useState<number | null>(null)
   const [tab, setTab] = useState<Tab>('home')
@@ -87,6 +88,7 @@ export function App() {
     }
     setBranchCode(selected.code)
     setDate(dateInTimezone(selected.timezone))
+    setRangeEnd(dateInTimezone(selected.timezone))
     setShiftId(null)
     void api.shifts(selected.code).then((available) => {
       setShifts(available)
@@ -122,7 +124,7 @@ export function App() {
     setDashboard(null)
     setBusinessDashboard(null)
     const request = selectedBusinessId
-      ? api.businessDashboard(selectedBusinessId, date, controller.signal)
+      ? api.businessDashboard(selectedBusinessId, date, rangeEnd || date, controller.signal)
       : api.dashboard(branchCode, date, shiftId, controller.signal)
     request
       .then((nextDashboard) => {
@@ -139,7 +141,7 @@ export function App() {
         if (!controller.signal.aborted) setDashboardLoading(false)
       })
     return () => controller.abort()
-  }, [becomeAnonymous, branchCode, date, refreshKey, selectedBusinessId, sessionState, shiftId])
+  }, [becomeAnonymous, branchCode, date, rangeEnd, refreshKey, selectedBusinessId, sessionState, shiftId])
 
   async function handleLogin(email: string, password: string) {
     setLoginBusy(true)
@@ -190,7 +192,9 @@ export function App() {
     if (nextCode.startsWith('all:')) {
       localStorage.setItem(storedBranchKey, nextCode)
       setBranchCode(nextCode)
-      setDate(dateInTimezone('America/Tijuana'))
+      const today = dateInTimezone('America/Tijuana')
+      setDate(today)
+      setRangeEnd(today)
       setShiftId(null)
       setShifts([])
       setDashboard(null)
@@ -203,6 +207,7 @@ export function App() {
     localStorage.setItem(storedBranchKey, nextCode)
     setBranchCode(nextCode)
     setDate(dateInTimezone(nextBranch.timezone))
+    setRangeEnd(dateInTimezone(nextBranch.timezone))
     setShiftId(null)
     void api.shifts(nextCode).then((available) => {
       setShifts(available)
@@ -300,12 +305,17 @@ export function App() {
             </label> : null}
             <label className="context-select context-date">
               <CalendarDays size={16} aria-hidden="true" />
-              <span className="sr-only">Fecha</span>
+              <span className="sr-only">{selectedBusinessId ? 'Desde' : 'Fecha'}</span>
               <input type="date" value={date} min={historyMinimumDate} onChange={(event) => {
                 setDate(event.target.value)
                 if (!selectedBusinessId) setShiftId(null)
               }} />
             </label>
+            {selectedBusinessId ? <label className="context-select context-date">
+              <CalendarDays size={16} aria-hidden="true" />
+              <span className="sr-only">Hasta</span>
+              <input type="date" value={rangeEnd || date} min={date || historyMinimumDate} onChange={(event) => setRangeEnd(event.target.value)} />
+            </label> : null}
             <button className="icon-button refresh-button" type="button" onClick={() => setRefreshKey((value) => value + 1)} aria-label="Actualizar datos">
               <RefreshCw size={18} className={dashboardLoading ? 'spinning' : ''} />
             </button>

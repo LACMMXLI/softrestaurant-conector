@@ -78,7 +78,8 @@ export type DashboardBranch = {
 export type BusinessDashboard = {
   businessId: string
   businessName: string
-  date: string
+  from: string
+  to: string
   coverage: 'complete' | 'partial' | 'missing'
   includedBranches: number
   totalBranches: number
@@ -90,6 +91,7 @@ export type BusinessDashboard = {
   branches: Array<{ code: string; name: string; tickets: number; sales: number; averageTicket: number; participationPercent: number; coverage: string }>
   topProducts: { foods: TopProductItem[]; beverages: TopProductItem[] }
   expenses: ExpenseSummary
+  openShifts: Array<{ branchCode: string; branchName: string; number: number; cashier: string | null; openedAt: string | null }>
 }
 
 export type DashboardMeta = {

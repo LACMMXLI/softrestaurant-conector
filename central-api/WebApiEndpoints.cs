@@ -388,7 +388,8 @@ internal static class WebApiEndpoints
         group.MapGet("/dashboard/business-home", async (
             HttpContext context,
             Guid businessId,
-            DateOnly date,
+            DateOnly from,
+            DateOnly to,
             WebAuthService auth,
             DashboardReportService reports,
             SubscriptionRegistry subscriptions,
@@ -400,9 +401,12 @@ internal static class WebApiEndpoints
             if (subscription is null || !subscription.CanAccessContent) return Results.Unauthorized();
             if (!SubscriptionPolicy.CanUseConsolidatedDashboard(subscription.Plan))
                 return Results.Json(new { error = "El dashboard concentrado de sucursales está disponible con el plan PLUS." }, statusCode: StatusCodes.Status403Forbidden);
-            var dateValidation = ValidateHistoryDate(subscription, date);
-            if (dateValidation is not null) return dateValidation;
-            var dashboard = await reports.GetBusinessHomeAsync(user, businessId, date, ct);
+            if (to < from) return Results.BadRequest(new { error = "La fecha final debe ser igual o posterior a la fecha inicial." });
+            var fromValidation = ValidateHistoryDate(subscription, from);
+            if (fromValidation is not null) return fromValidation;
+            var toValidation = ValidateHistoryDate(subscription, to);
+            if (toValidation is not null) return toValidation;
+            var dashboard = await reports.GetBusinessHomeAsync(user, businessId, from, to, ct);
             return dashboard is null ? Results.NotFound() : Results.Ok(dashboard);
         });
 

@@ -93,8 +93,8 @@ export const api = {
       `/api/web/dashboard/home?branchCode=${encodeURIComponent(branchCode)}&date=${date}${shiftId === null ? '' : `&shiftId=${shiftId}`}`,
       { signal },
     ),
-  businessDashboard: (businessId: string, date: string, signal?: AbortSignal) =>
-    request<BusinessDashboard>(`/api/web/dashboard/business-home?businessId=${encodeURIComponent(businessId)}&date=${date}`, { signal }),
+  businessDashboard: (businessId: string, from: string, to: string, signal?: AbortSignal) =>
+    request<BusinessDashboard>(`/api/web/dashboard/business-home?businessId=${encodeURIComponent(businessId)}&from=${from}&to=${to}`, { signal }),
   shifts: (branchCode: string, signal?: AbortSignal) =>
     request<DashboardShift[]>(`/api/web/dashboard/shifts?branchCode=${encodeURIComponent(branchCode)}`, { signal }),
   sales: (branchCode: string, date: string, shiftId: number | null, page: number, search: string, signal?: AbortSignal) => {
