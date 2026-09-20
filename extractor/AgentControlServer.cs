@@ -17,6 +17,7 @@ internal sealed record LinkDeviceCredential(
 /// <summary>Lo que la GUI necesita saber antes de poder iniciar sesión y vincular: dónde está central-api y si este equipo ya tiene identidad.</summary>
 internal sealed record AgentControlConfig(
     string? ApiUrl, bool Linked, string BranchCode, string? BusinessId, string? InstallationId, string MachineName);
+internal sealed record HistoricalBackfillRequest(DateOnly From, DateOnly To);
 
 /// <summary>
 /// API HTTP de control local, alcanzable únicamente desde <c>127.0.0.1</c> (nunca desde la red):
@@ -60,6 +61,14 @@ internal sealed class AgentControlServer(
                 pendingBatches = outcome.PendingBatches,
                 error = outcome.Error
             });
+        });
+
+        app.MapPost("/backfill", async (HistoricalBackfillRequest request, CancellationToken ct) =>
+        {
+            var outcome = await coordinator.TryBackfillAsync(request.From, request.To, ct);
+            if (!outcome.Started)
+                return Results.Json(new { started = false, error = outcome.Error }, statusCode: StatusCodes.Status409Conflict);
+            return Results.Ok(new { started = true, from = request.From, to = request.To, reconciliationOk = outcome.ReconciliationOk, pendingBatches = outcome.PendingBatches, error = outcome.Error });
         });
 
         app.MapGet("/diagnostics", async (CancellationToken ct) => Results.Ok(await RunDiagnosticsAsync(ct)));

@@ -81,9 +81,11 @@ export function DashboardScreen({
         </div>
       </section>
 
-      {meta.canShowData && meta.coverage === 'partial' ? (
+      {meta.canShowData && meta.coverage !== 'complete' ? (
         <div className="coverage-note" role="status">
-          Este turno solo está cubierto parcialmente. Los importes corresponden únicamente a la parte conciliada recibida.
+          {meta.coverage === 'partial'
+            ? 'Este turno solo está cubierto parcialmente. Los importes corresponden únicamente a la parte conciliada recibida.'
+            : 'Cobertura histórica no conciliada. Se muestran los datos disponibles del turno almacenado; solicita un backfill para verificar el periodo completo.'}
         </div>
       ) : null}
 

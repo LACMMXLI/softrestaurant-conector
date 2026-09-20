@@ -855,6 +855,11 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var coverage = GetCoverage(date, batchId, rangeStart, rangeEnd, reconciliationOk);
         int? selectedShiftId = reader.IsDBNull(10) ? null : reader.GetInt32(10);
         int? selectedShiftNumber = reader.IsDBNull(11) ? null : reader.GetInt32(11);
+        // Un turno ya recibido es evidencia real para consultarlo. La conciliación sigue
+        // indicando qué tan verificable es el periodo, pero no debe convertir hechos
+        // históricos almacenados en una pantalla vacía solo porque el lote original no
+        // conservó (o no generó) su rango de cobertura.
+        var hasStoredSelectedShift = selectedShiftId is not null;
         return new DashboardMeta(
             reader.GetGuid(1),
             reader.GetGuid(0),
@@ -869,7 +874,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             reconciliationOk,
             GetFreshness(lastSyncAt),
             coverage,
-            reconciliationOk == true && coverage is "complete" or "partial",
+            hasStoredSelectedShift || (reconciliationOk == true && coverage is "complete" or "partial"),
             shiftId,
             ResolveBusinessShiftNumber(selectedShiftId, selectedShiftNumber),
             !reader.IsDBNull(12) && reader.GetBoolean(12));

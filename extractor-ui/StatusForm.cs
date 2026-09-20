@@ -19,6 +19,9 @@ public sealed class StatusForm : Form
     private readonly Label pendingLabel = new();
     private readonly Label errorLabel = new();
     private readonly Button syncNowButton = new() { Text = "Sincronizar ahora" };
+    private readonly Button backfillButton = new() { Text = "Recuperar historial" };
+    private readonly DateTimePicker backfillFromPicker = new() { Format = DateTimePickerFormat.Short };
+    private readonly DateTimePicker backfillToPicker = new() { Format = DateTimePickerFormat.Short };
     private readonly Button diagnosticsButton = new() { Text = "Diagnóstico" };
     private readonly Button logsButton = new() { Text = "Ver logs" };
     private readonly TextBox logsBox = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Visible = false };
@@ -65,16 +68,26 @@ public sealed class StatusForm : Form
 
         var buttonsPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(16, 0, 16, 12) };
         syncNowButton.Click += async (_, _) => await OnSyncNowAsync();
+        backfillButton.Click += async (_, _) => await OnBackfillAsync();
         diagnosticsButton.Click += async (_, _) => await OnDiagnosticsAsync();
         logsButton.Click += async (_, _) => await OnToggleLogsAsync();
         UiTheme.StylePrimaryButton(syncNowButton);
+        UiTheme.StyleSecondaryButton(backfillButton);
         UiTheme.StyleSecondaryButton(diagnosticsButton);
         UiTheme.StyleSecondaryButton(logsButton);
         syncNowButton.Margin = new Padding(0, 0, 8, 0);
         diagnosticsButton.Margin = new Padding(0, 0, 8, 0);
         buttonsPanel.Controls.Add(syncNowButton);
+        buttonsPanel.Controls.Add(backfillButton);
         buttonsPanel.Controls.Add(diagnosticsButton);
         buttonsPanel.Controls.Add(logsButton);
+
+        backfillFromPicker.Value = DateTime.Today.AddDays(-7);
+        backfillToPicker.Value = DateTime.Today;
+        buttonsPanel.Controls.Add(new Label { Text = "Desde", AutoSize = true, Padding = new Padding(8, 7, 0, 0) });
+        buttonsPanel.Controls.Add(backfillFromPicker);
+        buttonsPanel.Controls.Add(new Label { Text = "Hasta", AutoSize = true, Padding = new Padding(8, 7, 0, 0) });
+        buttonsPanel.Controls.Add(backfillToPicker);
 
         logsBox.Dock = DockStyle.Fill;
         logsBox.Font = new Font(FontFamily.GenericMonospace, 8.5f);
@@ -117,6 +130,7 @@ public sealed class StatusForm : Form
             errorLabel.ForeColor = string.IsNullOrWhiteSpace(status.LastError) ? SystemColors.ControlText : Color.DarkRed;
 
             syncNowButton.Enabled = status.State != "Syncing";
+            backfillButton.Enabled = status.State != "Syncing" && status.Linked;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
         {
@@ -131,6 +145,7 @@ public sealed class StatusForm : Form
         sqlLabel.Text = "—";
         apiLabel.Text = "—";
         syncNowButton.Enabled = false;
+        backfillButton.Enabled = false;
     }
 
     private async Task OnSyncNowAsync()
@@ -153,6 +168,32 @@ public sealed class StatusForm : Form
         {
             await RefreshStatusAsync();
         }
+    }
+
+    private async Task OnBackfillAsync()
+    {
+        var from = DateOnly.FromDateTime(backfillFromPicker.Value);
+        var to = DateOnly.FromDateTime(backfillToPicker.Value);
+        if (to < from || to.DayNumber - from.DayNumber > 30)
+        {
+            MessageBox.Show(this, "El rango debe tener entre 1 y 31 días.", "Recuperar historial", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        backfillButton.Enabled = false;
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+            var result = await client.RequestBackfillAsync(from, to, cts.Token);
+            if (!result.Started || result.ReconciliationOk != true)
+                MessageBox.Show(this, result.Error ?? "El backfill no pudo conciliarse; no se enviaron datos incompletos.", "Recuperar historial", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            else
+                MessageBox.Show(this, "El rango fue conciliado, enviado por la cola local y quedará disponible al confirmarse en el servidor.", "Recuperar historial", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            MessageBox.Show(this, "El servicio no está disponible en este momento.", "Recuperar historial", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally { await RefreshStatusAsync(); }
     }
 
     private async Task OnDiagnosticsAsync()

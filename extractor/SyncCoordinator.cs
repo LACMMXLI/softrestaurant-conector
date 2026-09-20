@@ -87,5 +87,36 @@ internal sealed class SyncCoordinator(ExtractorConfig config, AgentStatusStore s
         }
     }
 
+    public async Task<SyncRunOutcome> TryBackfillAsync(DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        if (to < from || to.DayNumber - from.DayNumber > 30)
+            return new SyncRunOutcome(false, false, statusStore.Current.PendingBatches, "El rango histórico debe tener entre 1 y 31 días.");
+        if (!await gate.WaitAsync(0, ct))
+            return new SyncRunOutcome(false, false, statusStore.Current.PendingBatches, "Ya hay una sincronización en curso.");
+        try
+        {
+            statusStore.Update(s => s with { State = AgentOperationalState.Syncing });
+            log.Info($"Backfill histórico iniciado [{from:yyyy-MM-dd}, {to:yyyy-MM-dd}].");
+            var result = await runner.RunHistoricalAsync(from, to, ct);
+            statusStore.Update(s => s with
+            {
+                State = result.ReconciliationOk ? AgentOperationalState.Idle : AgentOperationalState.Error,
+                LastCycleAt = DateTime.UtcNow,
+                LastSuccessAt = result.ReconciliationOk ? DateTime.UtcNow : s.LastSuccessAt,
+                LastError = result.ReconciliationOk ? null : "La conciliación histórica con RestaurantAgent no coincidió.",
+                LastReconciliationOk = result.ReconciliationOk,
+                PendingBatches = result.PendingBatches
+            });
+            return new SyncRunOutcome(true, result.ReconciliationOk, result.PendingBatches, null);
+        }
+        catch (Exception ex)
+        {
+            statusStore.Update(s => s with { State = AgentOperationalState.Error, LastCycleAt = DateTime.UtcNow, LastError = ex.Message });
+            log.Error($"Backfill histórico falló: {ex.Message}");
+            return new SyncRunOutcome(true, false, statusStore.Current.PendingBatches, ex.Message);
+        }
+        finally { gate.Release(); }
+    }
+
     public bool IsRunning => gate.CurrentCount == 0;
 }

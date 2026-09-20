@@ -45,6 +45,12 @@ public sealed class SyncNowResultDto
     public string? Error { get; set; }
 }
 
+public sealed class HistoricalBackfillRequestDto
+{
+    public DateOnly From { get; set; }
+    public DateOnly To { get; set; }
+}
+
 public sealed class AgentControlConfigDto
 {
     public string? ApiUrl { get; set; }
@@ -105,6 +111,13 @@ public sealed class ControlApiClient(int port)
     public async Task<SyncNowResultDto> RequestSyncNowAsync(CancellationToken ct)
     {
         using var response = await client.PostAsync("/sync-now", content: null, ct);
+        var result = await response.Content.ReadFromJsonAsync<SyncNowResultDto>(JsonOptions, ct);
+        return result ?? new SyncNowResultDto { Started = false, Error = "Respuesta vacía del agente." };
+    }
+
+    public async Task<SyncNowResultDto> RequestBackfillAsync(DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        using var response = await client.PostAsJsonAsync("/backfill", new HistoricalBackfillRequestDto { From = from, To = to }, JsonOptions, ct);
         var result = await response.Content.ReadFromJsonAsync<SyncNowResultDto>(JsonOptions, ct);
         return result ?? new SyncNowResultDto { Started = false, Error = "Respuesta vacía del agente." };
     }

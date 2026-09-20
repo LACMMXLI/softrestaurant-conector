@@ -48,6 +48,37 @@ internal sealed class AgentRunService(ExtractorConfig config, AgentLog? log = nu
         return new AgentRunResult(result.Reconciliation.Ok, outbox is null ? 0 : await outbox.CountAsync(ct));
     }
 
+    /// <summary>
+    /// Extrae un intervalo histórico explícito sin tocar el checkpoint del ciclo diario. El
+    /// lote viaja por la misma cola SQLite e ingesta idempotente que el ciclo normal.
+    /// </summary>
+    public async Task<AgentRunResult> RunHistoricalAsync(DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        if (!config.SendEnabled || !config.Linked)
+            throw new InvalidOperationException("El agente debe estar vinculado para ejecutar un backfill histórico.");
+
+        var outbox = new SyncOutbox(config.QueuePath);
+        await outbox.InitializeAsync(ct);
+        var client = new AgentApiClient(config.ApiUrl!, config.DeviceToken!, config.InstallationId!);
+        await FlushAsync(outbox, client, ct);
+
+        var result = await ExtractionJob.RunAsync(
+            config, ct,
+            forcedDesde: from.ToDateTime(TimeOnly.MinValue),
+            forcedHasta: to.AddDays(1).ToDateTime(TimeOnly.MinValue));
+        if (!result.Reconciliation.Ok)
+        {
+            log?.Warn($"Backfill histórico [{from:yyyy-MM-dd}, {to:yyyy-MM-dd}] no enviado: conciliación fallida.");
+            return new AgentRunResult(false, await outbox.CountAsync(ct));
+        }
+
+        var batch = ExtractionJob.CreateBatch(config, result);
+        await outbox.EnqueueAsync(batch, ct);
+        log?.Info($"Backfill histórico [{from:yyyy-MM-dd}, {to:yyyy-MM-dd}] encolado como {batch.BatchId}.");
+        await FlushAsync(outbox, client, ct);
+        return new AgentRunResult(true, await outbox.CountAsync(ct));
+    }
+
     private async Task FlushAsync(SyncOutbox outbox, AgentApiClient client, CancellationToken ct)
     {
         for (var sent = 0; sent < 20; sent++)

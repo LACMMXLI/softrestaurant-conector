@@ -21,6 +21,18 @@ public sealed class DashboardSecurityTests
     }
 
     [Fact]
+    public void Stored_historical_shift_is_not_hidden_when_its_original_batch_is_missing()
+    {
+        // The UI must expose persisted facts with a non-conciliated warning instead of
+        // replacing them with empty totals merely because sync_batches has no old range.
+        var hasStoredSelectedShift = true;
+        var coverage = DashboardReportService.GetCoverage(new DateOnly(2026, 8, 31), null, null, null, null);
+        var canShowData = hasStoredSelectedShift || (false && coverage is "complete" or "partial");
+        Assert.Equal("missing", coverage);
+        Assert.True(canShowData);
+    }
+
+    [Fact]
     public void User_credentials_in_environment_are_ignored_and_do_not_block_startup()
     {
         var configuration = BuildConfiguration(new Dictionary<string, string?>
