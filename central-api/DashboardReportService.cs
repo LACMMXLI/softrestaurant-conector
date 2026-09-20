@@ -263,13 +263,8 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         await using var command = dataSource.CreateCommand("""
             WITH scoped_branches AS (
                 SELECT b.id, b.code, b.name,
-                       NOT EXISTS (
-                         SELECT 1
-                         FROM generate_series($3::date, ($4::date - 1), interval '1 day') AS day_range(day)
-                         WHERE NOT EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id = b.id
-                           AND sb.reconciliation_ok AND sb.range_start <= day_range.day
-                           AND sb.range_end >= day_range.day + interval '1 day')
-                       ) AS covered
+                       EXISTS (SELECT 1 FROM sync_batches sb WHERE sb.branch_id = b.id
+                         AND sb.reconciliation_ok AND sb.range_start <= $3 AND sb.range_end >= $4) AS covered
                 FROM branches b
                 WHERE b.business_id = $1 AND b.active
                   AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id = b.business_id AND bm.user_id = $2)

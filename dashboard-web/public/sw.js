@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'restaurant-agent-shell-v3'
+const SHELL_CACHE = 'restaurant-agent-shell-v4'
 const SHELL_URLS = [
   '/',
   '/manifest.webmanifest',
@@ -26,7 +26,9 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return
+  // Cache API acepta exclusivamente GET. Las llamadas de escritura y el API siempre
+  // van a la red para no almacenar respuestas autenticadas ni provocar errores en POST.
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
