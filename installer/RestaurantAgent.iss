@@ -1,5 +1,5 @@
 #ifndef BuildVersion
-  #define BuildVersion "2.3.0"
+  #define BuildVersion "2.4.1"
 #endif
 #ifndef BuildApiUrl
   #define BuildApiUrl "https://restaurant-agent-api.fatboymexicali.com"

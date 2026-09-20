@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string] $Version = '2.3.0',
+    [string] $Version = '2.4.1',
     [string] $ApiUrl = 'https://agente-restaurante.fatboymexicali.com',
     [string] $SqlUser = 'sa',
     [string] $SqlPassword = $env:SRX_INSTALLER_SQL_PASSWORD,
