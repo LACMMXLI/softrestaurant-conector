@@ -377,7 +377,11 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
     private async Task<TopProducts> GetBusinessTopProductsAsync(DashboardUser user, Guid businessId, DateTime start, DateTime end, CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""
-            WITH eligible AS (SELECT b.id FROM branches b WHERE b.business_id=$1 AND b.active AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id=b.business_id AND bm.user_id=$2)
+            WITH eligible AS (
+              SELECT b.id FROM branches b
+              WHERE b.business_id=$1 AND b.active
+                AND EXISTS (SELECT 1 FROM business_members bm WHERE bm.business_id=b.business_id AND bm.user_id=$2)
+            ),
             totals AS (SELECT COALESCE(NULLIF(p.description,''),NULLIF(l.payload->>'descripcionProducto',''),l.product_id) product_name, MAX(p.group_name) group_name,p.classification,
               SUM(l.quantity) quantity,SUM(GREATEST(l.quantity*l.price-COALESCE(NULLIF(l.payload->>'descuento','')::numeric,0),0)) sales
               FROM sale_lines l JOIN eligible e ON e.id=l.branch_id JOIN products p ON p.branch_id=l.branch_id AND p.product_id=l.product_id
