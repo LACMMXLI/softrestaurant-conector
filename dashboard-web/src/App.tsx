@@ -311,6 +311,8 @@ export function App() {
           </div>
         </header>
 
+        {subscription ? <SubscriptionSummary subscription={subscription} /> : null}
+
         <main className="app-main">
           {tab === 'home' ? (
             selectedBusinessId ? <BusinessDashboardScreen
@@ -370,6 +372,28 @@ export function App() {
         <TicketSheet branchCode={branchCode} folio={selectedTicket.folio} openAccount={selectedTicket.openAccount} onClose={closeTicket} onUnauthorized={becomeAnonymous} />
       ) : null}
     </div>
+  )
+}
+
+function SubscriptionSummary({ subscription }: { subscription: Subscription }) {
+  const expiresAt = subscription.status === 'ACTIVE'
+    ? subscription.paidUntil
+    : subscription.status === 'TRIAL' ? subscription.trialEndsAt : null
+  if (!expiresAt) return null
+
+  const expiryTimestamp = Date.parse(expiresAt)
+  if (!Number.isFinite(expiryTimestamp)) return null
+  const daysRemaining = Math.max(0, Math.ceil((expiryTimestamp - Date.now()) / 86_400_000))
+  const planName = subscription.plan === 'UNLIMITED' ? 'Ilimitado' : subscription.plan === 'PLUS' ? 'Plus' : 'Estándar'
+  const dateLabel = new Date(expiryTimestamp).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+  const remainingLabel = daysRemaining === 0 ? 'vence hoy' : `vence en ${daysRemaining} ${daysRemaining === 1 ? 'día' : 'días'}`
+
+  return (
+    <aside className="subscription-summary" aria-label="Información del plan">
+      <span>{subscription.status === 'TRIAL' ? 'Periodo de prueba' : `Plan ${planName}`}</span>
+      <span className="subscription-summary-divider" aria-hidden="true">·</span>
+      <span>{remainingLabel} <time dateTime={expiresAt}>({dateLabel})</time></span>
+    </aside>
   )
 }
 

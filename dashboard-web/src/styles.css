@@ -228,6 +228,10 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
   backdrop-filter: blur(16px);
 }
 
+.subscription-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 5px; padding: 8px 18px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.62); color: var(--ink-soft); font-size: .7rem; line-height: 1.4; }
+.subscription-summary > span:first-child { color: var(--ink); font-weight: 800; }
+.subscription-summary time { color: var(--ink-soft); }
+
 .product-brand { display: inline-flex; align-items: center; gap: 9px; min-width: 0; color: inherit; }
 .product-brand__mark { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 12px; object-fit: cover; }
 .product-brand__name { display: grid; min-width: 0; line-height: 1; }
@@ -1094,6 +1098,10 @@ html { scroll-behavior: smooth; }
     border-bottom-color: rgba(157, 183, 193, .14);
     background: rgba(6, 16, 25, .86);
   }
+
+  .subscription-summary { justify-content: flex-start; padding: 7px 14px; border-color: rgba(157,183,193,.12); background: #0B2026; color: #c3d0d3; }
+  .subscription-summary > span:first-child { color: #54ED40; }
+  .subscription-summary time { color: #9cabb4; }
 
   .product-brand__name small { color: #67df3f; }
   .context-controls { gap: 5px; min-width: 0; }
