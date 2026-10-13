@@ -24,6 +24,7 @@ builder.Services.AddSingleton<ConnectorInstallationRegistry>();
 builder.Services.AddSingleton<WebAuthService>();
 builder.Services.AddSingleton<UserRegistry>();
 builder.Services.AddSingleton<SubscriptionRegistry>();
+builder.Services.AddSingleton<PlatformSettingsRegistry>();
 builder.Services.AddSingleton<DashboardReportService>();
 builder.Services.AddSingleton<ExpenseCategoryService>();
 builder.Services.AddRateLimiter(options =>
@@ -282,6 +283,24 @@ app.MapPost("/api/admin/users/{id:guid}/subscription/status", async (
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
     var result = await subscriptions.SetSuspendedAsync(id, request.Suspended, ct);
     return result is null ? Results.NotFound() : Results.Ok(result);
+});
+
+app.MapGet("/api/admin/settings/subscription-notice", async (
+    HttpContext context, PlatformSettingsRegistry settings, WebAuthService webAuth, CancellationToken ct) =>
+{
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    return Results.Ok(new { design = await settings.GetSubscriptionNoticeDesignAsync(ct) });
+});
+
+app.MapPost("/api/admin/settings/subscription-notice", async (
+    HttpContext context, SubscriptionNoticeDesignRequest request, PlatformSettingsRegistry settings,
+    WebAuthService webAuth, CancellationToken ct) =>
+{
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    var design = request.Design?.Trim().ToUpperInvariant();
+    if (design is not ("A" or "B")) return Results.BadRequest(new { error = "Selecciona el diseño A o B." });
+    await settings.SetSubscriptionNoticeDesignAsync(design, ct);
+    return Results.Ok(new { design });
 });
 
 app.MapPost("/api/admin/users", async (

@@ -1049,13 +1049,18 @@ html { scroll-behavior: smooth; }
 .branch-comparison { display: grid; gap: 4px; }.branch-share { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; padding: 14px 0 11px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; cursor: pointer; }.branch-share > span { display: grid; grid-template-columns: 20px minmax(0,1fr); align-items: center; column-gap: 8px; }.branch-share svg { color: var(--teal); }.branch-share b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }.branch-share small { grid-column: 2; margin-top: 3px; color: var(--ink-soft); font-size: .67rem; }.branch-share > strong { display: grid; align-content: center; justify-items: end; font-size: .81rem; }.branch-share em { margin-top: 3px; color: var(--teal); font-size: .64rem; font-style: normal; }.branch-share > i { grid-column: 1/-1; height: 4px; overflow: hidden; border-radius: 999px; background: var(--line); }.branch-share > i > i { display:block; height:100%; border-radius:inherit; background:var(--teal); }.business-operations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:16px; }.business-operations span { display:grid; gap:5px; padding:12px; border-radius:12px; background:var(--canvas); color:var(--ink-soft); font-size:.67rem; }.business-operations svg { color:var(--teal); }.business-operations b { color:var(--ink); font-size:.82rem; }.business-operations small { font-size:.6rem; }.business-skeleton { height: 340px; border-radius: 22px; }
 @media (max-width: 520px) { .business-hero { padding:20px 17px; }.business-hero > strong { font-size:1.8rem; }.business-operations { grid-template-columns:1fr; }.business-operations span { grid-template-columns:20px 1fr auto; align-items:center; }.business-operations small { grid-column:2/-1; } }
 
-.subscription-wall { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #17352e, #081713 60%); }
-.subscription-wall-card { width: min(560px, 100%); padding: 36px; border: 1px solid rgba(255,255,255,.12); border-radius: 24px; background: #10231e; color: #f5fbf8; text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
-.subscription-wall-icon { width: 64px; height: 64px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 20px; color: #ffd37a; background: rgba(255,190,66,.12); }
-.subscription-wall-kicker { color: #ffd37a; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: .75rem; }
-.subscription-wall-card h1 { margin: 8px 0 14px; font-size: clamp(1.8rem, 6vw, 2.7rem); }
-.subscription-wall-card p { color: #bfd0ca; line-height: 1.65; }
-.subscription-wall-plan { display: inline-flex; margin: 10px 0; padding: 8px 14px; border-radius: 999px; background: rgba(78,203,154,.14); color: #8ce2be; font-weight: 800; }
+.subscription-wall { min-height: 100svh; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at 50% 25%, rgba(36,64,71,.38), transparent 46%), #071A20; color: #f4f8f8; }
+.subscription-wall-card { width: min(500px, 100%); padding: clamp(28px, 6vw, 42px); border: 1px solid #244047; border-radius: 24px; background: #0B2026; box-shadow: 0 28px 80px rgba(0,0,0,.34); text-align: center; }
+.subscription-wall-icon { width: 68px; height: 68px; display: grid; place-items: center; margin: 0 auto 23px; border: 1px solid rgba(245,181,37,.34); border-radius: 20px; background: radial-gradient(circle, rgba(245,181,37,.2), rgba(245,181,37,.07) 68%); color: #F5B525; filter: drop-shadow(0 0 18px rgba(245,181,37,.18)); }
+.subscription-wall-card h1 { margin: 0 0 13px; color: #fff; font-size: clamp(1.9rem, 5vw, 2.35rem); line-height: 1.12; letter-spacing: -.04em; }
+.subscription-wall-message { max-width: 42ch; margin: 0 auto; color: #c3d0d3; font-size: .98rem; line-height: 1.65; }
+.subscription-wall-info { margin: 25px 0 23px; padding: 18px; border: 1px solid #244047; border-radius: 16px; background: #122930; text-align: left; }
+.subscription-wall-info strong { color: #fff; font-size: .91rem; }
+.subscription-wall-info p { margin: 8px 0 0; color: #b7c7ca; font-size: .86rem; line-height: 1.6; }
+.subscription-wall-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 0 20px; border: 1px solid #244047; border-radius: 12px; background: #122930; color: #f3f7f7; font: inherit; font-weight: 750; cursor: pointer; transition: transform .18s ease, filter .18s ease; }
+.subscription-wall-button:hover { transform: translateY(-1px); filter: brightness(1.13); }
+.subscription-wall-button:focus-visible { outline: 3px solid #54ED40; outline-offset: 3px; }
+@media (max-width: 520px) { .subscription-wall { padding: 18px; }.subscription-wall-card { padding: 30px 22px; border-radius: 21px; }.subscription-wall-message { font-size: .94rem; }.subscription-wall-info { padding: 16px; } }
 
 /* Mobile dashboard: a single, compact navigation row and a dark operational
    surface inspired by the shift-control reference.  The data structure and

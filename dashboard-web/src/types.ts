@@ -19,7 +19,7 @@ export type Subscription = {
   historyDays: number | null
 }
 
-export type DashboardSession = { user: DashboardUser; expiresAt?: string; subscription: Subscription }
+export type DashboardSession = { user: DashboardUser; expiresAt?: string; subscription: Subscription; subscriptionNoticeDesign: 'A' | 'B' }
 
 export type BusinessMembership = {
   id: string

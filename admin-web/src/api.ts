@@ -119,6 +119,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ suspended }),
     }),
+  subscriptionNoticeDesign: () => request<{ design: 'A' | 'B' }>('/api/admin/settings/subscription-notice'),
+  setSubscriptionNoticeDesign: (design: 'A' | 'B') => request<{ design: 'A' | 'B' }>(
+    '/api/admin/settings/subscription-notice',
+    { method: 'POST', body: JSON.stringify({ design }) },
+  ),
   resetUserPassword: (id: string, password: string) =>
     request<UserMutationResponse>(`/api/admin/users/${id}/password`, {
       method: 'POST',

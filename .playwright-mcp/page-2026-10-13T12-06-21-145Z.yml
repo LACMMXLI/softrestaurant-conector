@@ -1,0 +1,9 @@
+- generic [ref=f1e2]:
+  - main [ref=f1e3]:
+    - alert [ref=f1e4]:
+      - paragraph [ref=f1e8]: Acceso al sistema pausado
+      - heading "Tu cuenta está deshabilitada por falta de pago" [level=1] [ref=f1e9]
+      - paragraph [ref=f1e10]: Para reactivar tu cuenta, contacta al administrador y registra tu pago.
+      - generic [ref=f1e11]: Plan Plus
+      - button "Cerrar sesión" [ref=f1e12] [cursor=pointer]
+  - button "Instalar RestaurantAgent en este dispositivo" [ref=f1e33] [cursor=pointer]

@@ -49,6 +49,8 @@ export type Subscription = {
   historyDays: number | null
 }
 
+export type SubscriptionNoticeDesign = 'A' | 'B'
+
 export type UserBusiness = {
   businessId: string
   name: string

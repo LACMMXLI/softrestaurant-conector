@@ -1,0 +1,5 @@
+- main "Iniciando dashboard" [ref=e3]:
+  - generic [ref=e6]:
+    - strong [ref=e7]: RestaurantAgent
+    - generic [ref=e8]: by Fatboy
+  - paragraph [ref=e9]: Preparando RestaurantAgent…

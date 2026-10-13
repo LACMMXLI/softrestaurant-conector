@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BarChart3, Building2, CalendarDays, CreditCard, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
+import { BarChart3, Building2, CalendarDays, LayoutDashboard, LockKeyhole, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { Brand } from './components/Brand'
 import { LoginScreen } from './components/LoginScreen'
@@ -233,21 +233,10 @@ export function App() {
   }
 
   if (subscription && !subscription.canAccessContent) {
-    const suspended = subscription.status === 'SUSPENDED'
     return (
-      <main className="subscription-wall">
-        <section className="subscription-wall-card" role="alert" aria-labelledby="subscription-title">
-          <span className="subscription-wall-icon"><CreditCard size={30} /></span>
-          <p className="subscription-wall-kicker">Acceso al restaurante pausado</p>
-          <h1 id="subscription-title">{suspended ? 'Tu cuenta está desactivada' : 'Tu periodo de acceso terminó'}</h1>
-          <p>{suspended
-            ? 'El administrador suspendió temporalmente esta cuenta. Tus negocios, sucursales e historial permanecen guardados.'
-            : 'La prueba gratuita de 15 días o el periodo contratado ya venció. Tus datos no se eliminaron, pero no pueden visualizarse hasta renovar.'}</p>
-          <div className="subscription-wall-plan">Plan {subscription.plan === 'UNLIMITED' ? 'Ilimitado' : subscription.plan === 'PLUS' ? 'Plus' : 'Estándar'}</div>
-          <p>Comunícate directamente con el administrador para registrar tu pago o solicitar una activación.</p>
-          <button className="primary-button" type="button" onClick={() => void handleLogout()}><LogOut size={17} /> Cerrar sesión</button>
-        </section>
-      </main>
+      <SubscriptionAccessNotice
+        onLogout={() => void handleLogout()}
+      />
     )
   }
 
@@ -381,6 +370,23 @@ export function App() {
         <TicketSheet branchCode={branchCode} folio={selectedTicket.folio} openAccount={selectedTicket.openAccount} onClose={closeTicket} onUnauthorized={becomeAnonymous} />
       ) : null}
     </div>
+  )
+}
+
+function SubscriptionAccessNotice({ onLogout }: { onLogout: () => void }) {
+  return (
+    <main className="subscription-wall">
+      <section className="subscription-wall-card" role="alert" aria-labelledby="subscription-title">
+        <span className="subscription-wall-icon"><LockKeyhole size={28} strokeWidth={2} /></span>
+        <h1 id="subscription-title">Cuenta inactiva</h1>
+        <p className="subscription-wall-message">Tu acceso al sistema se encuentra temporalmente suspendido porque no tienes un plan activo.</p>
+        <div className="subscription-wall-info">
+          <strong>Acceso temporalmente restringido</strong>
+          <p>Tu información permanece guardada. Para continuar utilizando el sistema, solicita la activación o renovación de tu cuenta.</p>
+        </div>
+        <button className="subscription-wall-button" type="button" onClick={onLogout}><LogOut size={17} /> Cerrar sesión</button>
+      </section>
+    </main>
   )
 }
 

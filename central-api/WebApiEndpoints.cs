@@ -29,6 +29,7 @@ internal static class WebApiEndpoints
             DashboardRegisterRequest request,
             WebAuthService auth,
             SubscriptionRegistry subscriptions,
+            PlatformSettingsRegistry platformSettings,
             CancellationToken ct) =>
         {
             var email = request.Email?.Trim() ?? string.Empty;
@@ -51,7 +52,7 @@ internal static class WebApiEndpoints
 
             var login = result.Login!;
             WebAuthService.SetSessionCookie(context, login);
-            return Results.Ok(new { user = login.User, expiresAt = login.ExpiresAtUtc, subscription = await subscriptions.GetAsync(login.User.Id, ct) });
+            return Results.Ok(new { user = login.User, expiresAt = login.ExpiresAtUtc, subscription = await subscriptions.GetAsync(login.User.Id, ct), subscriptionNoticeDesign = await platformSettings.GetSubscriptionNoticeDesignAsync(ct) });
         }).RequireRateLimiting("dashboard-login");
 
         group.MapPost("/auth/login", async (
@@ -59,6 +60,7 @@ internal static class WebApiEndpoints
             DashboardLoginRequest request,
             WebAuthService auth,
             SubscriptionRegistry subscriptions,
+            PlatformSettingsRegistry platformSettings,
             CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(request.Email) || request.Email.Length > 320 ||
@@ -76,7 +78,7 @@ internal static class WebApiEndpoints
             if (login is null) return Results.Unauthorized();
 
             WebAuthService.SetSessionCookie(context, login);
-            return Results.Ok(new { user = login.User, expiresAt = login.ExpiresAtUtc, subscription = await subscriptions.GetAsync(login.User.Id, ct) });
+            return Results.Ok(new { user = login.User, expiresAt = login.ExpiresAtUtc, subscription = await subscriptions.GetAsync(login.User.Id, ct), subscriptionNoticeDesign = await platformSettings.GetSubscriptionNoticeDesignAsync(ct) });
         }).RequireRateLimiting("dashboard-login");
 
         group.MapPost("/auth/logout", async (
@@ -93,10 +95,11 @@ internal static class WebApiEndpoints
             HttpContext context,
             WebAuthService auth,
             SubscriptionRegistry subscriptions,
+            PlatformSettingsRegistry platformSettings,
             CancellationToken ct) =>
         {
             var user = await auth.AuthenticateAsync(context, ct);
-            return user is null ? Results.Unauthorized() : Results.Ok(new { user, subscription = await subscriptions.GetAsync(user.Id, ct) });
+            return user is null ? Results.Unauthorized() : Results.Ok(new { user, subscription = await subscriptions.GetAsync(user.Id, ct), subscriptionNoticeDesign = await platformSettings.GetSubscriptionNoticeDesignAsync(ct) });
         });
 
         // ── Negocios (Account → Business) ───────────────────────────────────────────────────

@@ -541,6 +541,13 @@ CREATE TABLE IF NOT EXISTS connector_installations (
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS platform_settings (
+    key text PRIMARY KEY,
+    value text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS ix_connector_installations_branch ON connector_installations(branch_id, active);
 DROP INDEX IF EXISTS ix_connectors_branch;
 

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Building2, LogOut, ShieldCheck, UsersRound } from 'lucide-react'
+import { Building2, LogOut, PanelsTopLeft, ShieldCheck, UsersRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { LoginScreen } from './components/LoginScreen'
 import { BranchDetailScreen } from './screens/BranchDetailScreen'
 import { BranchesScreen } from './screens/BranchesScreen'
 import { UserDetailScreen } from './screens/UserDetailScreen'
 import { UsersScreen } from './screens/UsersScreen'
+import { SubscriptionNoticeScreen } from './screens/SubscriptionNoticeScreen'
 import type { AdminUser, Branch, Business, UserDetail, UserSummary } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
@@ -13,6 +14,7 @@ type View =
   | { name: 'branches' }
   | { name: 'branch-detail'; code: string }
   | { name: 'users' }
+  | { name: 'subscription-notice' }
   | { name: 'user-detail'; id: string }
 
 export function App() {
@@ -185,6 +187,14 @@ export function App() {
             <UsersRound size={18} aria-hidden="true" />
             <span>Usuarios</span>
           </button>
+          <button
+            type="button"
+            className={view.name === 'subscription-notice' ? 'nav-item active' : 'nav-item'}
+            onClick={() => setView({ name: 'subscription-notice' })}
+          >
+            <PanelsTopLeft size={18} aria-hidden="true" />
+            <span>Avisos al cliente</span>
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -242,6 +252,10 @@ export function App() {
             onUnauthorized={becomeAnonymous}
           />
         ) : null}
+
+        {view.name === 'subscription-notice' ? (
+          <SubscriptionNoticeScreen onUnauthorized={becomeAnonymous} />
+        ) : null}
       </main>
 
       <nav className="mobile-nav" aria-label="Navegación principal">
@@ -260,6 +274,14 @@ export function App() {
         >
           <UsersRound size={20} aria-hidden="true" />
           <span>Usuarios</span>
+        </button>
+        <button
+          type="button"
+          className={view.name === 'subscription-notice' ? 'mobile-nav-item active' : 'mobile-nav-item'}
+          onClick={() => setView({ name: 'subscription-notice' })}
+        >
+          <PanelsTopLeft size={20} aria-hidden="true" />
+          <span>Avisos</span>
         </button>
       </nav>
     </div>
