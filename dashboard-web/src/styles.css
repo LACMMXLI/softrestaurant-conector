@@ -615,7 +615,7 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.035em; }
 .panel-hint { margin: 8px 0 0; color: var(--ink-soft); font-size: .68rem; line-height: 1.5; }
 
 .mobile-nav { position: fixed; z-index: 40; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); padding: 7px; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; background: rgba(15,29,37,.96); box-shadow: 0 18px 45px rgba(15,29,37,.28); backdrop-filter: blur(16px); }
-.nav-items { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
+.nav-items { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; }
 .nav-item { min-height: 54px; display: grid; place-items: center; align-content: center; gap: 3px; border: 0; border-radius: 14px; background: transparent; color: #8da0a6; }
 .nav-item span { font-size: .6rem; font-weight: 700; }
 .nav-item.active { background: #20333c; color: #85ded0; }
@@ -1035,13 +1035,16 @@ html { scroll-behavior: smooth; }
 .top-product-name small, .top-product-values small { color: var(--ink-soft); font-size: .62rem; }
 .top-product-values { text-align: right; }
 .top-product-values strong { color: var(--ink); font-size: .72rem; }
-.product-total-count { color: var(--ink-soft); font-size: .76rem; font-weight: 700; }
-.product-totals-scroll { overflow-x: auto; margin-top: 12px; }
-.product-totals-table { width: 100%; border-collapse: collapse; text-align: left; }
-.product-totals-table th, .product-totals-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: .8rem; }
-.product-totals-table th { color: var(--ink-soft); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-.product-totals-table td:nth-child(n+3), .product-totals-table th:nth-child(n+3) { text-align: right; white-space: nowrap; }
-.product-totals-table tfoot th { color: var(--ink); border-bottom: 0; }
+.product-total-list { display: grid; margin-top: 8px; }
+.product-total-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; min-height: 64px; padding: 10px 2px; border-bottom: 1px solid var(--line); }
+.product-total-name { min-width: 0; overflow-wrap: anywhere; color: var(--ink); font-size: .92rem; }
+.product-total-quantity, .product-total-sales { display: grid; justify-items: end; gap: 2px; white-space: nowrap; }
+.product-total-quantity strong { color: var(--teal); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.product-total-quantity small, .product-total-sales small { color: var(--ink-soft); font-size: .65rem; }
+.product-total-sales strong { color: var(--ink); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.product-totals-summary { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--canvas); color: var(--ink-soft); font-size: .72rem; }
+.product-totals-summary strong { margin-left: auto; color: var(--teal); font-size: .84rem; white-space: nowrap; }
+.product-totals-summary b { color: var(--ink); font-size: .82rem; white-space: nowrap; }
 @media (max-width: 760px) { .top-products-grid { grid-template-columns: 1fr; } .top-products-total { display: none; } }
 
 /* Consolidado: la jerarquía se expresa con venta y participación, no con una gráfica que
@@ -1207,10 +1210,10 @@ html { scroll-behavior: smooth; }
     background: rgba(5, 15, 23, .97);
     box-shadow: 0 -10px 34px rgba(0, 0, 0, .24);
   }
-  .nav-items { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; }
+  .nav-items { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; }
   .nav-item { min-width: 0; min-height: 52px; gap: 2px; border-radius: 11px; color: #a8b5bb; }
   .nav-item svg { width: 18px; height: 18px; }
-  .nav-item span { overflow: hidden; max-width: 100%; font-size: .52rem; white-space: nowrap; text-overflow: ellipsis; }
+  .nav-item span { overflow: hidden; max-width: 100%; font-size: .49rem; white-space: nowrap; text-overflow: ellipsis; }
   .nav-item.active { color: #67df3f; background: radial-gradient(circle at 50% 0%, rgba(103, 223, 63, .17), transparent 74%); }
 }
 
@@ -1320,6 +1323,13 @@ html { scroll-behavior: smooth; }
   .context-controls { width: auto; gap: 5px; }
   .context-select, .context-date { padding-inline: 6px; }
   .context-select svg, .context-date svg { display: none; }
+  .product-total-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .product-total-name { grid-column: 1; font-size: .88rem; }
+  .product-total-quantity { grid-column: 2; grid-row: 1 / span 2; }
+  .product-total-sales { grid-column: 1; grid-row: 2; justify-items: start; }
+  .product-totals-summary { flex-wrap: wrap; gap: 5px 8px; }
+  .product-totals-summary span { flex-basis: 100%; }
+  .product-totals-summary strong { margin-left: 0; }
   .pulse-ticket { padding: 17px 15px 15px; }
   .pulse-topline, .pulse-foot { gap: 9px; }
   .pulse-amount strong { font-size: clamp(2.25rem, 12vw, 3.25rem); }

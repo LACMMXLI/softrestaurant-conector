@@ -2,7 +2,6 @@ import { ArrowDownToLine, Ban, Banknote, CreditCard, Receipt, Store, Utensils, W
 import { formatAmount, formatInteger } from '../format'
 import type { BusinessDashboard } from '../types'
 import { EmptyState } from '../components/EmptyState'
-import { ProductTotals } from '../components/ProductTotals'
 
 export function BusinessDashboardScreen({ data, loading, error, onRetry, onOpenBranch }: {
   data: BusinessDashboard | null; loading: boolean; error: string | null; onRetry: () => void; onOpenBranch: (code: string) => void
@@ -25,7 +24,6 @@ export function BusinessDashboardScreen({ data, loading, error, onRetry, onOpenB
     <section className="content-card"><div className="section-heading"><div><p className="utility-label">Participación</p><h2>Venta por sucursal</h2></div></div><div className="branch-comparison">{data.branches.map(branch => <button key={branch.code} className="branch-share" onClick={() => onOpenBranch(branch.code)}><span><Store size={17} /><b>{branch.name}</b><small>{formatInteger(branch.tickets)} tickets · {formatAmount(branch.averageTicket)} promedio</small></span><strong>{formatAmount(branch.sales)}<em>{branch.participationPercent}% del total</em></strong><i><i style={{ width: `${branch.participationPercent}%` }} /></i></button>)}</div></section>
     <section className="content-card"><div className="section-heading"><div><p className="utility-label">Formas de pago y caja</p><h2>Ingresos y salidas</h2></div></div><div className="payment-breakdown"><div><Banknote size={17}/><span>Efectivo</span><strong>{formatAmount(summary.cashSales)}</strong></div><div><CreditCard size={17}/><span>Tarjeta</span><strong>{formatAmount(summary.cardSales)}</strong></div><div><WalletCards size={17}/><span>Otros</span><strong>{formatAmount(summary.otherSales)}</strong></div></div><div className="business-operations"><span><ArrowDownToLine size={18}/> Entradas <b>{formatAmount(summary.cashIn)}</b></span><span><Banknote size={18}/> Salidas <b>{formatAmount(summary.cashOut)}</b></span><span><Ban size={18}/> Cancelaciones <b>{formatInteger(summary.cancelledTickets)}</b><small>{formatInteger(summary.cancelledLines)} líneas</small></span></div></section>
     <section className="content-card top-products-card"><div className="section-heading"><div><p className="utility-label">Productos vendidos</p><h2>Top 20 de todas las sucursales</h2></div></div><div className="top-products-grid"><ProductList title="Alimentos" items={data.topProducts.foods} /><ProductList title="Bebidas" items={data.topProducts.beverages} /></div></section>
-    <ProductTotals items={data.topProducts.all} scope="de todas las sucursales" />
   </div>
 }
 function Metric({ icon, label, value }: {icon: React.ReactNode; label:string; value:string}) { return <article className="metric-item"><span className="metric-icon">{icon}</span><span>{label}</span><strong>{value}</strong></article> }

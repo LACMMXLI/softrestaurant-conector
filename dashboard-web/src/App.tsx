@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BarChart3, Building2, CalendarDays, LayoutDashboard, LockKeyhole, LogOut, Menu, ReceiptText, RefreshCw, Store, UserRound } from 'lucide-react'
+import { BarChart3, Building2, CalendarDays, LayoutDashboard, LockKeyhole, LogOut, Menu, ReceiptText, RefreshCw, ShoppingBasket, Store, UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { Brand } from './components/Brand'
 import { LoginScreen } from './components/LoginScreen'
@@ -13,10 +13,11 @@ import { OperationsScreen } from './screens/OperationsScreen'
 import { ProductCancellationsScreen } from './screens/ProductCancellationsScreen'
 import { SalesScreen } from './screens/SalesScreen'
 import { ExpenseCategoriesScreen } from './screens/ExpenseCategoriesScreen'
+import { ProductTotals } from './components/ProductTotals'
 import type { BusinessDashboard, BusinessMembership, DashboardBranch, DashboardHome, DashboardShift, DashboardUser, Subscription } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
-type Tab = 'home' | 'sales' | 'operations' | 'cancellations' | 'businesses' | 'more' | 'expense-categories'
+type Tab = 'home' | 'sales' | 'operations' | 'cancellations' | 'products' | 'businesses' | 'more' | 'expense-categories'
 type SelectedTicket = { folio: number; openAccount: boolean }
 
 const storedBranchKey = 'sr-dashboard:v1:branch'
@@ -347,6 +348,12 @@ export function App() {
             />
           ) : null}
           {tab === 'cancellations' ? <ProductCancellationsScreen branchCode={branchCode} date={date} shiftId={shiftId} onUnauthorized={becomeAnonymous} /> : null}
+          {tab === 'products' ? <ProductTotals
+            items={selectedBusinessId ? businessDashboard?.topProducts.all ?? [] : dashboard?.topProducts.all ?? []}
+            scope={selectedBusinessId ? `de todas las sucursales de ${businessDashboard?.businessName ?? 'este negocio'}` : `de la sucursal ${currentBranch?.name ?? ''}`}
+            loading={dashboardLoading}
+            error={dashboardError}
+          /> : null}
           {tab === 'businesses' ? <BusinessesScreen onUnauthorized={becomeAnonymous} /> : null}
           {tab === 'expense-categories' && currentBranch ? <ExpenseCategoriesScreen branchCode={currentBranch.code} canManage={isCurrentBusinessOwner} onUnauthorized={becomeAnonymous} /> : null}
           {tab === 'more' && currentBranch ? (
@@ -420,6 +427,7 @@ function Navigation({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void 
     { key: 'sales', label: 'Ventas', icon: <BarChart3 size={20} /> },
     { key: 'operations', label: 'Operación', icon: <ReceiptText size={20} /> },
     { key: 'cancellations', label: 'Cancelados', icon: <ReceiptText size={20} /> },
+    { key: 'products', label: 'Productos', icon: <ShoppingBasket size={20} /> },
     { key: 'businesses', label: 'Negocios', icon: <Building2 size={20} /> },
     { key: 'more', label: 'Más', icon: <Menu size={20} /> },
   ]

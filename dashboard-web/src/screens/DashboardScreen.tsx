@@ -3,7 +3,6 @@ import { EmptyState } from '../components/EmptyState'
 import { SalesChart } from '../components/SalesChart'
 import { StatusPill } from '../components/StatusPill'
 import { TicketRow } from '../components/TicketRow'
-import { ProductTotals } from '../components/ProductTotals'
 import { formatAmount, formatInteger, formatTime, timeAgo } from '../format'
 import type { DashboardHome } from '../types'
 
@@ -203,7 +202,6 @@ export function DashboardScreen({
             </div>
             <p className="data-note">Incluye productos con importe de tickets cobrados y no cancelados del turno, aunque el corte siga abierto. La categoría proviene del grupo configurado en SoftRestaurant.</p>
           </section>
-          <ProductTotals items={data.topProducts.all} scope={`de la sucursal ${meta.branchName}`} />
 
           <section className="content-card operational-card">
             <div className="section-heading">
