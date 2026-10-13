@@ -104,4 +104,19 @@ internal sealed class SubscriptionRegistry(NpgsqlDataSource dataSource)
             reader.GetString(0), reader.GetDateTime(1), reader.IsDBNull(2) ? null : reader.GetDateTime(2),
             reader.GetBoolean(3), DateTime.UtcNow);
     }
+
+    public async Task<SubscriptionView?> ResetPaidTimeAsync(Guid userId, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("""
+            UPDATE app_users SET paid_until = NULL, subscription_updated_at = now(), updated_at = now()
+            WHERE id = $1
+            RETURNING subscription_plan, trial_ends_at, paid_until, subscription_suspended;
+            """);
+        command.Parameters.AddWithValue(userId);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        if (!await reader.ReadAsync(ct)) return null;
+        return SubscriptionPolicy.Evaluate(
+            reader.GetString(0), reader.GetDateTime(1), reader.IsDBNull(2) ? null : reader.GetDateTime(2),
+            reader.GetBoolean(3), DateTime.UtcNow);
+    }
 }

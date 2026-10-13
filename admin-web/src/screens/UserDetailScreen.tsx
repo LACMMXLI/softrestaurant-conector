@@ -168,6 +168,21 @@ export function UserDetailScreen({
     }
   }
 
+  async function handleResetSubscriptionTime() {
+    if (!window.confirm('Esto eliminará todo el tiempo pagado acumulado de esta cuenta. ¿Deseas continuar?')) return
+    setSubscriptionBusy(true)
+    setError(null)
+    try {
+      const subscription = await api.resetSubscriptionTime(user.id)
+      onUserUpdated({ ...user, subscription })
+    } catch (reason) {
+      if (reason instanceof ApiError && reason.status === 401) return onUnauthorized()
+      setError(reason instanceof Error ? reason.message : 'No fue posible restablecer el tiempo de suscripción.')
+    } finally {
+      setSubscriptionBusy(false)
+    }
+  }
+
   return (
     <div className="panel-stack">
       <button className="icon-button back-button" type="button" onClick={onBack}>
@@ -256,6 +271,12 @@ export function UserDetailScreen({
           </button>
         </form>
         <p className="panel-hint">La desactivación no elimina la cuenta, negocios, sucursales ni historial.</p>
+        <div className="panel-card-footer">
+          <button className="secondary-button danger-outline" type="button" disabled={subscriptionBusy || !user.subscription.paidUntil} onClick={() => void handleResetSubscriptionTime()}>
+            {subscriptionBusy ? 'Actualizando…' : 'Restablecer tiempo pagado'}
+          </button>
+          <p className="panel-hint">Elimina la fecha de vencimiento pagado y conserva el plan y el estado de acceso. Esta acción no se puede deshacer.</p>
+        </div>
       </section>
 
       <section className="panel-card" aria-labelledby="user-password-title">

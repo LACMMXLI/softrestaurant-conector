@@ -285,6 +285,14 @@ app.MapPost("/api/admin/users/{id:guid}/subscription/status", async (
     return result is null ? Results.NotFound() : Results.Ok(result);
 });
 
+app.MapPost("/api/admin/users/{id:guid}/subscription/reset-time", async (
+    HttpContext context, Guid id, SubscriptionRegistry subscriptions, WebAuthService webAuth, CancellationToken ct) =>
+{
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    var result = await subscriptions.ResetPaidTimeAsync(id, ct);
+    return result is null ? Results.NotFound() : Results.Ok(result);
+});
+
 app.MapGet("/api/admin/settings/subscription-notice", async (
     HttpContext context, PlatformSettingsRegistry settings, WebAuthService webAuth, CancellationToken ct) =>
 {

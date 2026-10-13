@@ -119,6 +119,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ suspended }),
     }),
+  resetSubscriptionTime: (id: string) =>
+    request<Subscription>(`/api/admin/users/${id}/subscription/reset-time`, { method: 'POST' }),
   subscriptionNoticeDesign: () => request<{ design: 'A' | 'B' }>('/api/admin/settings/subscription-notice'),
   setSubscriptionNoticeDesign: (design: 'A' | 'B') => request<{ design: 'A' | 'B' }>(
     '/api/admin/settings/subscription-notice',
