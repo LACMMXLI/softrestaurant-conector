@@ -99,9 +99,7 @@ await DbInitializer.InitializeAsync(dataSource, apiOptions, CancellationToken.No
 // pero no obtiene datos del restaurante aunque llame al API directamente.
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/api/web") &&
-        !context.Request.Path.StartsWithSegments("/api/web/auth") &&
-        !context.Request.Path.StartsWithSegments("/api/web/agent/latest"))
+    if (SubscriptionPolicy.RequiresActiveSubscription(context.Request.Path))
     {
         var auth = context.RequestServices.GetRequiredService<WebAuthService>();
         var user = await auth.AuthenticateAsync(context, context.RequestAborted);

@@ -17,26 +17,27 @@ internal sealed record SubscriptionStatusRequest(bool Suspended);
 
 internal static class SubscriptionPolicy
 {
-    public const int BasicHistoryDays = 3;
-    public const int PlusHistoryDays = 30;
     public const int BasicBranchLimit = 1;
     public const int PlusBranchLimit = 5;
 
     public static bool IsValidPlan(string? plan) => plan is "BASIC" or "PLUS" or "UNLIMITED";
     public static bool IsValidDuration(int months) => months is 1 or 2 or 3 or 6;
-    // La retención nunca depende del plan: los hechos que llegan por un conector se conservan
-    // en PostgreSQL. Esta capacidad solo determina desde qué fecha puede consultar la cuenta.
-    public static int? GetHistoryDays(string plan) => plan switch
-    {
-        "BASIC" => BasicHistoryDays,
-        "PLUS" => PlusHistoryDays,
-        "UNLIMITED" => null,
-        _ => BasicHistoryDays
-    };
+    // El nivel de plan ya no recorta la antigüedad de los hechos conservados. Así, al
+    // reactivar el acceso se puede consultar también lo recibido mientras el cliente estaba
+    // suspendido o vencido. La disponibilidad depende de lo que se haya sincronizado.
+    public static int? GetHistoryDays(string plan) => null;
     public static int GetBranchLimit(string plan) => plan == "BASIC" ? BasicBranchLimit : PlusBranchLimit;
     public static bool CanUseConsolidatedDashboard(string plan) => plan is "PLUS" or "UNLIMITED";
     public static DateOnly? GetOldestAvailableDate(string plan, DateOnly today) =>
         GetHistoryDays(plan) is { } days ? today.AddDays(-(days - 1)) : null;
+
+    // La suscripción controla las superficies interactivas del cliente. La identidad del
+    // conector autentica el agente por separado; no se debe aplicar este bloqueo a ingesta,
+    // heartbeat ni endpoints operativos del dispositivo.
+    public static bool RequiresActiveSubscription(PathString path) =>
+        path.StartsWithSegments("/api/web") &&
+        !path.StartsWithSegments("/api/web/auth") &&
+        !path.StartsWithSegments("/api/web/agent/latest");
 
     public static SubscriptionView Evaluate(
         string plan, DateTime trialEndsAt, DateTime? paidUntil, bool suspended, DateTime utcNow)

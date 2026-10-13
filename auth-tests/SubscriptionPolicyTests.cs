@@ -41,16 +41,30 @@ public sealed class SubscriptionPolicyTests
     }
 
     [Theory]
+    [InlineData("/api/web/dashboard/home", true)]
+    [InlineData("/api/web/sales", true)]
+    [InlineData("/api/web/auth/login", false)]
+    [InlineData("/api/web/auth/me", false)]
+    [InlineData("/api/web/agent/latest", false)]
+    [InlineData("/api/ingestion/batches", false)]
+    [InlineData("/api/agents/heartbeat", false)]
+    [InlineData("/api/dashboard/today", false)]
+    [InlineData("/api/branches/main/sync-status", false)]
+    public void Subscription_gate_is_scoped_to_customer_web_endpoints(string path, bool expected) =>
+        Assert.Equal(expected, SubscriptionPolicy.RequiresActiveSubscription(new Microsoft.AspNetCore.Http.PathString(path)));
+
+    [Theory]
     [InlineData(1)] [InlineData(2)] [InlineData(3)] [InlineData(6)]
     public void Only_supported_activation_durations_are_accepted(int months) =>
         Assert.True(SubscriptionPolicy.IsValidDuration(months));
 
     [Theory]
-    [InlineData("BASIC", 3, 1)]
-    [InlineData("PLUS", 30, 5)]
-    public void Plans_have_their_real_history_and_branch_limits(string plan, int historyDays, int branchLimit)
+    [InlineData("BASIC", 1)]
+    [InlineData("PLUS", 5)]
+    public void All_active_plans_can_consult_stored_history(string plan, int branchLimit)
     {
-        Assert.Equal(historyDays, SubscriptionPolicy.GetHistoryDays(plan));
+        Assert.Null(SubscriptionPolicy.GetHistoryDays(plan));
+        Assert.Null(SubscriptionPolicy.GetOldestAvailableDate(plan, DateOnly.FromDateTime(Now)));
         Assert.Equal(branchLimit, SubscriptionPolicy.GetBranchLimit(plan));
     }
 

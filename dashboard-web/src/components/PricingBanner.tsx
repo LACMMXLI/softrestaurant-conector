@@ -21,7 +21,7 @@ const PLANS: Plan[] = [
     period: 'MXN / mes',
     features: [
       '1 sucursal',
-      'Historial de hasta 3 días',
+      'Todo el historial recibido',
       'Sincronización en vivo (cuentas abiertas y corte de caja)',
       'Corte de caja estimado y desglose por forma de pago',
       'Tickets recientes y cancelaciones',
@@ -36,7 +36,7 @@ const PLANS: Plan[] = [
     highlight: true,
     features: [
       'Hasta 5 sucursales',
-      'Historial extendido de hasta 30 días',
+      'Todo el historial recibido',
       'Analítica avanzada: tendencias, productos top y comparativos entre sucursales',
       'Alertas automáticas de diferencias de caja y cancelaciones inusuales',
       'Exportación de reportes a Excel y PDF',

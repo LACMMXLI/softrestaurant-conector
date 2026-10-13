@@ -240,8 +240,8 @@ export function UserDetailScreen({
         <form className="inline-form" onSubmit={handleActivateSubscription}>
           <label>Plan
             <select value={subscriptionPlan} onChange={(event) => setSubscriptionPlan(event.target.value as 'BASIC' | 'PLUS' | 'UNLIMITED')}>
-              <option value="BASIC">Estándar · historial de 3 días</option>
-              <option value="PLUS">Plus · historial de 30 días</option>
+              <option value="BASIC">Estándar · historial completo disponible</option>
+              <option value="PLUS">Plus · historial completo disponible</option>
               <option value="UNLIMITED">Ilimitado · todo el historial</option>
             </select>
           </label>
