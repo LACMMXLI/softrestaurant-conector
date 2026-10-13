@@ -4,6 +4,7 @@ const amountFormatter = new Intl.NumberFormat('es-MX', {
 })
 
 const integerFormatter = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 0 })
+const quantityFormatter = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 3 })
 
 export function formatAmount(value: number | null): string {
   return value === null ? '—' : amountFormatter.format(value)
@@ -11,6 +12,10 @@ export function formatAmount(value: number | null): string {
 
 export function formatInteger(value: number | null): string {
   return value === null ? '—' : integerFormatter.format(value)
+}
+
+export function formatQuantity(value: number | null): string {
+  return value === null ? '—' : quantityFormatter.format(value)
 }
 
 export function formatTime(value: string | null): string {

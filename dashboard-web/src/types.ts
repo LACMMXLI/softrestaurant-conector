@@ -89,7 +89,7 @@ export type BusinessDashboard = {
     cashSales: number; cardSales: number; otherSales: number
   }
   branches: Array<{ code: string; name: string; tickets: number; sales: number; averageTicket: number; participationPercent: number; coverage: string }>
-  topProducts: { foods: TopProductItem[]; beverages: TopProductItem[] }
+  topProducts: { foods: TopProductItem[]; beverages: TopProductItem[]; all: TopProductItem[] }
   expenses: ExpenseSummary
   openShifts: Array<{ branchCode: string; branchName: string; number: number; cashier: string | null; openedAt: string | null }>
 }
@@ -217,6 +217,7 @@ export type DashboardHome = {
   topProducts: {
     foods: TopProductItem[]
     beverages: TopProductItem[]
+    all: TopProductItem[]
   }
   recentCancellations: CancellationItem[]
   recentCashMovements: CashMovementItem[]

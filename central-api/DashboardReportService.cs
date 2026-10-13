@@ -100,7 +100,8 @@ internal sealed record HourlySalesPoint(int Hour, decimal Sales, long Tickets);
 internal sealed record TopProductItem(string ProductId, string ProductName, string? GroupName,
     decimal Quantity, decimal Sales, int Rank);
 
-internal sealed record TopProducts(IReadOnlyList<TopProductItem> Foods, IReadOnlyList<TopProductItem> Beverages);
+internal sealed record TopProducts(IReadOnlyList<TopProductItem> Foods, IReadOnlyList<TopProductItem> Beverages,
+    IReadOnlyList<TopProductItem> All);
 
 internal sealed record SalesTicketItem(
     long Folio,
@@ -385,14 +386,14 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             totals AS (SELECT COALESCE(NULLIF(p.description,''),NULLIF(l.payload->>'descripcionProducto',''),l.product_id) product_name, MAX(p.group_name) group_name,p.classification,
               SUM(l.quantity) quantity,SUM(GREATEST(l.quantity*l.price-COALESCE(NULLIF(l.payload->>'descuento','')::numeric,0),0)) sales
               FROM sale_lines l JOIN eligible e ON e.id=l.branch_id JOIN products p ON p.branch_id=l.branch_id AND p.product_id=l.product_id
-              WHERE COALESCE(l.quantity,0)>0 AND COALESCE(l.price,0)>0 AND p.classification IN (1,2) AND EXISTS (SELECT 1 FROM sales s WHERE s.branch_id=l.branch_id AND s.source_folio=l.source_folio AND s.business_date >= $3 AND s.business_date < $4 AND s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL)
+              WHERE COALESCE(l.quantity,0)>0 AND COALESCE(l.price,0)>0 AND EXISTS (SELECT 1 FROM sales s WHERE s.branch_id=l.branch_id AND s.source_folio=l.source_folio AND s.business_date >= $3 AND s.business_date < $4 AND s.paid AND NOT s.cancelled AND s.closed_at IS NOT NULL)
               GROUP BY COALESCE(NULLIF(p.description,''),NULLIF(l.payload->>'descripcionProducto',''),l.product_id),p.classification), ranked AS (SELECT *,ROW_NUMBER() OVER(PARTITION BY classification ORDER BY quantity DESC,sales DESC,product_name) rank FROM totals)
-            SELECT product_name,group_name,classification,quantity,sales,rank FROM ranked WHERE rank<=20 ORDER BY classification,rank;
+            SELECT product_name,group_name,classification,quantity,sales,rank FROM ranked ORDER BY classification,rank;
             """);
         command.Parameters.AddWithValue(businessId); command.Parameters.AddWithValue(user.Id); command.Parameters.AddWithValue(start); command.Parameters.AddWithValue(end);
-        var foods=new List<TopProductItem>(); var beverages=new List<TopProductItem>(); await using var reader=await command.ExecuteReaderAsync(ct);
-        while(await reader.ReadAsync(ct)){ var item=new TopProductItem(reader.GetString(0),reader.GetString(0),ReadNullableString(reader,1),reader.GetDecimal(3),reader.GetDecimal(4),checked((int)reader.GetInt64(5))); if(reader.GetInt32(2)==1) beverages.Add(item); else foods.Add(item); }
-        return new TopProducts(foods,beverages);
+        var foods=new List<TopProductItem>(); var beverages=new List<TopProductItem>(); var all=new List<TopProductItem>(); await using var reader=await command.ExecuteReaderAsync(ct);
+        while(await reader.ReadAsync(ct)){ var item=new TopProductItem(reader.GetString(0),reader.GetString(0),ReadNullableString(reader,1),reader.GetDecimal(3),reader.GetDecimal(4),checked((int)reader.GetInt64(5))); all.Add(item); if(reader.GetInt32(2)==1) beverages.Add(item); else if(reader.GetInt32(2)==2) foods.Add(item); }
+        return new TopProducts(foods.Take(20).ToArray(), beverages.Take(20).ToArray(), all);
     }
 
     public async Task<IReadOnlyList<DashboardShift>> GetShiftsAsync(
@@ -464,7 +465,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 [],
                 [],
                 [],
-                new TopProducts([], []),
+                new TopProducts([], [], []),
                 [],
                 []);
         }
@@ -473,7 +474,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
         var hourlyTask = GetHourlySalesAsync(meta, ct);
         var ticketsTask = GetTicketItemsAsync(meta, page: 1, pageSize: 6, search: null, ct);
         var openAccountsTask = GetTransientAccountItemsAsync(meta, limit: 20, ct);
-        var topProductsTask = GetTopProductsAsync(meta, limitPerCategory: 20, ct);
+        var topProductsTask = GetTopProductsAsync(meta, ct);
         var cancellationsTask = GetCancellationsAsync(meta, limit: 5, ct);
         var cashTask = GetCashMovementItemsAsync(meta, page: 1, pageSize: 5, type: null, search: null, ct);
         await Task.WhenAll(summaryTask, hourlyTask, ticketsTask, openAccountsTask, topProductsTask, cancellationsTask, cashTask);
@@ -489,7 +490,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             (await cashTask).Items);
     }
 
-    private async Task<TopProducts> GetTopProductsAsync(DashboardMeta meta, int limitPerCategory, CancellationToken ct)
+    private async Task<TopProducts> GetTopProductsAsync(DashboardMeta meta, CancellationToken ct)
     {
         var start = meta.Date.ToDateTime(TimeOnly.MinValue);
         var end = start.AddDays(1);
@@ -527,7 +528,6 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                            - COALESCE(NULLIF(l.payload->>'descuento', '')::numeric, 0), 0)) AS sales
                 FROM eligible_lines l
                 INNER JOIN products p ON p.branch_id = l.branch_id AND p.product_id = l.product_id
-                WHERE p.classification IN (1, 2)
                 GROUP BY l.product_id,
                          COALESCE(NULLIF(p.description, ''), NULLIF(l.payload->>'descripcionProducto', ''), l.product_id),
                          p.group_name, p.classification
@@ -536,23 +536,25 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
                 FROM totals
             )
             SELECT product_id, product_name, group_name, classification, quantity, sales, rank
-            FROM ranked WHERE rank <= $5 ORDER BY classification, rank;
+            FROM ranked ORDER BY classification, rank;
             """);
         command.Parameters.AddWithValue(meta.BranchId);
         command.Parameters.AddWithValue(start);
         command.Parameters.AddWithValue(end);
         command.Parameters.AddWithValue((object?)meta.ShiftNumber ?? DBNull.Value);
-        command.Parameters.AddWithValue(limitPerCategory);
         var foods = new List<TopProductItem>();
         var beverages = new List<TopProductItem>();
+        var all = new List<TopProductItem>();
         await using var reader = await command.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
         {
             var item = new TopProductItem(reader.GetString(0), reader.GetString(1), ReadNullableString(reader, 2),
                 reader.GetDecimal(4), reader.GetDecimal(5), checked((int)reader.GetInt64(6)));
-            if (reader.GetInt32(3) == 1) beverages.Add(item); else foods.Add(item);
+            all.Add(item);
+            if (reader.GetInt32(3) == 1) beverages.Add(item);
+            else if (reader.GetInt32(3) == 2) foods.Add(item);
         }
-        return new TopProducts(foods, beverages);
+        return new TopProducts(foods.Take(20).ToArray(), beverages.Take(20).ToArray(), all);
     }
 
     public async Task<SalesPage?> GetSalesAsync(

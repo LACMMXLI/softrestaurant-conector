@@ -1031,6 +1031,13 @@ html { scroll-behavior: smooth; }
 .top-product-name small, .top-product-values small { color: var(--ink-soft); font-size: .62rem; }
 .top-product-values { text-align: right; }
 .top-product-values strong { color: var(--ink); font-size: .72rem; }
+.product-total-count { color: var(--ink-soft); font-size: .76rem; font-weight: 700; }
+.product-totals-scroll { overflow-x: auto; margin-top: 12px; }
+.product-totals-table { width: 100%; border-collapse: collapse; text-align: left; }
+.product-totals-table th, .product-totals-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: .8rem; }
+.product-totals-table th { color: var(--ink-soft); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.product-totals-table td:nth-child(n+3), .product-totals-table th:nth-child(n+3) { text-align: right; white-space: nowrap; }
+.product-totals-table tfoot th { color: var(--ink); border-bottom: 0; }
 @media (max-width: 760px) { .top-products-grid { grid-template-columns: 1fr; } .top-products-total { display: none; } }
 
 /* Consolidado: la jerarquía se expresa con venta y participación, no con una gráfica que
