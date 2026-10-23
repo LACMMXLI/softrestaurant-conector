@@ -5,7 +5,8 @@ internal sealed record ApiOptions(
     int DashboardSessionHours,
     int DashboardStaleMinutes,
     string? InstallerDownloadUrl,
-    string? InstallerVersion)
+    string? InstallerVersion,
+    int ActivityRetentionDays = 180)
 {
     public static ApiOptions FromConfiguration(IConfiguration configuration)
     {
@@ -22,7 +23,8 @@ internal sealed record ApiOptions(
             sessionHours,
             staleMinutes,
             configuration["INSTALLER_DOWNLOAD_URL"],
-            configuration["INSTALLER_VERSION"]);
+            configuration["INSTALLER_VERSION"],
+            ReadPositiveInt(configuration["ACTIVITY_LOG_RETENTION_DAYS"], 180, 7, 3650));
     }
 
     private static int ReadPositiveInt(string? value, int fallback, int minimum, int maximum) =>

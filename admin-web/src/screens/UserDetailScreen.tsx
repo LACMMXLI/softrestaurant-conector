@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowLeft, Ban, CheckCircle2, KeyRound, Plus, Save, Trash2 } from 'lucide-react'
+import { Activity, ArrowLeft, Ban, CheckCircle2, KeyRound, Plus, Save, Trash2 } from 'lucide-react'
 import { api, ApiError } from '../api'
 import { BUSINESS_ROLE_LABELS, BUSINESS_ROLES, ROLE_LABELS, ROLES } from '../types'
 import type { Business, BusinessRole, Role, UserDetail } from '../types'
@@ -9,6 +9,7 @@ type UserDetailScreenProps = {
   user: UserDetail
   allBusinesses: Business[]
   onBack: () => void
+  onOpenActivity: () => void
   onUserUpdated: (user: UserDetail) => void
   onSelfSessionInvalidated: (message: string) => void
   onUnauthorized: () => void
@@ -18,6 +19,7 @@ export function UserDetailScreen({
   user,
   allBusinesses,
   onBack,
+  onOpenActivity,
   onUserUpdated,
   onSelfSessionInvalidated,
   onUnauthorized,
@@ -188,6 +190,10 @@ export function UserDetailScreen({
       <button className="icon-button back-button" type="button" onClick={onBack}>
         <ArrowLeft size={17} aria-hidden="true" />
         <span>Volver a usuarios</span>
+      </button>
+      <button className="secondary-button" type="button" onClick={onOpenActivity}>
+        <Activity size={16} aria-hidden="true" />
+        <span>Ver actividad de esta cuenta</span>
       </button>
 
       <section className="panel-card" aria-labelledby="user-detail-title">

@@ -127,6 +127,33 @@ crean desde la aplicación y no se leen credenciales de usuario desde el entorno
 - Crear/editar/activar-desactivar sucursales igual que antes, ahora con `businessId`
   obligatorio en la creación.
 
+## Registro de actividad de usuarios (solo SUPERADMIN)
+
+Historial de las interacciones de las cuentas con el panel web (`/api/web/*`): quién, de qué
+negocio y sucursal, y qué hizo. Se consulta desde la pantalla **Actividad** de admin-web o con:
+
+- `GET /api/admin/activity` — listado paginado (máx. 100 por página, más recientes primero).
+  Filtros: `userId`, `businessId`, `branchCode`, `eventType` (`auth|session|view|action|context|api`),
+  `action`, `from`/`to` (instantes ISO; `to` exclusivo), `includeAdmins` (por defecto se excluyen
+  las cuentas SUPERADMIN para no mezclar el uso del operador con el de los clientes).
+- `GET /api/admin/activity/summary` — totales, eventos por día (`tz` = zona IANA), usuarios,
+  acciones y negocios más activos.
+
+Cómo se captura (tabla `activity_log`, distinta de `audit_log`, que es de seguridad):
+
+- **Servidor** (`ActivityTracking`): cada petición autenticada a `/api/web/*` se traduce con
+  `ActivityClassifier` a una acción estable (`dashboard.home`, `ticket.open`, `sync.request`…).
+  La visita se cuenta en `app_open` (cada carga de la app consulta `/auth/me`).
+- **Cliente**: `POST /api/web/activity` recibe la navegación que no genera petición (cambio de
+  pestaña, sucursal, fecha/turno, actualizar). Solo acepta valores de listas cerradas.
+- La escritura es asíncrona por lotes (`ActivityLogger`): no agrega latencia ni puede romper una
+  petición. Las visitas sin sesión no se guardan (salvo intentos de login/registro).
+
+Privacidad: nunca se guardan contraseñas, cuerpos de petición, el correo escrito en un login
+fallido ni el texto de las búsquedas (solo que se filtró). Sí se guardan IP y navegador, igual
+que en las sesiones. Conviene mencionarlo en el aviso de privacidad de la plataforma. El historial
+se depura solo: `ACTIVITY_LOG_RETENTION_DAYS` (por defecto 180; admite 7–3650).
+
 ## Usuarios y permisos
 
 1. Crear una cuenta con `POST /api/admin/users` (`email`, `displayName`, `password` ≥12

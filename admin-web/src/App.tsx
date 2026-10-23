@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Building2, LogOut, PanelsTopLeft, ShieldCheck, UsersRound } from 'lucide-react'
+import { Activity, Building2, LogOut, PanelsTopLeft, ShieldCheck, UsersRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { LoginScreen } from './components/LoginScreen'
+import { ActivityScreen } from './screens/ActivityScreen'
 import { BranchDetailScreen } from './screens/BranchDetailScreen'
 import { BranchesScreen } from './screens/BranchesScreen'
 import { UserDetailScreen } from './screens/UserDetailScreen'
@@ -15,6 +16,7 @@ type View =
   | { name: 'branch-detail'; code: string }
   | { name: 'users' }
   | { name: 'subscription-notice' }
+  | { name: 'activity'; userId?: string }
   | { name: 'user-detail'; id: string }
 
 export function App() {
@@ -189,6 +191,14 @@ export function App() {
           </button>
           <button
             type="button"
+            className={view.name === 'activity' ? 'nav-item active' : 'nav-item'}
+            onClick={() => setView({ name: 'activity' })}
+          >
+            <Activity size={18} aria-hidden="true" />
+            <span>Actividad</span>
+          </button>
+          <button
+            type="button"
             className={view.name === 'subscription-notice' ? 'nav-item active' : 'nav-item'}
             onClick={() => setView({ name: 'subscription-notice' })}
           >
@@ -233,6 +243,7 @@ export function App() {
             id={detailUserSummary.id}
             allBusinesses={businesses}
             onBack={() => setView({ name: 'users' })}
+            onOpenActivity={() => setView({ name: 'activity', userId: detailUserSummary.id })}
             onUserUpdated={upsertUserInList}
             onSelfSessionInvalidated={becomeAnonymous}
             onUnauthorized={becomeAnonymous}
@@ -249,6 +260,18 @@ export function App() {
               upsertUserInList(created)
               void loadUsers()
             }}
+            onUnauthorized={becomeAnonymous}
+          />
+        ) : null}
+
+        {view.name === 'activity' ? (
+          <ActivityScreen
+            key={view.userId ?? 'all'}
+            users={users}
+            businesses={businesses}
+            branches={branches}
+            initialUserId={view.userId}
+            onBackToUser={view.userId ? () => setView({ name: 'user-detail', id: view.userId! }) : undefined}
             onUnauthorized={becomeAnonymous}
           />
         ) : null}
@@ -277,6 +300,14 @@ export function App() {
         </button>
         <button
           type="button"
+          className={view.name === 'activity' ? 'mobile-nav-item active' : 'mobile-nav-item'}
+          onClick={() => setView({ name: 'activity' })}
+        >
+          <Activity size={20} aria-hidden="true" />
+          <span>Actividad</span>
+        </button>
+        <button
+          type="button"
           className={view.name === 'subscription-notice' ? 'mobile-nav-item active' : 'mobile-nav-item'}
           onClick={() => setView({ name: 'subscription-notice' })}
         >
@@ -294,6 +325,7 @@ function UserDetailFetcher({
   id,
   allBusinesses,
   onBack,
+  onOpenActivity,
   onUserUpdated,
   onSelfSessionInvalidated,
   onUnauthorized,
@@ -301,6 +333,7 @@ function UserDetailFetcher({
   id: string
   allBusinesses: Business[]
   onBack: () => void
+  onOpenActivity: () => void
   onUserUpdated: (user: UserDetail) => void
   onSelfSessionInvalidated: (message: string) => void
   onUnauthorized: () => void
@@ -335,6 +368,7 @@ function UserDetailFetcher({
       user={detail}
       allBusinesses={allBusinesses}
       onBack={onBack}
+      onOpenActivity={onOpenActivity}
       onUserUpdated={handleUpdated}
       onSelfSessionInvalidated={onSelfSessionInvalidated}
       onUnauthorized={onUnauthorized}

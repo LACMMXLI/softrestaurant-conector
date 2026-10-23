@@ -1,4 +1,7 @@
 import type {
+  ActivityFilters,
+  ActivityPage,
+  ActivitySummary,
   AdminUser,
   Branch,
   Business,
@@ -140,4 +143,29 @@ export const api = {
     request<{ removed: boolean }>(`/api/admin/users/${id}/businesses/${encodeURIComponent(businessId)}`, {
       method: 'DELETE',
     }),
+
+  activity: (filters: ActivityFilters, page: number, signal?: AbortSignal) =>
+    request<ActivityPage>(`/api/admin/activity?${activityParams(filters, { page: String(page), pageSize: '40' })}`, { signal }),
+  activitySummary: (filters: ActivityFilters, signal?: AbortSignal) =>
+    request<ActivitySummary>(
+      `/api/admin/activity/summary?${activityParams(filters, { tz: Intl.DateTimeFormat().resolvedOptions().timeZone })}`,
+      { signal },
+    ),
+}
+
+/** Las fechas se interpretan en la zona horaria del navegador: "hasta" incluye todo ese día. */
+function activityParams(filters: ActivityFilters, extra: Record<string, string>): string {
+  const params = new URLSearchParams(extra)
+  if (filters.userId) params.set('userId', filters.userId)
+  if (filters.businessId) params.set('businessId', filters.businessId)
+  if (filters.branchCode) params.set('branchCode', filters.branchCode)
+  if (filters.eventType) params.set('eventType', filters.eventType)
+  if (filters.fromDate) params.set('from', new Date(`${filters.fromDate}T00:00:00`).toISOString())
+  if (filters.toDate) {
+    const end = new Date(`${filters.toDate}T00:00:00`)
+    end.setDate(end.getDate() + 1)
+    params.set('to', end.toISOString())
+  }
+  if (filters.includeAdmins) params.set('includeAdmins', 'true')
+  return params.toString()
 }

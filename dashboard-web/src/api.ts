@@ -16,6 +16,14 @@ import type {
   TicketDetail,
 } from './types'
 
+export type ActivityEvent = {
+  kind: 'view' | 'scope' | 'filter' | 'refresh'
+  view?: string
+  branchCode?: string
+  businessId?: string
+  detail?: string
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -139,6 +147,17 @@ export const api = {
     const params=new URLSearchParams({ branchCode, from, to, page:String(page), pageSize:'25' })
     if(shiftId!==null)params.set('shiftId',String(shiftId)); if(user.trim())params.set('user',user.trim()); if(product.trim())params.set('product',product.trim())
     return request<import('./types').ProductCancellationsReport>(`/api/web/product-cancellations?${params}`,{signal})
+  },
+  // Navegación de la app para el historial del operador. Es "dispara y olvida": jamás debe
+  // mostrar errores ni frenar la interfaz si el registro falla.
+  trackActivity: (event: ActivityEvent) => {
+    void fetch('/api/web/activity', {
+      method: 'POST',
+      credentials: 'include',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event),
+    }).catch(() => undefined)
   },
   ticket: (branchCode: string, folio: number, signal?: AbortSignal) =>
     request<TicketDetail>(`/api/web/sales/${encodeURIComponent(branchCode)}/${folio}`, { signal }),

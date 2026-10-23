@@ -577,3 +577,38 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_connector_installations_branch_active
 DROP TABLE IF EXISTS connector_activation_keys;
 ALTER TABLE branches DROP COLUMN IF EXISTS token_hash;
 ALTER TABLE branches DROP COLUMN IF EXISTS legacy_auth_enabled;
+
+-- ── Registro de actividad de usuarios (visible solo para el operador de plataforma) ──────────
+-- Una fila por interacción con el panel web: apertura de la app, vistas, consultas, acciones y
+-- cambios de contexto. Distinto de audit_log (eventos de seguridad: login/logout). Se guardan
+-- copias (snapshot) del correo, nombre, sucursal y negocio para que el historial siga siendo
+-- legible aunque después se renombren o se eliminen. Nunca se guardan contraseñas, cuerpos de
+-- petición ni textos de búsqueda libres; ver central-api/ActivityClassifier.cs.
+CREATE TABLE IF NOT EXISTS activity_log (
+    id bigserial PRIMARY KEY,
+    occurred_at timestamptz NOT NULL DEFAULT now(),
+    user_id uuid NULL REFERENCES app_users(id) ON DELETE SET NULL,
+    user_email text NULL,
+    user_name text NULL,
+    source text NOT NULL,              -- 'api' (observado en el servidor) | 'client' (reportado por la app)
+    event_type text NOT NULL,          -- auth | session | view | action | context | api
+    action text NOT NULL,              -- clave estable, p. ej. 'dashboard.home'
+    view text NULL,                    -- pestaña/pantalla: home, sales, operations, ...
+    method text NULL,
+    path text NULL,
+    status integer NULL,
+    duration_ms integer NULL,
+    business_id uuid NULL REFERENCES businesses(id) ON DELETE SET NULL,
+    business_name text NULL,
+    branch_id uuid NULL REFERENCES branches(id) ON DELETE SET NULL,
+    branch_code text NULL,
+    branch_name text NULL,
+    ip text NULL,
+    user_agent text NULL,
+    session_ref text NULL,             -- prefijo del hash de la sesión: agrupa eventos de una misma visita
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX IF NOT EXISTS ix_activity_log_date ON activity_log(occurred_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS ix_activity_log_user_date ON activity_log(user_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS ix_activity_log_business_date ON activity_log(business_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS ix_activity_log_branch_date ON activity_log(branch_id, occurred_at DESC);
