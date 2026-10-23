@@ -20,6 +20,8 @@
     --gold-soft: rgba(255, 154, 31, .14);
     --red: #ff4d52;
     --red-soft: rgba(255, 77, 82, .14);
+    --ok: #67df3f;
+    --ok-soft: rgba(103, 223, 63, .14);
     --night: #07121b;
     --shadow: 0 18px 42px rgba(0, 0, 0, .28);
   }

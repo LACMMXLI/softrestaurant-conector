@@ -1,4 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, Ban, Banknote, Coins, CreditCard, Equal, GlassWater, Hourglass, Landmark, Minus, Plus, Receipt, Utensils, WalletCards } from 'lucide-react'
+import { CashVerdict } from '../components/CashVerdict'
 import { EmptyState } from '../components/EmptyState'
 import { Metric } from '../components/Metric'
 import { SalesChart } from '../components/SalesChart'
@@ -159,7 +160,7 @@ export function DashboardScreen({
                   <Minus size={17} aria-label="menos" />
                   <EquationPart label="Salidas" value={summary.cashOut} />
                   <Equal size={17} aria-label="igual" />
-                  <div className="equation-result"><span>Efectivo esperado</span><strong>{formatAmount(summary.expectedCash)}</strong></div>
+                  <div className="equation-result"><span>Efectivo esperado en caja</span><strong>{formatAmount(summary.expectedCash)}</strong></div>
                 </div>
 
                 <div className="payment-breakdown" aria-label="Venta por tipo de pago">
@@ -172,13 +173,8 @@ export function DashboardScreen({
                   <p className="data-note">Cálculo operativo: fondo + cobros en efectivo + entradas − salidas. La declaración y diferencia de caja estarán disponibles al realizar el corte.</p>
                 ) : (
                   <>
-                    <div className="cash-reconciliation">
-                      <span>Declarado por cajeros: <strong>{formatAmount(summary.declaredCash)}</strong></span>
-                      <span className={summary.cashDifference === 0 ? 'balanced' : 'attention'}>
-                        Diferencia candidata: <strong>{formatAmount(summary.cashDifference)}</strong>
-                      </span>
-                    </div>
-                    <p className="data-note">Cálculo: fondo + cobros en efectivo + entradas − salidas. La diferencia es candidata hasta contrastarla con el corte impreso de RestaurantAgent.</p>
+                    <CashVerdict expected={summary.expectedCash} declared={summary.declaredCash} difference={summary.cashDifference} />
+                    <p className="data-note">Cálculo: fondo + cobros en efectivo + entradas − salidas. El resultado es candidato hasta contrastarlo con el corte impreso de RestaurantAgent.</p>
                   </>
                 )}
               </>
