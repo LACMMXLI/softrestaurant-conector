@@ -7,20 +7,22 @@ import type { DashboardBranch, DashboardHome, DashboardUser } from '../types'
 
 type MoreScreenProps = {
   user: DashboardUser
-  branch: DashboardBranch
+  branch: DashboardBranch | null
   dashboard: DashboardHome | null
   onLogout: () => Promise<void>
   onBranchUpdated: (branch: DashboardBranch) => void
   onOpenExpenseCategories: () => void
   canManageExpenses: boolean
+  canRequestSync: boolean
   onUnauthorized: () => void
 }
 
-export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated, onOpenExpenseCategories, canManageExpenses, onUnauthorized }: MoreScreenProps) {
+export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated, onOpenExpenseCategories, canManageExpenses, canRequestSync, onUnauthorized }: MoreScreenProps) {
   const [requestingSync, setRequestingSync] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
 
   async function handleRequestSync() {
+    if (!branch) return
     setRequestingSync(true)
     setSyncError(null)
     try {
@@ -41,7 +43,7 @@ export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated,
       <section className="screen-title">
         <p className="utility-label">Cuenta y sistema</p>
         <h1>Más</h1>
-        <p>Identidad, alcance y estado técnico de la sucursal seleccionada.</p>
+        <p>{branch ? 'Identidad, alcance y estado técnico de la sucursal seleccionada.' : 'Identidad y cuenta. Elige una sucursal para ver su estado técnico.'}</p>
       </section>
 
       <section className="content-card profile-card">
@@ -53,39 +55,45 @@ export function MoreScreen({ user, branch, dashboard, onLogout, onBranchUpdated,
         </div>
       </section>
 
-      <section className="content-card system-card">
-        <div className="section-heading horizontal">
-          <div>
-            <p className="utility-label">Fuente seleccionada</p>
-            <h2>{branch.name}</h2>
+      {branch ? (
+        <>
+        <section className="content-card system-card">
+          <div className="section-heading horizontal">
+            <div>
+              <p className="utility-label">Fuente seleccionada</p>
+              <h2>{branch.name}</h2>
+            </div>
+            {dashboard ? <StatusPill freshness={dashboard.meta.freshness} coverage={dashboard.meta.coverage} /> : null}
           </div>
-          {dashboard ? <StatusPill freshness={dashboard.meta.freshness} coverage={dashboard.meta.coverage} /> : null}
-        </div>
-        <dl className="detail-list">
-          <div><dt><Server size={16} /> Código</dt><dd>{branch.code}</dd></div>
-          <div><dt><Database size={16} /> Última sincronización</dt><dd>{timeAgo(branch.lastSyncAt)}</dd></div>
-          <div><dt>Zona horaria</dt><dd>{branch.timezone}</dd></div>
-          <div><dt>Conciliación</dt><dd>{branch.reconciliationOk === null ? 'Sin lote' : branch.reconciliationOk ? 'Correcta' : 'Pendiente'}</dd></div>
-        </dl>
+          <dl className="detail-list">
+            <div><dt><Server size={16} /> Código</dt><dd>{branch.code}</dd></div>
+            <div><dt><Database size={16} /> Última sincronización</dt><dd>{timeAgo(branch.lastSyncAt)}</dd></div>
+            <div><dt>Zona horaria</dt><dd>{branch.timezone}</dd></div>
+            <div><dt>Conciliación</dt><dd>{branch.reconciliationOk === null ? 'Sin lote' : branch.reconciliationOk ? 'Correcta' : 'Pendiente'}</dd></div>
+          </dl>
 
-        <button className="secondary-button" type="button" onClick={() => void handleRequestSync()} disabled={requestingSync}>
-          <RefreshCw size={16} aria-hidden="true" />
-          <span>{requestingSync ? 'Solicitando…' : 'Sincronizar ahora'}</span>
-        </button>
-        <p className="panel-hint">
-          {branch.syncRequestedAt
-            ? `Última solicitud: ${new Date(branch.syncRequestedAt).toLocaleString('es-MX')}. El agente la recoge en su siguiente latido.`
-            : 'Pide al agente de esta sucursal que sincronice en cuanto pueda.'}
-        </p>
-        {syncError ? <p className="form-error" role="alert">{syncError}</p> : null}
-      </section>
+          <button className="secondary-button" type="button" onClick={() => void handleRequestSync()} disabled={requestingSync || !canRequestSync}>
+            <RefreshCw size={16} aria-hidden="true" />
+            <span>{requestingSync ? 'Solicitando…' : 'Sincronizar ahora'}</span>
+          </button>
+          <p className="panel-hint">
+            {!canRequestSync
+              ? 'Tu rol es de solo consulta; solo el propietario o un gerente pueden solicitar una sincronización.'
+              : branch.syncRequestedAt
+              ? `Última solicitud: ${new Date(branch.syncRequestedAt).toLocaleString('es-MX')}. El agente la recoge en su siguiente latido.`
+              : 'Pide al agente de esta sucursal que sincronice en cuanto pueda.'}
+          </p>
+          {syncError ? <p className="form-error" role="alert">{syncError}</p> : null}
+        </section>
 
-      <section className="content-card settings-card">
-        <div className="section-heading horizontal"><div><p className="utility-label">Configuración</p><h2>Categorías de gastos</h2></div><Settings2 size={20} /></div>
-        <p className="panel-hint">Define palabras clave y prioridades para clasificar automáticamente las salidas de todas las sucursales.</p>
-        <button className="secondary-button" type="button" onClick={onOpenExpenseCategories} disabled={!canManageExpenses}><Tag size={16} /> Administrar categorías</button>
-        {!canManageExpenses ? <p className="panel-hint">Solo el OWNER del negocio puede modificar estas reglas.</p> : null}
-      </section>
+        <section className="content-card settings-card">
+          <div className="section-heading horizontal"><div><p className="utility-label">Configuración</p><h2>Categorías de gastos</h2></div><Settings2 size={20} /></div>
+          <p className="panel-hint">Define palabras clave y prioridades para clasificar automáticamente las salidas de todas las sucursales.</p>
+          <button className="secondary-button" type="button" onClick={onOpenExpenseCategories} disabled={!canManageExpenses}><Tag size={16} /> Administrar categorías</button>
+          {!canManageExpenses ? <p className="panel-hint">Solo el propietario del negocio puede modificar estas reglas.</p> : null}
+        </section>
+        </>
+      ) : null}
 
       <button className="logout-button" type="button" onClick={() => void onLogout()}>
         <LogOut size={19} /> Cerrar sesión

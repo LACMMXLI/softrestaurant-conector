@@ -295,7 +295,7 @@ internal sealed class DashboardReportService(NpgsqlDataSource dataSource, ApiOpt
             ), cancellations AS (
                 SELECT cs.branch_id, COALESCE(SUM(cs.occurrences),0) cancelled_lines
                 FROM cancellation_summaries cs JOIN eligible e ON e.id=cs.branch_id
-                WHERE cs.cancellation_date=$3::date GROUP BY cs.branch_id
+                WHERE cs.cancellation_date >= $3::date AND cs.cancellation_date < $4::date GROUP BY cs.branch_id
             )
             SELECT b.name, (SELECT COUNT(*) FROM scoped_branches), (SELECT COUNT(*) FROM scoped_branches WHERE covered),
                    e.code, e.name, COALESCE(sb.tickets,0), COALESCE(sb.sales,0), COALESCE(sb.tips,0), COALESCE(sb.cancelled_tickets,0),

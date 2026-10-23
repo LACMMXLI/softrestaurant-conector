@@ -1,23 +1,27 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BarChart3, Building2, CalendarDays, LayoutDashboard, LockKeyhole, LogOut, Menu, ReceiptText, RefreshCw, ShoppingBasket, Store, UserRound } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
 import { Brand } from './components/Brand'
+import { ContextControls } from './components/ContextControls'
 import { LoginScreen } from './components/LoginScreen'
+import { Navigation } from './components/Navigation'
+import { ProductTotals } from './components/ProductTotals'
+import { SubscriptionAccessNotice, SubscriptionSummary } from './components/SubscriptionNotices'
 import { TicketSheet } from './components/TicketSheet'
 import { dateInTimezone } from './format'
+import { businessIdFromCode, isConsolidatedCode, isTabAvailable } from './lib/navigation'
+import type { Tab } from './lib/navigation'
 import { BusinessesScreen } from './screens/BusinessesScreen'
-import { DashboardScreen } from './screens/DashboardScreen'
 import { BusinessDashboardScreen } from './screens/BusinessDashboardScreen'
+import { DashboardScreen } from './screens/DashboardScreen'
+import { ExpenseCategoriesScreen } from './screens/ExpenseCategoriesScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { OperationsScreen } from './screens/OperationsScreen'
 import { ProductCancellationsScreen } from './screens/ProductCancellationsScreen'
 import { SalesScreen } from './screens/SalesScreen'
-import { ExpenseCategoriesScreen } from './screens/ExpenseCategoriesScreen'
-import { ProductTotals } from './components/ProductTotals'
-import type { BusinessDashboard, BusinessMembership, DashboardBranch, DashboardHome, DashboardShift, DashboardUser, Subscription } from './types'
+import type { BusinessDashboard, BusinessMembership, DashboardBranch, DashboardHome, DashboardSession, DashboardShift, DashboardUser, Subscription } from './types'
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
-type Tab = 'home' | 'sales' | 'operations' | 'cancellations' | 'products' | 'businesses' | 'more' | 'expense-categories'
 type SelectedTicket = { folio: number; openAccount: boolean }
 
 const storedBranchKey = 'sr-dashboard:v1:branch'
@@ -33,6 +37,9 @@ export function App() {
   const [rangeEnd, setRangeEnd] = useState('')
   const [shifts, setShifts] = useState<DashboardShift[]>([])
   const [shiftId, setShiftId] = useState<number | null>(null)
+  // Mientras se resuelven los turnos de la sucursal no se consulta el dashboard: así se evita
+  // pedirlo primero sin turno y de nuevo con el turno abierto (doble carga y parpadeo).
+  const [contextLoading, setContextLoading] = useState(false)
   const [tab, setTab] = useState<Tab>('home')
   const [dashboard, setDashboard] = useState<DashboardHome | null>(null)
   const [businessDashboard, setBusinessDashboard] = useState<BusinessDashboard | null>(null)
@@ -42,13 +49,17 @@ export function App() {
   const [loginBusy, setLoginBusy] = useState(false)
   const [selectedTicket, setSelectedTicket] = useState<SelectedTicket | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const shiftRequest = useRef(0)
 
   const currentBranch = useMemo(
     () => branches.find((branch) => branch.code === branchCode) ?? null,
     [branchCode, branches],
   )
-  const selectedBusinessId = branchCode.startsWith('all:') ? branchCode.slice(4) : null
-  const isCurrentBusinessOwner = currentBranch !== null && businesses.some((business) => business.id === currentBranch.businessId && business.role === 'OWNER')
+  const selectedBusinessId = businessIdFromCode(branchCode)
+  const consolidated = selectedBusinessId !== null
+  const currentRole = businesses.find((business) => business.id === currentBranch?.businessId)?.role ?? null
+  const isCurrentBusinessOwner = currentRole === 'OWNER'
+  const canRequestSync = currentRole === 'OWNER' || currentRole === 'MANAGER'
   const historyMinimumDate = useMemo(() => {
     if (subscription?.historyDays === null) return undefined
     if (subscription?.historyDays === undefined) return undefined
@@ -58,6 +69,7 @@ export function App() {
   }, [subscription?.historyDays])
 
   const becomeAnonymous = useCallback(() => {
+    shiftRequest.current += 1
     setSessionState('anonymous')
     setUser(null)
     setSubscription(null)
@@ -67,6 +79,7 @@ export function App() {
     setBusinessDashboard(null)
     setShifts([])
     setShiftId(null)
+    setContextLoading(false)
     setSelectedTicket(null)
   }, [])
 
@@ -76,49 +89,86 @@ export function App() {
     setBranches((current) => current.map((branch) => (branch.code === next.code ? next : branch)))
   }, [])
 
-  const applyBranches = useCallback((availableBranches: DashboardBranch[]) => {
+  /**
+   * Punto único para cambiar de sucursal o de resumen general: fija fecha y turno de forma
+   * coherente y descarta respuestas de turnos de una selección anterior.
+   */
+  const selectScope = useCallback((code: string, available: DashboardBranch[]) => {
+    const request = ++shiftRequest.current
+    setBranchCode(code)
+    setDashboard(null)
+    setBusinessDashboard(null)
+    setShifts([])
+    setShiftId(null)
+
+    const businessId = businessIdFromCode(code)
+    if (businessId) {
+      // El resumen general usa la zona horaria de las sucursales del negocio.
+      const timezone = available.find((branch) => branch.businessId === businessId)?.timezone
+        ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+      const today = dateInTimezone(timezone)
+      setDate(today)
+      setRangeEnd(today)
+      setContextLoading(false)
+      setTab((current) => (isTabAvailable(current, true) ? current : 'home'))
+      return
+    }
+
+    const branch = available.find((candidate) => candidate.code === code)
+    if (!branch) {
+      setDate('')
+      setContextLoading(false)
+      return
+    }
+    const today = dateInTimezone(branch.timezone)
+    setDate(today)
+    setRangeEnd(today)
+    setContextLoading(true)
+    api.shifts(code)
+      .then((availableShifts) => {
+        if (request !== shiftRequest.current) return
+        const current = availableShifts.find((shift) => shift.isOpen) ?? availableShifts[0]
+        setShifts(availableShifts)
+        setShiftId(current?.id ?? null)
+        if (current?.openedAt) setDate(current.openedAt.slice(0, 10))
+        setContextLoading(false)
+      })
+      .catch((reason: unknown) => {
+        if (request !== shiftRequest.current) return
+        if (reason instanceof ApiError && reason.status === 401) return becomeAnonymous()
+        setShifts([])
+        setContextLoading(false)
+      })
+  }, [becomeAnonymous])
+
+  const openSession = useCallback(async (session: DashboardSession) => {
+    const canAccess = session.subscription.canAccessContent
+    const [availableBranches, availableBusinesses] = canAccess
+      ? await Promise.all([api.branches(), api.businesses()])
+      : [[] as DashboardBranch[], [] as BusinessMembership[]]
+    setUser(session.user)
+    setSubscription(session.subscription)
+    setBusinesses(availableBusinesses)
     setBranches(availableBranches)
     const stored = localStorage.getItem(storedBranchKey)
     const selected = availableBranches.find((branch) => branch.code === stored) ?? availableBranches[0]
-    if (!selected) {
-      setBranchCode('')
-      setDate('')
-      setShifts([])
-      setShiftId(null)
-      return
-    }
-    setBranchCode(selected.code)
-    setDate(dateInTimezone(selected.timezone))
-    setRangeEnd(dateInTimezone(selected.timezone))
-    setShiftId(null)
-    void api.shifts(selected.code).then((available) => {
-      setShifts(available)
-      const current = available.find((shift) => shift.isOpen) ?? available[0]
-      setShiftId(current?.id ?? null)
-      if (current?.openedAt) setDate(current.openedAt.slice(0, 10))
-    }).catch(() => setShifts([]))
-  }, [])
+    if (selected) selectScope(selected.code, availableBranches)
+    else selectScope('', availableBranches)
+    setSessionState('authenticated')
+  }, [selectScope])
 
   useEffect(() => {
     let active = true
     api.me()
-      .then(async (session) => ({ session, availableBranches: session.subscription.canAccessContent ? await api.branches() : [], availableBusinesses: session.subscription.canAccessContent ? await api.businesses() : [] }))
-      .then(({ session, availableBranches, availableBusinesses }) => {
-        if (!active) return
-        setUser(session.user)
-        setSubscription(session.subscription)
-        setBusinesses(availableBusinesses)
-        applyBranches(availableBranches)
-        setSessionState('authenticated')
-      })
+      .then((session) => (active ? openSession(session) : undefined))
       .catch(() => {
         if (active) becomeAnonymous()
       })
     return () => { active = false }
-  }, [applyBranches, becomeAnonymous])
+  }, [becomeAnonymous, openSession])
 
   useEffect(() => {
-    if (sessionState !== 'authenticated' || !branchCode || !date) return
+    if (sessionState !== 'authenticated' || !branchCode || !date || contextLoading) return
     const controller = new AbortController()
     setDashboardLoading(true)
     setDashboardError(null)
@@ -142,20 +192,13 @@ export function App() {
         if (!controller.signal.aborted) setDashboardLoading(false)
       })
     return () => controller.abort()
-  }, [becomeAnonymous, branchCode, date, rangeEnd, refreshKey, selectedBusinessId, sessionState, shiftId])
+  }, [becomeAnonymous, branchCode, contextLoading, date, rangeEnd, refreshKey, selectedBusinessId, sessionState, shiftId])
 
   async function handleLogin(email: string, password: string) {
     setLoginBusy(true)
     setLoginError(null)
     try {
-      const session = await api.login(email, password)
-      const resolvedBranches = session.subscription.canAccessContent ? await api.branches() : []
-      const resolvedBusinesses = session.subscription.canAccessContent ? await api.businesses() : []
-      setUser(session.user)
-      setSubscription(session.subscription)
-      setBusinesses(resolvedBusinesses)
-      applyBranches(resolvedBranches)
-      setSessionState('authenticated')
+      await openSession(await api.login(email, password))
     } catch (reason) {
       setLoginError(reason instanceof Error ? reason.message : 'No fue posible iniciar sesión.')
     } finally {
@@ -168,11 +211,13 @@ export function App() {
     setLoginError(null)
     try {
       const session = await api.register(email, password, displayName)
-      // Cuenta recién creada: sin negocios todavía, applyBranches([]) deja al usuario en la
-      // pantalla "sin sucursales" (que ahora ofrece directamente crear su primer negocio).
+      // Cuenta recién creada: sin negocios todavía. Se deja al usuario en la pantalla de
+      // negocios para que cree el primero, sin consultar listas que están vacías.
       setUser(session.user)
       setSubscription(session.subscription)
-      applyBranches([])
+      setBusinesses([])
+      setBranches([])
+      selectScope('', [])
       setSessionState('authenticated')
     } catch (reason) {
       setLoginError(reason instanceof Error ? reason.message : 'No fue posible crear la cuenta.')
@@ -190,35 +235,25 @@ export function App() {
   }
 
   function handleBranchChange(nextCode: string) {
-    if (nextCode.startsWith('all:')) {
+    if (nextCode !== branchCode && (isConsolidatedCode(nextCode) || branches.some((branch) => branch.code === nextCode))) {
       localStorage.setItem(storedBranchKey, nextCode)
-      setBranchCode(nextCode)
-      const today = dateInTimezone('America/Tijuana')
-      setDate(today)
-      setRangeEnd(today)
-      setShiftId(null)
-      setShifts([])
-      setDashboard(null)
-      setBusinessDashboard(null)
-      setTab('home')
-      return
+      selectScope(nextCode, branches)
     }
-    const nextBranch = branches.find((branch) => branch.code === nextCode)
-    if (!nextBranch) return
-    localStorage.setItem(storedBranchKey, nextCode)
-    setBranchCode(nextCode)
-    setDate(dateInTimezone(nextBranch.timezone))
-    setRangeEnd(dateInTimezone(nextBranch.timezone))
-    setShiftId(null)
-    void api.shifts(nextCode).then((available) => {
-      setShifts(available)
-      const current = available.find((shift) => shift.isOpen) ?? available[0]
-      setShiftId(current?.id ?? null)
-      if (current?.openedAt) setDate(current.openedAt.slice(0, 10))
-    }).catch(() => setShifts([]))
-    setDashboard(null)
-    setBusinessDashboard(null)
   }
+
+  function handleShiftChange(next: DashboardShift | null) {
+    setShiftId(next?.id ?? null)
+    if (next?.openedAt) setDate(next.openedAt.slice(0, 10))
+  }
+
+  function handleDateChange(nextDate: string) {
+    setDate(nextDate)
+    if (!consolidated) setShiftId(null)
+  }
+
+  const refresh = () => setRefreshKey((value) => value + 1)
+  const openTicket = (folio: number, openAccount: boolean) => setSelectedTicket({ folio, openAccount })
+  const loading = dashboardLoading || contextLoading
 
   if (sessionState === 'loading') {
     return (
@@ -234,14 +269,10 @@ export function App() {
   }
 
   if (subscription && !subscription.canAccessContent) {
-    return (
-      <SubscriptionAccessNotice
-        onLogout={() => void handleLogout()}
-      />
-    )
+    return <SubscriptionAccessNotice onLogout={() => void handleLogout()} />
   }
 
-  if (!currentBranch && !selectedBusinessId) {
+  if (!currentBranch && !consolidated) {
     // Cuenta válida pero sin ninguna sucursal accesible todavía — el caso normal para un
     // usuario recién registrado, antes de crear su primer negocio/sucursal. En vez de un
     // callejón sin salida, se ofrece directamente la pantalla de negocios.
@@ -264,99 +295,88 @@ export function App() {
     <div className="app-shell">
       <aside className="desktop-sidebar">
         <Brand className="sidebar-brand" />
-        <Navigation tab={tab} onChange={setTab} />
+        <Navigation tab={tab} consolidated={consolidated} onChange={setTab} />
         <div className="sidebar-user"><UserRound size={18} /><span>{user.displayName}</span></div>
       </aside>
 
       <div className="app-column">
         <header className="app-header">
           <Brand compact className="mobile-brand" />
-          <div className="context-controls">
-            <label className="context-select">
-              <Store size={17} aria-hidden="true" />
-              <span className="sr-only">Sucursal</span>
-              <select value={branchCode} onChange={(event) => handleBranchChange(event.target.value)}>
-                {(subscription?.plan === 'PLUS' || subscription?.plan === 'UNLIMITED') && businesses.filter((business) => branches.some((branch) => branch.businessId === business.id)).map((business) => (
-                  <option value={`all:${business.id}`} key={`all:${business.id}`}>Resumen general · {business.name}</option>
-                ))}
-                {branches.map((branch) => <option value={branch.code} key={branch.code}>{branch.name}</option>)}
-              </select>
-            </label>
-            {!selectedBusinessId ? <label className="context-select">
-              <span className="sr-only">Turno</span>
-              <select value={shiftId ?? ''} onChange={(event) => {
-                const next = shifts.find((shift) => shift.id === Number(event.target.value))
-                setShiftId(next?.id ?? null)
-                if (next?.openedAt) setDate(next.openedAt.slice(0, 10))
-              }}>
-                {shifts.length === 0 ? <option value="">Sin turnos sincronizados</option> : null}
-                {shifts.map((shift) => <option value={shift.id} key={shift.id}>{shift.isOpen ? 'Abierto' : 'Cerrado'} · Turno {shift.number} · {shift.cashier || 'Sin cajero'}</option>)}
-              </select>
-            </label> : null}
-            <label className="context-select context-date">
-              <CalendarDays size={16} aria-hidden="true" />
-              <span className="sr-only">{selectedBusinessId ? 'Desde' : 'Fecha'}</span>
-              <input type="date" value={date} min={historyMinimumDate} onChange={(event) => {
-                setDate(event.target.value)
-                if (!selectedBusinessId) setShiftId(null)
-              }} />
-            </label>
-            {selectedBusinessId ? <label className="context-select context-date">
-              <CalendarDays size={16} aria-hidden="true" />
-              <span className="sr-only">Hasta</span>
-              <input type="date" value={rangeEnd || date} min={date || historyMinimumDate} onChange={(event) => setRangeEnd(event.target.value)} />
-            </label> : null}
-            <button className="icon-button refresh-button" type="button" onClick={() => setRefreshKey((value) => value + 1)} aria-label="Actualizar datos">
-              <RefreshCw size={18} className={dashboardLoading ? 'spinning' : ''} />
-            </button>
-          </div>
+          <ContextControls
+            branchCode={branchCode}
+            branches={branches}
+            businesses={businesses}
+            subscription={subscription}
+            shifts={shifts}
+            shiftId={shiftId}
+            date={date}
+            rangeEnd={rangeEnd}
+            minimumDate={historyMinimumDate}
+            consolidated={consolidated}
+            refreshing={loading}
+            onBranchChange={handleBranchChange}
+            onShiftChange={handleShiftChange}
+            onDateChange={handleDateChange}
+            onRangeEndChange={setRangeEnd}
+            onRefresh={refresh}
+          />
         </header>
 
         {subscription ? <SubscriptionSummary subscription={subscription} /> : null}
 
         <main className="app-main">
           {tab === 'home' ? (
-            selectedBusinessId ? <BusinessDashboardScreen
-              data={businessDashboard}
-              loading={dashboardLoading}
-              error={dashboardError}
-              onRetry={() => setRefreshKey((value) => value + 1)}
-              onOpenBranch={handleBranchChange}
-            /> : <DashboardScreen
-              data={dashboard}
-              loading={dashboardLoading}
-              error={dashboardError}
-              onRetry={() => setRefreshKey((value) => value + 1)}
-              onOpenTicket={(folio, transient) => setSelectedTicket({ folio, openAccount: transient })}
-              onOpenAccount={(folio) => setSelectedTicket({ folio, openAccount: true })}
-              onOpenSales={() => setTab('sales')}
-            />
+            consolidated ? (
+              <BusinessDashboardScreen
+                data={businessDashboard}
+                loading={loading}
+                error={dashboardError}
+                onRetry={refresh}
+                onOpenBranch={handleBranchChange}
+              />
+            ) : (
+              <DashboardScreen
+                data={dashboard}
+                loading={loading}
+                error={dashboardError}
+                onRetry={refresh}
+                onOpenTicket={openTicket}
+                onOpenAccount={(folio) => openTicket(folio, true)}
+                onOpenSales={() => setTab('sales')}
+              />
+            )
           ) : null}
-          {tab === 'sales' ? (
-            <SalesScreen key={`${branchCode}:${shiftId}`} branchCode={branchCode} date={date} shiftId={shiftId} onOpenTicket={(folio, transient) => setSelectedTicket({ folio, openAccount: transient })} onUnauthorized={becomeAnonymous} />
+          {tab === 'sales' && !consolidated ? (
+            <SalesScreen key={`${branchCode}:${shiftId}`} branchCode={branchCode} date={date} shiftId={shiftId} onOpenTicket={openTicket} onUnauthorized={becomeAnonymous} />
           ) : null}
-          {tab === 'operations' ? (
+          {tab === 'operations' && !consolidated ? (
             <OperationsScreen
               key={`${branchCode}:${shiftId}`}
               branchCode={branchCode}
               date={date}
               shiftId={shiftId}
               data={dashboard}
-              loading={dashboardLoading}
+              loading={loading}
               canManageExpenses={isCurrentBusinessOwner}
               onUnauthorized={becomeAnonymous}
             />
           ) : null}
-          {tab === 'cancellations' ? <ProductCancellationsScreen branchCode={branchCode} date={date} shiftId={shiftId} onUnauthorized={becomeAnonymous} /> : null}
-          {tab === 'products' ? <ProductTotals
-            items={selectedBusinessId ? businessDashboard?.topProducts.all ?? [] : dashboard?.topProducts.all ?? []}
-            scope={selectedBusinessId ? `de todas las sucursales de ${businessDashboard?.businessName ?? 'este negocio'}` : `de la sucursal ${currentBranch?.name ?? ''}`}
-            loading={dashboardLoading}
-            error={dashboardError}
-          /> : null}
+          {tab === 'cancellations' && !consolidated ? (
+            <ProductCancellationsScreen branchCode={branchCode} date={date} shiftId={shiftId} onUnauthorized={becomeAnonymous} />
+          ) : null}
+          {tab === 'products' ? (
+            <ProductTotals
+              items={consolidated ? businessDashboard?.topProducts.all ?? [] : dashboard?.topProducts.all ?? []}
+              scope={consolidated ? `de todas las sucursales de ${businessDashboard?.businessName ?? 'este negocio'}` : `de la sucursal ${currentBranch?.name ?? ''}`}
+              loading={loading}
+              error={dashboardError}
+            />
+          ) : null}
           {tab === 'businesses' ? <BusinessesScreen onUnauthorized={becomeAnonymous} /> : null}
-          {tab === 'expense-categories' && currentBranch ? <ExpenseCategoriesScreen branchCode={currentBranch.code} canManage={isCurrentBusinessOwner} onUnauthorized={becomeAnonymous} /> : null}
-          {tab === 'more' && currentBranch ? (
+          {tab === 'expense-categories' && currentBranch ? (
+            <ExpenseCategoriesScreen branchCode={currentBranch.code} canManage={isCurrentBusinessOwner} onUnauthorized={becomeAnonymous} />
+          ) : null}
+          {tab === 'more' ? (
             <MoreScreen
               user={user}
               branch={currentBranch}
@@ -365,85 +385,20 @@ export function App() {
               onBranchUpdated={updateBranch}
               onOpenExpenseCategories={() => setTab('expense-categories')}
               canManageExpenses={isCurrentBusinessOwner}
+              canRequestSync={canRequestSync}
               onUnauthorized={becomeAnonymous}
             />
           ) : null}
         </main>
 
         <nav className="mobile-nav" aria-label="Navegación principal">
-          <Navigation tab={tab} onChange={setTab} />
+          <Navigation tab={tab} consolidated={consolidated} onChange={setTab} />
         </nav>
       </div>
 
       {selectedTicket !== null ? (
         <TicketSheet branchCode={branchCode} folio={selectedTicket.folio} openAccount={selectedTicket.openAccount} onClose={closeTicket} onUnauthorized={becomeAnonymous} />
       ) : null}
-    </div>
-  )
-}
-
-function SubscriptionSummary({ subscription }: { subscription: Subscription }) {
-  const expiresAt = subscription.status === 'ACTIVE'
-    ? subscription.paidUntil
-    : subscription.status === 'TRIAL' ? subscription.trialEndsAt : null
-  if (!expiresAt) return null
-
-  const expiryTimestamp = Date.parse(expiresAt)
-  if (!Number.isFinite(expiryTimestamp)) return null
-  const daysRemaining = Math.max(0, Math.ceil((expiryTimestamp - Date.now()) / 86_400_000))
-  const planName = subscription.plan === 'UNLIMITED' ? 'Ilimitado' : subscription.plan === 'PLUS' ? 'Plus' : 'Estándar'
-  const dateLabel = new Date(expiryTimestamp).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
-  const remainingLabel = daysRemaining === 0 ? 'vence hoy' : `vence en ${daysRemaining} ${daysRemaining === 1 ? 'día' : 'días'}`
-
-  return (
-    <aside className="subscription-summary" aria-label="Información del plan">
-      <span>{subscription.status === 'TRIAL' ? 'Periodo de prueba' : `Plan ${planName}`}</span>
-      <span className="subscription-summary-divider" aria-hidden="true">·</span>
-      <span>{remainingLabel} <time dateTime={expiresAt}>({dateLabel})</time></span>
-    </aside>
-  )
-}
-
-function SubscriptionAccessNotice({ onLogout }: { onLogout: () => void }) {
-  return (
-    <main className="subscription-wall">
-      <section className="subscription-wall-card" role="alert" aria-labelledby="subscription-title">
-        <span className="subscription-wall-icon"><LockKeyhole size={28} strokeWidth={2} /></span>
-        <h1 id="subscription-title">Cuenta inactiva</h1>
-        <p className="subscription-wall-message">Tu acceso al sistema se encuentra temporalmente suspendido porque no tienes un plan activo.</p>
-        <div className="subscription-wall-info">
-          <strong>Acceso temporalmente restringido</strong>
-          <p>Tu información permanece guardada. Para continuar utilizando el sistema, solicita la activación o renovación de tu cuenta.</p>
-        </div>
-        <button className="subscription-wall-button" type="button" onClick={onLogout}><LogOut size={17} /> Cerrar sesión</button>
-      </section>
-    </main>
-  )
-}
-
-function Navigation({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
-  const items: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
-    { key: 'home', label: 'Inicio', icon: <LayoutDashboard size={20} /> },
-    { key: 'sales', label: 'Ventas', icon: <BarChart3 size={20} /> },
-    { key: 'operations', label: 'Operación', icon: <ReceiptText size={20} /> },
-    { key: 'cancellations', label: 'Cancelados', icon: <ReceiptText size={20} /> },
-    { key: 'products', label: 'Productos', icon: <ShoppingBasket size={20} /> },
-    { key: 'businesses', label: 'Negocios', icon: <Building2 size={20} /> },
-    { key: 'more', label: 'Más', icon: <Menu size={20} /> },
-  ]
-  return (
-    <div className="nav-items">
-      {items.map((item) => (
-        <button
-          type="button"
-          key={item.key}
-          className={tab === item.key ? 'nav-item active' : 'nav-item'}
-          onClick={() => onChange(item.key)}
-          aria-current={tab === item.key ? 'page' : undefined}
-        >
-          {item.icon}<span>{item.label}</span>
-        </button>
-      ))}
     </div>
   )
 }

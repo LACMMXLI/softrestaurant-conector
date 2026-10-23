@@ -55,7 +55,7 @@ export function ExpenseCategoriesScreen({ branchCode, canManage, onUnauthorized 
     setDraft(current => ({ ...current, rules: current.rules.map((rule, position) => position === index ? { ...rule, ...patch } : rule) }))
   }
 
-  if (!canManage) return <section className="content-card"><h1>Categorías de gastos</h1><p className="quiet-empty">Solo el OWNER del negocio puede administrar reglas de gastos.</p></section>
+  if (!canManage) return <section className="content-card"><h1>Categorías de gastos</h1><p className="quiet-empty">Solo el propietario del negocio puede administrar reglas de gastos.</p></section>
 
   return <div className="screen-stack">
     <section className="screen-title"><p className="utility-label">Configuración</p><h1>Categorías de gastos</h1><p>Las palabras clave y su prioridad se aplican a todas las sucursales de este negocio.</p></section>

@@ -1,8 +1,10 @@
 import { ArrowDownRight, ArrowUpRight, Ban, Banknote, Coins, CreditCard, Equal, GlassWater, Hourglass, Landmark, Minus, Plus, Receipt, Utensils, WalletCards } from 'lucide-react'
 import { EmptyState } from '../components/EmptyState'
+import { Metric } from '../components/Metric'
 import { SalesChart } from '../components/SalesChart'
 import { StatusPill } from '../components/StatusPill'
 import { TicketRow } from '../components/TicketRow'
+import { TopProductList } from '../components/TopProductList'
 import { formatAmount, formatInteger, formatTime, timeAgo } from '../format'
 import type { DashboardHome } from '../types'
 
@@ -197,8 +199,8 @@ export function DashboardScreen({
               <span className="top-products-total">Ordenado por unidades reales</span>
             </div>
             <div className="top-products-grid">
-              <TopProductList title="Alimentos" icon={<Utensils size={19} />} items={data.topProducts.foods} />
-              <TopProductList title="Bebidas" icon={<GlassWater size={19} />} items={data.topProducts.beverages} />
+              <TopProductList title="Alimentos" icon={<Utensils size={19} />} items={data.topProducts.foods} emptyMessage="No hay productos clasificados en este corte." />
+              <TopProductList title="Bebidas" icon={<GlassWater size={19} />} items={data.topProducts.beverages} emptyMessage="No hay productos clasificados en este corte." />
             </div>
             <p className="data-note">Incluye productos con importe de tickets cobrados y no cancelados del turno, aunque el corte siga abierto. La categoría proviene del grupo configurado en SoftRestaurant.</p>
           </section>
@@ -250,33 +252,12 @@ export function DashboardScreen({
   )
 }
 
-function TopProductList({ title, icon, items }: { title: string; icon: React.ReactNode; items: DashboardHome['topProducts']['foods'] }) {
-  return <div className="top-product-column">
-    <div className="top-product-heading">{icon}<h3>{title}</h3><span>{items.length}</span></div>
-    {items.length > 0 ? <ol className="top-product-list">{items.map((item) => <li key={item.productId}>
-      <span className="top-product-rank">{item.rank}</span>
-      <span className="top-product-name"><strong>{item.productName}</strong><small>{item.groupName || 'Sin grupo'}</small></span>
-      <span className="top-product-values"><strong>{formatInteger(item.quantity)} u.</strong><small>{formatAmount(item.sales)}</small></span>
-    </li>)}</ol> : <p className="quiet-empty">No hay productos clasificados en este corte.</p>}
-  </div>
-}
-
 function EquationPart({ icon, label, value }: { icon?: React.ReactNode; label: string; value: number | null }) {
   return (
     <div className="equation-part">
       <span>{icon}{label}</span>
       <strong>{formatAmount(value)}</strong>
     </div>
-  )
-}
-
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <article className="metric-item">
-      <span className="metric-icon" aria-hidden="true">{icon}</span>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
   )
 }
 
