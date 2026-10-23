@@ -1,30 +1,118 @@
-import { ArrowDownToLine, Ban, Banknote, CreditCard, Receipt, Store, Utensils, WalletCards } from 'lucide-react'
+import { ArrowDownToLine, Ban, Banknote, CreditCard, GlassWater, Receipt, Store, Utensils, WalletCards } from 'lucide-react'
+import { EmptyState } from '../components/EmptyState'
+import { Metric } from '../components/Metric'
+import { TopProductList } from '../components/TopProductList'
 import { formatAmount, formatInteger } from '../format'
 import type { BusinessDashboard } from '../types'
-import { EmptyState } from '../components/EmptyState'
 
-export function BusinessDashboardScreen({ data, loading, error, onRetry, onOpenBranch }: {
-  data: BusinessDashboard | null; loading: boolean; error: string | null; onRetry: () => void; onOpenBranch: (code: string) => void
-}) {
+type BusinessDashboardScreenProps = {
+  data: BusinessDashboard | null
+  loading: boolean
+  error: string | null
+  onRetry: () => void
+  onOpenBranch: (code: string) => void
+}
+
+export function BusinessDashboardScreen({ data, loading, error, onRetry, onOpenBranch }: BusinessDashboardScreenProps) {
   if (loading && !data) return <div className="skeleton business-skeleton" aria-busy="true" />
   if (error && !data) return <EmptyState title="No se pudo consultar el resumen" message={error} />
   if (!data) return null
+
   const { summary } = data
   const rangeLabel = data.from === data.to ? data.from : `${data.from} al ${data.to}`
-  return <div className="screen-stack business-summary">
-    {error ? <button className="inline-alert" onClick={onRetry}>{error} · Toca para reintentar</button> : null}
-    <section className="business-hero">
-      <div><p>Resumen general · {rangeLabel}</p><h1>{data.businessName}</h1><span>{data.includedBranches} de {data.totalBranches} sucursales con periodo conciliado</span></div>
-      <strong>{formatAmount(summary.sales)}</strong><small>Ventas consolidadas</small>
-    </section>
-    {data.coverage !== 'complete' ? <div className="coverage-note">Se muestran los datos almacenados de todas las sucursales. La cobertura pendiente se señala para conciliación y nunca se interpreta como venta cero.</div> : null}
-    <section className="content-card"><div className="section-heading"><div><p className="utility-label">Operación actual</p><h2>Turnos abiertos</h2></div></div>{data.openShifts.length ? <div className="branch-comparison">{data.openShifts.map(shift => <article className="branch-share" key={`${shift.branchCode}:${shift.number}`}><span><Store size={17} /><b>{shift.branchName}</b><small>Turno {shift.number} · {shift.cashier || 'Sin cajero'}</small></span><strong>Abierto<em>{shift.openedAt ? `Desde ${shift.openedAt.slice(0, 16).replace('T', ' ')}` : 'Sin hora registrada'}</em></strong></article>)}</div> : <p className="quiet-empty">No hay turnos abiertos en las sucursales de este negocio.</p>}</section>
-    <section className="metric-strip"><Metric icon={<Receipt />} label="Tickets" value={formatInteger(summary.tickets)} /><Metric icon={<WalletCards />} label="Ticket promedio" value={formatAmount(summary.averageTicket)} /><Metric icon={<Banknote />} label="Propinas" value={formatAmount(summary.tips)} /></section>
-    <section className="expense-strip business-expense-strip" aria-label="Gasto consolidado por categoría"><div className="expense-strip-heading"><div><p className="utility-label">Todas las sucursales</p><h2>Gastos consolidados</h2></div><strong>{formatAmount(data.expenses.total)}</strong></div>{data.expenses.categories.length===0?<p className="quiet-empty">No hay salidas de caja conciliadas para esta fecha.</p>:<div className="expense-category-strip">{data.expenses.categories.map(item=><article className="expense-category" key={item.category}><span>{item.category}</span><b>{formatAmount(item.total)}</b><small>{formatInteger(item.movementCount)} salidas</small></article>)}</div>}</section>
-    <section className="content-card"><div className="section-heading"><div><p className="utility-label">Participación</p><h2>Venta por sucursal</h2></div></div><div className="branch-comparison">{data.branches.map(branch => <button key={branch.code} className="branch-share" onClick={() => onOpenBranch(branch.code)}><span><Store size={17} /><b>{branch.name}</b><small>{formatInteger(branch.tickets)} tickets · {formatAmount(branch.averageTicket)} promedio</small></span><strong>{formatAmount(branch.sales)}<em>{branch.participationPercent}% del total</em></strong><i><i style={{ width: `${branch.participationPercent}%` }} /></i></button>)}</div></section>
-    <section className="content-card"><div className="section-heading"><div><p className="utility-label">Formas de pago y caja</p><h2>Ingresos y salidas</h2></div></div><div className="payment-breakdown"><div><Banknote size={17}/><span>Efectivo</span><strong>{formatAmount(summary.cashSales)}</strong></div><div><CreditCard size={17}/><span>Tarjeta</span><strong>{formatAmount(summary.cardSales)}</strong></div><div><WalletCards size={17}/><span>Otros</span><strong>{formatAmount(summary.otherSales)}</strong></div></div><div className="business-operations"><span><ArrowDownToLine size={18}/> Entradas <b>{formatAmount(summary.cashIn)}</b></span><span><Banknote size={18}/> Salidas <b>{formatAmount(summary.cashOut)}</b></span><span><Ban size={18}/> Cancelaciones <b>{formatInteger(summary.cancelledTickets)}</b><small>{formatInteger(summary.cancelledLines)} líneas</small></span></div></section>
-    <section className="content-card top-products-card"><div className="section-heading"><div><p className="utility-label">Productos vendidos</p><h2>Top 20 de todas las sucursales</h2></div></div><div className="top-products-grid"><ProductList title="Alimentos" items={data.topProducts.foods} /><ProductList title="Bebidas" items={data.topProducts.beverages} /></div></section>
-  </div>
+
+  return (
+    <div className="screen-stack business-summary">
+      {error ? <button className="inline-alert" type="button" onClick={onRetry}>{error} · Toca para reintentar</button> : null}
+
+      <section className="business-hero">
+        <div>
+          <p>Resumen general · {rangeLabel}</p>
+          <h1>{data.businessName}</h1>
+          <span>{data.includedBranches} de {data.totalBranches} sucursales con periodo conciliado</span>
+        </div>
+        <strong>{formatAmount(summary.sales)}</strong>
+        <small>Ventas consolidadas</small>
+      </section>
+
+      {data.coverage !== 'complete' ? (
+        <div className="coverage-note">Se muestran los datos almacenados de todas las sucursales. La cobertura pendiente se señala para conciliación y nunca se interpreta como venta cero.</div>
+      ) : null}
+
+      <section className="content-card">
+        <div className="section-heading"><div><p className="utility-label">Operación actual</p><h2>Turnos abiertos</h2></div></div>
+        {data.openShifts.length > 0 ? (
+          <div className="branch-comparison">
+            {data.openShifts.map((shift) => (
+              <article className="branch-share" key={`${shift.branchCode}:${shift.number}`}>
+                <span><Store size={17} /><b>{shift.branchName}</b><small>Turno {shift.number} · {shift.cashier || 'Sin cajero'}</small></span>
+                <strong>Abierto<em>{shift.openedAt ? `Desde ${shift.openedAt.slice(0, 16).replace('T', ' ')}` : 'Sin hora registrada'}</em></strong>
+              </article>
+            ))}
+          </div>
+        ) : <p className="quiet-empty">No hay turnos abiertos en las sucursales de este negocio.</p>}
+      </section>
+
+      <section className="metric-strip">
+        <Metric icon={<Receipt />} label="Tickets" value={formatInteger(summary.tickets)} />
+        <Metric icon={<WalletCards />} label="Ticket promedio" value={formatAmount(summary.averageTicket)} />
+        <Metric icon={<Banknote />} label="Propinas" value={formatAmount(summary.tips)} />
+      </section>
+
+      <section className="expense-strip business-expense-strip" aria-label="Gasto consolidado por categoría">
+        <div className="expense-strip-heading">
+          <div><p className="utility-label">Todas las sucursales</p><h2>Gastos consolidados</h2></div>
+          <strong>{formatAmount(data.expenses.total)}</strong>
+        </div>
+        {data.expenses.categories.length === 0 ? (
+          <p className="quiet-empty">No hay salidas de caja conciliadas para esta fecha.</p>
+        ) : (
+          <div className="expense-category-strip">
+            {data.expenses.categories.map((item) => (
+              <article className="expense-category" key={item.category}>
+                <span>{item.category}</span>
+                <b>{formatAmount(item.total)}</b>
+                <small>{formatInteger(item.movementCount)} salidas</small>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="content-card">
+        <div className="section-heading"><div><p className="utility-label">Participación</p><h2>Venta por sucursal</h2></div></div>
+        <div className="branch-comparison">
+          {data.branches.map((branch) => (
+            <button key={branch.code} type="button" className="branch-share" onClick={() => onOpenBranch(branch.code)}>
+              <span><Store size={17} /><b>{branch.name}</b><small>{formatInteger(branch.tickets)} tickets · {formatAmount(branch.averageTicket)} promedio</small></span>
+              <strong>{formatAmount(branch.sales)}<em>{branch.participationPercent}% del total</em></strong>
+              <i><i style={{ width: `${branch.participationPercent}%` }} /></i>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="content-card">
+        <div className="section-heading"><div><p className="utility-label">Formas de pago y caja</p><h2>Ingresos y salidas</h2></div></div>
+        <div className="payment-breakdown">
+          <div><Banknote size={17} /><span>Efectivo</span><strong>{formatAmount(summary.cashSales)}</strong></div>
+          <div><CreditCard size={17} /><span>Tarjeta</span><strong>{formatAmount(summary.cardSales)}</strong></div>
+          <div><WalletCards size={17} /><span>Otros</span><strong>{formatAmount(summary.otherSales)}</strong></div>
+        </div>
+        <div className="business-operations">
+          <span><ArrowDownToLine size={18} /> Entradas <b>{formatAmount(summary.cashIn)}</b></span>
+          <span><Banknote size={18} /> Salidas <b>{formatAmount(summary.cashOut)}</b></span>
+          <span><Ban size={18} /> Cancelaciones <b>{formatInteger(summary.cancelledTickets)}</b><small>{formatInteger(summary.cancelledLines)} líneas</small></span>
+        </div>
+      </section>
+
+      <section className="content-card top-products-card">
+        <div className="section-heading"><div><p className="utility-label">Productos vendidos</p><h2>Top 20 de todas las sucursales</h2></div></div>
+        <div className="top-products-grid">
+          <TopProductList title="Alimentos" icon={<Utensils size={18} />} items={data.topProducts.foods} variant="units" emptyMessage="Sin productos clasificados." />
+          <TopProductList title="Bebidas" icon={<GlassWater size={18} />} items={data.topProducts.beverages} variant="units" emptyMessage="Sin productos clasificados." />
+        </div>
+      </section>
+    </div>
+  )
 }
-function Metric({ icon, label, value }: {icon: React.ReactNode; label:string; value:string}) { return <article className="metric-item"><span className="metric-icon">{icon}</span><span>{label}</span><strong>{value}</strong></article> }
-function ProductList({title,items}:{title:string;items:BusinessDashboard['topProducts']['foods']}) { return <div className="top-product-column"><div className="top-product-heading"><Utensils size={18}/><h3>{title}</h3></div>{items.length ? <ol className="top-product-list">{items.map(x=><li key={x.productId}><span className="top-product-rank">{x.rank}</span><span className="top-product-name"><strong>{x.productName}</strong><small>{formatInteger(x.quantity)} unidades</small></span><span className="top-product-values"><strong>{formatAmount(x.sales)}</strong></span></li>)}</ol> : <p className="quiet-empty">Sin productos clasificados.</p>}</div> }

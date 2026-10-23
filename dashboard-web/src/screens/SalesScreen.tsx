@@ -1,9 +1,9 @@
 import { Search, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { api, ApiError } from '../api'
+import { useState } from 'react'
+import { api } from '../api'
 import { EmptyState } from '../components/EmptyState'
 import { TicketRow } from '../components/TicketRow'
-import type { SalesPage } from '../types'
+import { useApiResource } from '../hooks/useApiResource'
 
 type SalesScreenProps = {
   branchCode: string
@@ -17,29 +17,12 @@ export function SalesScreen({ branchCode, date, shiftId, onOpenTicket, onUnautho
   const [search, setSearch] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [result, setResult] = useState<SalesPage | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    setLoading(true)
-    setError(null)
-    setResult(null)
-    api.sales(branchCode, date, shiftId, page, submittedSearch, controller.signal)
-      .then((nextResult) => {
-        if (!controller.signal.aborted) setResult(nextResult)
-      })
-      .catch((reason: unknown) => {
-        if (reason instanceof DOMException && reason.name === 'AbortError') return
-        if (reason instanceof ApiError && reason.status === 401) onUnauthorized()
-        else setError(reason instanceof Error ? reason.message : 'No fue posible cargar los tickets.')
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false)
-      })
-    return () => controller.abort()
-  }, [branchCode, date, onUnauthorized, page, shiftId, submittedSearch])
+  const { data: result, loading, error } = useApiResource(
+    (signal) => api.sales(branchCode, date, shiftId, page, submittedSearch, signal),
+    [branchCode, date, page, shiftId, submittedSearch],
+    onUnauthorized,
+    'No fue posible cargar los tickets.',
+  )
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

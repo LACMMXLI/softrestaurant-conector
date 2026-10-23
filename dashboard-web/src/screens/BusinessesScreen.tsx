@@ -75,13 +75,13 @@ export function BusinessesScreen({ onUnauthorized }: BusinessesScreenProps) {
           <p className="panel-hint">Todavía no tienes ningún negocio. Crea el primero abajo.</p>
         ) : null}
 
-        <div className="detail-list">
+        <div className="business-picker">
           {businesses.map((business) => (
             <button
               key={business.id}
               type="button"
-              className={business.id === selectedId ? 'secondary-button' : 'secondary-button'}
-              style={{ justifyContent: 'flex-start', marginBottom: 8 }}
+              className={business.id === selectedId ? 'secondary-button active' : 'secondary-button'}
+              aria-pressed={business.id === selectedId}
               onClick={() => setSelectedId(business.id)}
             >
               <Building2 size={16} aria-hidden="true" />
@@ -173,7 +173,7 @@ function BusinessBranches({ business, onUnauthorized }: { business: BusinessMemb
       {!loading && branches.length === 0 ? <p className="panel-hint">Este negocio todavía no tiene sucursales.</p> : null}
 
       {branches.map(({ branch, connector }) => (
-        <div className="detail-list" key={branch.id} style={{ marginBottom: 16 }}>
+        <div className="detail-list branch-detail" key={branch.id}>
           <div><dt><Server size={16} /> {branch.name} ({branch.code})</dt></div>
           <div><dt>Conector</dt><dd>{connector ? `Vinculado a ${connector.machineName}` : 'Sin instalar'}</dd></div>
           {connector ? (
