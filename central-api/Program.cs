@@ -27,6 +27,9 @@ builder.Services.AddSingleton<SubscriptionRegistry>();
 builder.Services.AddSingleton<PlatformSettingsRegistry>();
 builder.Services.AddSingleton<DashboardReportService>();
 builder.Services.AddSingleton<ExpenseCategoryService>();
+builder.Services.AddSingleton<ActivityLogger>();
+builder.Services.AddHostedService(services => services.GetRequiredService<ActivityLogger>());
+builder.Services.AddSingleton<ActivityReportService>();
 builder.Services.AddRateLimiter(options =>
 {
     // Misma política para login, autorregistro y emisión de credenciales de dispositivo
@@ -38,6 +41,16 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    // La app reporta su navegación; el tope por IP evita que un cliente inunde el historial.
+    options.AddPolicy("dashboard-activity", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -93,6 +106,8 @@ app.Use(async (context, next) =>
         context.Response.Headers.CacheControl = "no-store";
     await next();
 });
+// Antes de la defensa de suscripción para que también queden registrados los accesos bloqueados (402).
+app.UseActivityTracking();
 var dataSource = app.Services.GetRequiredService<NpgsqlDataSource>();
 await DbInitializer.InitializeAsync(dataSource, apiOptions, CancellationToken.None);
 
@@ -677,6 +692,7 @@ app.MapGet("/api/branches/{branchCode}/sync-status", async (
 });
 
 app.MapDashboardWebApi();
+app.MapActivityApi(apiOptions);
 
 app.Run();
 

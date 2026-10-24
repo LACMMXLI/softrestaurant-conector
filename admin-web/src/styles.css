@@ -466,3 +466,47 @@ input, select { min-height: 44px; border-radius: 11px; background: #0c1722; }
 .notice-saved { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ok); font-size: .86rem; font-weight: 700; }
 @media (max-width: 680px) { .notice-design-options { grid-template-columns: 1fr; }.notice-settings-footer { align-items: stretch; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+/* Actividad de usuarios */
+.activity-screen { max-width: 1040px; }
+.activity-check { flex-direction: row !important; align-items: center; gap: .5rem !important; }
+.activity-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+.activity-stat { display: grid; gap: .15rem; padding: .85rem 1rem; background: var(--bg-panel-alt); border: 1px solid var(--border); border-radius: var(--radius); }
+.activity-stat span { color: var(--accent); }
+.activity-stat strong { font-size: 1.5rem; letter-spacing: -.03em; }
+.activity-stat small { color: var(--text-muted); }
+.activity-days { display: flex; align-items: flex-end; gap: 4px; height: 96px; margin: 1.1rem 0 .3rem; }
+.activity-day { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.activity-day-bar { width: 100%; max-width: 28px; background: var(--accent-strong); border-radius: 4px 4px 0 0; }
+.activity-day small { color: var(--text-muted); font-size: .62rem; }
+.activity-tops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.1rem; }
+.activity-top h3 { margin: 0 0 .5rem; font-size: .85rem; color: var(--text-muted); }
+.activity-top ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.activity-top li { display: flex; justify-content: space-between; gap: .75rem; font-size: .85rem; }
+.activity-top li span { display: grid; min-width: 0; }
+.activity-top li b, .activity-top li small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-top li small { color: var(--text-muted); font-size: .72rem; }
+.activity-list { display: grid; gap: .4rem; margin-top: .8rem; }
+.activity-row { background: var(--bg-panel-alt); border: 1px solid var(--border); border-radius: 9px; }
+.activity-row summary { display: flex; align-items: center; gap: .75rem; padding: .65rem .85rem; cursor: pointer; list-style: none; }
+.activity-row summary::-webkit-details-marker { display: none; }
+.activity-icon { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 8px; background: rgba(77,163,255,.12); color: var(--accent); }
+.activity-main { display: grid; min-width: 0; flex: 1; }
+.activity-main b { font-size: .88rem; }
+.activity-main small { color: var(--text-muted); font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-side { display: flex; align-items: center; gap: .5rem; flex: none; color: var(--text-muted); font-size: .76rem; }
+.activity-detail { display: grid; gap: .35rem; margin: 0; padding: .2rem .85rem .85rem 3.4rem; font-size: .8rem; }
+.activity-detail div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: .5rem; }
+.activity-detail dt { color: var(--text-muted); }
+.activity-detail dd { margin: 0; overflow-wrap: anywhere; }
+.activity-pagination { display: flex; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
+@media (max-width: 720px) {
+  .activity-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .activity-tops { grid-template-columns: 1fr; }
+  .activity-side time { display: none; }
+  .activity-detail { padding-left: .85rem; }
+  .activity-detail div { grid-template-columns: 1fr; gap: 0; }
+  .mobile-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mobile-nav-item { min-width: 0; padding-inline: .15rem; font-size: .68rem; }
+  .mobile-nav-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

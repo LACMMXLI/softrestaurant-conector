@@ -24,6 +24,7 @@ services:
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-restaurant_agent_reports};Username=${POSTGRES_USER:-restaurant_agent};Password=${SERVICE_PASSWORD_64_POSTGRES}
       INSTALLER_DOWNLOAD_URL: ${INSTALLER_DOWNLOAD_URL:-}
       INSTALLER_VERSION: ${INSTALLER_VERSION:-}
+      ACTIVITY_LOG_RETENTION_DAYS: ${ACTIVITY_LOG_RETENTION_DAYS:-180}
     depends_on:
       postgres:
         condition: service_healthy

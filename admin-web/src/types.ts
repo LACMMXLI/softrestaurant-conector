@@ -124,3 +124,48 @@ export type DeviceCredential = {
   token: string
   apiUrl: string | null
 }
+
+export type ActivityItem = {
+  id: number
+  occurredAt: string
+  userId: string | null
+  userEmail: string | null
+  userName: string | null
+  source: 'api' | 'client'
+  eventType: string
+  action: string
+  view: string | null
+  method: string | null
+  path: string | null
+  status: number | null
+  durationMs: number | null
+  businessId: string | null
+  businessName: string | null
+  branchCode: string | null
+  branchName: string | null
+  ip: string | null
+  userAgent: string | null
+  sessionRef: string | null
+  metadata: Record<string, unknown>
+}
+
+export type ActivityPage = { items: ActivityItem[]; page: number; pageSize: number; hasMore: boolean }
+
+export type ActivitySummary = {
+  totals: { events: number; activeUsers: number; visits: number; appOpens: number; logins: number; activeBusinesses: number }
+  byDay: Array<{ day: string; events: number; users: number }>
+  topUsers: Array<{ userId: string; email: string | null; name: string | null; events: number; lastAt: string }>
+  topActions: Array<{ key: string; label: string | null; events: number }>
+  topBusinesses: Array<{ key: string; label: string | null; events: number }>
+}
+
+export type ActivityFilters = {
+  userId: string
+  businessId: string
+  branchCode: string
+  eventType: string
+  /** yyyy-mm-dd en la zona horaria del navegador del operador. */
+  fromDate: string
+  toDate: string
+  includeAdmins: boolean
+}

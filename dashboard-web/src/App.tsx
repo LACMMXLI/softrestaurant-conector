@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { UserRound } from 'lucide-react'
 import { api, ApiError } from './api'
+import type { ActivityEvent } from './api'
 import { Brand } from './components/Brand'
 import { ContextControls } from './components/ContextControls'
 import { LoginScreen } from './components/LoginScreen'
@@ -237,21 +238,48 @@ export function App() {
   function handleBranchChange(nextCode: string) {
     if (nextCode !== branchCode && (isConsolidatedCode(nextCode) || branches.some((branch) => branch.code === nextCode))) {
       localStorage.setItem(storedBranchKey, nextCode)
+      const nextBranch = branches.find((branch) => branch.code === nextCode)
+      api.trackActivity({
+        kind: 'scope',
+        view: tab,
+        branchCode: isConsolidatedCode(nextCode) ? undefined : nextCode,
+        businessId: businessIdFromCode(nextCode) ?? nextBranch?.businessId,
+        detail: isConsolidatedCode(nextCode) ? 'resumen general' : undefined,
+      })
       selectScope(nextCode, branches)
     }
   }
 
   function handleShiftChange(next: DashboardShift | null) {
+    track('filter', tab, next ? `turno=${next.number}` : 'turno=ninguno')
     setShiftId(next?.id ?? null)
     if (next?.openedAt) setDate(next.openedAt.slice(0, 10))
   }
 
   function handleDateChange(nextDate: string) {
+    track('filter', tab, `fecha=${nextDate}`)
     setDate(nextDate)
     if (!consolidated) setShiftId(null)
   }
 
-  const refresh = () => setRefreshKey((value) => value + 1)
+  // Reporta la navegación al historial de actividad del operador (no bloquea ni muestra errores).
+  const track = (kind: ActivityEvent['kind'], view?: Tab, detail?: string) =>
+    api.trackActivity({
+      kind,
+      view,
+      branchCode: consolidated ? undefined : branchCode || undefined,
+      businessId: selectedBusinessId ?? currentBranch?.businessId,
+      detail,
+    })
+
+  const changeTab = (next: Tab) => {
+    if (next !== tab) track('view', next)
+    setTab(next)
+  }
+  const refresh = () => {
+    track('refresh', tab)
+    setRefreshKey((value) => value + 1)
+  }
   const openTicket = (folio: number, openAccount: boolean) => setSelectedTicket({ folio, openAccount })
   const loading = dashboardLoading || contextLoading
 
@@ -295,7 +323,7 @@ export function App() {
     <div className="app-shell">
       <aside className="desktop-sidebar">
         <Brand className="sidebar-brand" />
-        <Navigation tab={tab} consolidated={consolidated} onChange={setTab} />
+        <Navigation tab={tab} consolidated={consolidated} onChange={changeTab} />
         <div className="sidebar-user"><UserRound size={18} /><span>{user.displayName}</span></div>
       </aside>
 
@@ -342,7 +370,7 @@ export function App() {
                 onRetry={refresh}
                 onOpenTicket={openTicket}
                 onOpenAccount={(folio) => openTicket(folio, true)}
-                onOpenSales={() => setTab('sales')}
+                onOpenSales={() => changeTab('sales')}
               />
             )
           ) : null}
@@ -383,7 +411,7 @@ export function App() {
               dashboard={dashboard}
               onLogout={handleLogout}
               onBranchUpdated={updateBranch}
-              onOpenExpenseCategories={() => setTab('expense-categories')}
+              onOpenExpenseCategories={() => changeTab('expense-categories')}
               canManageExpenses={isCurrentBusinessOwner}
               canRequestSync={canRequestSync}
               onUnauthorized={becomeAnonymous}
@@ -392,7 +420,7 @@ export function App() {
         </main>
 
         <nav className="mobile-nav" aria-label="Navegación principal">
-          <Navigation tab={tab} consolidated={consolidated} onChange={setTab} />
+          <Navigation tab={tab} consolidated={consolidated} onChange={changeTab} />
         </nav>
       </div>
 

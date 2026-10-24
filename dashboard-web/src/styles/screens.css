@@ -53,3 +53,36 @@
 .business-picker .secondary-button { justify-content: flex-start; }
 .business-picker .secondary-button.active { border-color: var(--teal); background: var(--teal-soft); color: var(--ink); }
 .branch-detail { margin-bottom: 16px; }
+
+/* Resultado del corte: faltante en rojo, sobrante en verde; el signo y la palabra nunca dependen solo del color. */
+.cash-verdict {
+  --verdict: var(--ink-soft);
+  --verdict-soft: transparent;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 14px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 2px solid var(--verdict);
+  border-radius: 18px;
+  background: var(--verdict-soft);
+}
+.cash-verdict--short { --verdict: var(--red); --verdict-soft: var(--red-soft); }
+.cash-verdict--over, .cash-verdict--ok { --verdict: var(--ok); --verdict-soft: var(--ok-soft); }
+.cash-verdict--pending { grid-template-columns: 1fr; border-style: dashed; }
+.cash-verdict-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: var(--verdict); color: #fff; }
+.cash-verdict-main small, .cash-verdict--pending small { display: block; color: var(--ink-soft); font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.cash-verdict-main strong, .cash-verdict--pending strong { display: block; color: var(--verdict); font-size: 1.35rem; font-weight: 850; letter-spacing: .02em; }
+.cash-verdict-main p, .cash-verdict--pending p { margin-top: 2px; color: var(--ink); font-size: .84rem; line-height: 1.4; }
+.cash-verdict-amount { color: var(--verdict); font-size: 1.7rem; font-weight: 850; letter-spacing: -.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cash-verdict-math { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; padding-top: 12px; border-top: 1px dashed var(--verdict); }
+.cash-verdict-math div { display: grid; gap: 2px; }
+.cash-verdict-math dt { color: var(--ink-soft); font-size: .68rem; }
+.cash-verdict-math dd { margin: 0; color: var(--ink); font-size: .95rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cash-verdict-math div:last-child dd { color: var(--verdict); }
+.cash-verdict-rule { grid-column: 1 / -1; margin-top: 8px; color: var(--ink-soft); font-size: .72rem; }
+@media (max-width: 420px) {
+  .cash-verdict { grid-template-columns: auto minmax(0, 1fr); }
+  .cash-verdict-amount { grid-column: 1 / -1; font-size: 1.9rem; }
+}

@@ -24,6 +24,13 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
 {
     public const string CookieName = "sr_dashboard_session";
 
+    /// <summary>
+    /// Usuario ya autenticado en esta petición. El registro de actividad autentica antes del
+    /// endpoint; con este caché el endpoint (y el middleware de suscripción) no repiten la
+    /// consulta a la base de datos.
+    /// </summary>
+    private const string AuthenticatedUserItem = "sr.authenticated-user";
+
     private readonly PasswordHasher<DashboardUser> passwordHasher = new();
 
     /// <summary>Hashea contraseñas antes de persistirlas; nunca se almacena texto plano.</summary>
@@ -186,6 +193,9 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
 
     public async Task<DashboardUser?> AuthenticateAsync(HttpContext context, CancellationToken ct)
     {
+        if (context.Items.TryGetValue(AuthenticatedUserItem, out var cached) && cached is DashboardUser cachedUser)
+            return cachedUser;
+
         if (!context.Request.Cookies.TryGetValue(CookieName, out var token) ||
             string.IsNullOrWhiteSpace(token))
         {
@@ -204,9 +214,15 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
         await using var reader = await command.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct)) return null;
 
-        return new DashboardUser(
+        var user = new DashboardUser(
             reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3));
+        context.Items[AuthenticatedUserItem] = user;
+        return user;
     }
+
+    /// <summary>Usuario que ya quedó identificado durante esta petición (incluye login/registro recién hechos).</summary>
+    public static DashboardUser? GetAuthenticatedUser(HttpContext context) =>
+        context.Items.TryGetValue(AuthenticatedUserItem, out var user) ? user as DashboardUser : null;
 
     public async Task LogoutAsync(HttpContext context, CancellationToken ct)
     {
@@ -224,6 +240,7 @@ internal sealed class WebAuthService(NpgsqlDataSource dataSource, ApiOptions opt
 
     public static void SetSessionCookie(HttpContext context, DashboardLoginResult login)
     {
+        context.Items[AuthenticatedUserItem] = login.User;
         context.Response.Cookies.Append(
             CookieName,
             login.Token,

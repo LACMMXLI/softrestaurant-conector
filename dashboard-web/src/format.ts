@@ -10,6 +10,13 @@ export function formatAmount(value: number | null): string {
   return value === null ? '—' : amountFormatter.format(value)
 }
 
+/** Con signo explícito (+ / −) para que un faltante y un sobrante nunca se confundan. */
+export function formatSignedAmount(value: number | null): string {
+  if (value === null) return '—'
+  if (Math.abs(value) < 0.005) return amountFormatter.format(0)
+  return `${value < 0 ? '−' : '+'}${amountFormatter.format(Math.abs(value))}`
+}
+
 export function formatInteger(value: number | null): string {
   return value === null ? '—' : integerFormatter.format(value)
 }
