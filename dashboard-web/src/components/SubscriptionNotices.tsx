@@ -1,26 +1,69 @@
-import { LockKeyhole, LogOut } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { CalendarClock, LockKeyhole, LogOut, X } from 'lucide-react'
+import { describeRemainingDays, getSubscriptionExpiry } from '../lib/subscription'
+import type { SubscriptionExpiry } from '../lib/subscription'
 import type { Subscription } from '../types'
 
 const planNames: Record<Subscription['plan'], string> = { BASIC: 'Estándar', PLUS: 'Plus', UNLIMITED: 'Ilimitado' }
 
 export function SubscriptionSummary({ subscription }: { subscription: Subscription }) {
-  const expiresAt = subscription.status === 'ACTIVE'
-    ? subscription.paidUntil
-    : subscription.status === 'TRIAL' ? subscription.trialEndsAt : null
-  if (!expiresAt) return null
+  const expiry = getSubscriptionExpiry(subscription)
+  if (!expiry) return null
 
-  const expiryTimestamp = Date.parse(expiresAt)
-  if (!Number.isFinite(expiryTimestamp)) return null
-  const daysRemaining = Math.max(0, Math.ceil((expiryTimestamp - Date.now()) / 86_400_000))
-  const dateLabel = new Date(expiryTimestamp).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
-  const remainingLabel = daysRemaining === 0 ? 'vence hoy' : `vence en ${daysRemaining} ${daysRemaining === 1 ? 'día' : 'días'}`
+  const dateLabel = new Date(expiry.expiryTimestamp).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+  const remainingLabel = expiry.daysRemaining === 0 ? 'vence hoy' : `vence en ${expiry.daysRemaining} ${expiry.daysRemaining === 1 ? 'día' : 'días'}`
 
   return (
     <aside className="subscription-summary" aria-label="Información del plan">
-      <span>{subscription.status === 'TRIAL' ? 'Periodo de prueba' : `Plan ${planNames[subscription.plan]}`}</span>
+      <span>{expiry.isTrial ? 'Periodo de prueba' : `Plan ${planNames[subscription.plan]}`}</span>
       <span className="subscription-summary-divider" aria-hidden="true">·</span>
-      <span>{remainingLabel} <time dateTime={expiresAt}>({dateLabel})</time></span>
+      <span>{remainingLabel} <time dateTime={expiry.expiresAt}>({dateLabel})</time></span>
     </aside>
+  )
+}
+
+/**
+ * Aviso emergente de cuenta por vencer. Es un diálogo modal nativo (foco atrapado, Esc cierra).
+ * Se puede cerrar, pero el estado vive solo en memoria: vuelve a salir al iniciar sesión o recargar.
+ */
+export function ExpiryNoticeDialog({ expiry, onClose }: { expiry: SubscriptionExpiry; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const acceptRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (dialog && !dialog.open) dialog.showModal()
+    // showModal() enfoca el primer control (la X); el foco útil es la acción principal.
+    acceptRef.current?.focus()
+  }, [])
+
+  const urgent = expiry.daysRemaining <= 1
+  const when = describeRemainingDays(expiry.daysRemaining)
+  const dateLabel = new Date(expiry.expiryTimestamp).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className={urgent ? 'expiry-dialog expiry-dialog--urgent' : 'expiry-dialog'}
+      aria-labelledby="expiry-title"
+      aria-describedby="expiry-message"
+      onCancel={(event) => { event.preventDefault(); onClose() }}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose() }}
+    >
+      <button className="icon-button expiry-close" type="button" onClick={onClose} aria-label="Cerrar aviso">
+        <X size={18} />
+      </button>
+      <span className="expiry-icon" aria-hidden="true"><CalendarClock size={28} /></span>
+      <h2 id="expiry-title">{expiry.isTrial ? 'Tu periodo de prueba está por terminar' : 'Tu cuenta está por vencer'}</h2>
+      <p className="expiry-when">
+        {expiry.daysRemaining === 0 ? 'Vence hoy' : `Vence ${when}`}
+        <small>{dateLabel}</small>
+      </p>
+      <p id="expiry-message">
+        Contacta con el administrador de la plataforma para renovar tu plan y no perder el acceso a tu sistema ni a tu información.
+      </p>
+      <button ref={acceptRef} className="primary-button expiry-accept" type="button" onClick={onClose}>Entendido</button>
+    </dialog>
   )
 }
 
