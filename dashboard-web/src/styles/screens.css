@@ -86,3 +86,25 @@
   .cash-verdict { grid-template-columns: auto minmax(0, 1fr); }
   .cash-verdict-amount { grid-column: 1 / -1; font-size: 1.9rem; }
 }
+
+/* Aviso emergente de cuenta por vencer. */
+.expiry-dialog {
+  position: fixed; inset: 0; margin: auto; z-index: 90;
+  width: min(92vw, 440px); max-height: 90svh; overflow-y: auto;
+  padding: 30px 26px 24px; border: 1px solid var(--line); border-top: 5px solid var(--gold);
+  border-radius: 22px; background: var(--paper); color: var(--ink); text-align: center;
+  box-shadow: 0 28px 70px rgba(5, 15, 20, .45);
+}
+.expiry-dialog::backdrop { background: rgba(5, 15, 20, .62); backdrop-filter: blur(3px); }
+.expiry-dialog--urgent { border-top-color: var(--red); }
+.expiry-close { position: absolute; top: 10px; right: 10px; }
+.expiry-icon { display: inline-grid; place-items: center; width: 56px; height: 56px; margin-bottom: 14px; border-radius: 18px; background: var(--gold-soft); color: var(--gold); }
+.expiry-dialog--urgent .expiry-icon { background: var(--red-soft); color: var(--red); }
+.expiry-dialog h2 { font-size: 1.3rem; line-height: 1.2; }
+.expiry-when { margin-top: 14px; font-size: 1.15rem; font-weight: 800; color: var(--gold); }
+.expiry-dialog--urgent .expiry-when { color: var(--red); }
+.expiry-when small { display: block; margin-top: 2px; color: var(--ink-soft); font-size: .8rem; font-weight: 600; }
+.expiry-when small::first-letter { text-transform: uppercase; }
+.expiry-dialog p:not(.expiry-when) { margin-top: 14px; color: var(--ink-soft); font-size: .92rem; line-height: 1.55; }
+.expiry-accept { display: flex; justify-content: center; width: 100%; margin-top: 22px; border: 0; background: var(--gold); color: #1a1205; font-weight: 800; text-align: center; }
+.expiry-dialog--urgent .expiry-accept { background: var(--red); color: #fff; }
