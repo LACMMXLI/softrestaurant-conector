@@ -76,12 +76,23 @@ export type UserMutationResponse = {
   selfAffected: boolean
 }
 
+export type BusinessMember = {
+  userId: string
+  email: string
+  displayName: string
+  role: BusinessRole
+}
+
 export type Business = {
   id: string
   name: string
   slug: string
   active: boolean
   createdAt: string
+  branchCount: number
+  activeBranchCount: number
+  /** Propietarios primero, luego gerentes y solo lectura. */
+  members: BusinessMember[]
 }
 
 export type Branch = {

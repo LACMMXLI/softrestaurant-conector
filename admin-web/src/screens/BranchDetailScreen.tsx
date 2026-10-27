@@ -7,12 +7,13 @@ import type { Branch } from '../types'
 
 type BranchDetailScreenProps = {
   branch: Branch
+  businessName: string
   onBack: () => void
   onBranchUpdated: (branch: Branch) => void
   onUnauthorized: () => void
 }
 
-export function BranchDetailScreen({ branch, onBack, onBranchUpdated, onUnauthorized }: BranchDetailScreenProps) {
+export function BranchDetailScreen({ branch, businessName, onBack, onBranchUpdated, onUnauthorized }: BranchDetailScreenProps) {
   const [name, setName] = useState(branch.name)
   const [timezone, setTimezone] = useState(branch.timezone)
   const [saving, setSaving] = useState(false)
@@ -67,10 +68,11 @@ export function BranchDetailScreen({ branch, onBack, onBranchUpdated, onUnauthor
     <div className="panel-stack">
       <button className="icon-button back-button" type="button" onClick={onBack}>
         <ArrowLeft size={17} aria-hidden="true" />
-        <span>Volver a sucursales</span>
+        <span>Volver a {businessName}</span>
       </button>
 
       <section className="panel-card" aria-labelledby="branch-detail-title">
+        <p className="section-kicker">{businessName} › Sucursal</p>
         <div className="panel-card-header">
           <h2 id="branch-detail-title">
             {branch.name} <code className="branch-code-badge">{branch.code}</code>
