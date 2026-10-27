@@ -1,30 +1,21 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { ChevronRight, Clock3, Plus, Store, X } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Clock3, Plus, Store, UserRound, X } from 'lucide-react'
 import { api, ApiError } from '../api'
+import { BUSINESS_ROLE_LABELS } from '../types'
 import type { Branch, Business } from '../types'
 
-type BranchesScreenProps = {
+type BusinessDetailScreenProps = {
+  business: Business
   branches: Branch[]
-  businesses: Business[]
-  loading: boolean
-  error: string | null
+  onBack: () => void
   onOpenBranch: (code: string) => void
   onBranchCreated: (branch: Branch) => void
   onUnauthorized: () => void
 }
 
-export function BranchesScreen({
-  branches,
-  businesses,
-  loading,
-  error,
-  onOpenBranch,
-  onBranchCreated,
-  onUnauthorized,
-}: BranchesScreenProps) {
+export function BusinessDetailScreen({ business, branches, onBack, onOpenBranch, onBranchCreated, onUnauthorized }: BusinessDetailScreenProps) {
   const [formOpen, setFormOpen] = useState(false)
-  const [businessId, setBusinessId] = useState('')
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [timezone, setTimezone] = useState('America/Tijuana')
@@ -33,17 +24,12 @@ export function BranchesScreen({
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!businessId) {
-      setFormError('Selecciona el negocio dueño de la sucursal.')
-      return
-    }
     setBusy(true)
     setFormError(null)
     try {
-      const branch = await api.createBranch(businessId, code.trim(), name.trim(), timezone.trim())
+      const branch = await api.createBranch(business.id, code.trim(), name.trim(), timezone.trim())
       onBranchCreated(branch)
       setFormOpen(false)
-      setBusinessId('')
       setCode('')
       setName('')
       setTimezone('America/Tijuana')
@@ -57,18 +43,45 @@ export function BranchesScreen({
 
   return (
     <div className="panel-stack">
-      <section className="panel-card" aria-labelledby="branches-title">
+      <button className="icon-button back-button" type="button" onClick={onBack}>
+        <ArrowLeft size={17} aria-hidden="true" />
+        <span>Volver a negocios</span>
+      </button>
+
+      <section className="panel-card" aria-labelledby="business-detail-title">
         <div className="panel-card-header">
           <div>
-            <p className="section-kicker">Operación conectada</p>
-            <h1 id="branches-title">Sucursales</h1>
-            <p className="panel-hint">Administra el estado y conexión de cada punto de venta.</p>
+            <p className="section-kicker">Negocio</p>
+            <h1 id="business-detail-title">{business.name} <code className="branch-code-badge">{business.slug}</code></h1>
+            <p className="panel-hint">Alta: {new Date(business.createdAt).toLocaleDateString('es-MX', { dateStyle: 'long' })}</p>
           </div>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() => setFormOpen((open) => !open)}
-          >
+          <span className={business.active ? 'status-pill status-ok' : 'status-pill status-off'}>{business.active ? 'Activo' : 'Inactivo'}</span>
+        </div>
+
+        <h2 className="business-subtitle">Equipo</h2>
+        {business.members.length === 0 ? (
+          <p className="panel-hint">Este negocio no tiene personas asignadas. Asígnalas desde Usuarios.</p>
+        ) : (
+          <ul className="business-members">
+            {business.members.map((member) => (
+              <li key={member.userId}>
+                <span className="row-icon"><UserRound size={16} aria-hidden="true" /></span>
+                <span className="business-member-main"><b>{member.displayName}</b><small>{member.email}</small></span>
+                <span className="status-pill">{BUSINESS_ROLE_LABELS[member.role]}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="panel-card" aria-labelledby="business-branches-title">
+        <div className="panel-card-header">
+          <div>
+            <p className="section-kicker">Dentro de {business.name}</p>
+            <h2 id="business-branches-title">Sucursales</h2>
+            <p className="panel-hint">Estado y conexión de cada punto de venta de este negocio.</p>
+          </div>
+          <button className="secondary-button" type="button" onClick={() => setFormOpen((open) => !open)}>
             {formOpen ? <X size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
             <span>{formOpen ? 'Cancelar' : 'Nueva sucursal'}</span>
           </button>
@@ -76,15 +89,6 @@ export function BranchesScreen({
 
         {formOpen ? (
           <form className="inline-form" onSubmit={handleCreate}>
-            <label>
-              Negocio
-              <select value={businessId} onChange={(event) => setBusinessId(event.target.value)} required>
-                <option value="">Selecciona…</option>
-                {businesses.map((business) => (
-                  <option key={business.id} value={business.id}>{business.name}</option>
-                ))}
-              </select>
-            </label>
             <label>
               Código
               <input
@@ -99,37 +103,21 @@ export function BranchesScreen({
             </label>
             <label>
               Nombre
-              <input
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                maxLength={200}
-                placeholder="Sucursal Centro"
-                required
-              />
+              <input type="text" value={name} onChange={(event) => setName(event.target.value)} maxLength={200} placeholder="Sucursal Centro" required />
             </label>
             <label>
               Zona horaria
-              <input
-                type="text"
-                value={timezone}
-                onChange={(event) => setTimezone(event.target.value)}
-                placeholder="America/Tijuana"
-              />
+              <input type="text" value={timezone} onChange={(event) => setTimezone(event.target.value)} placeholder="America/Tijuana" />
             </label>
             <button className="primary-button" type="submit" disabled={busy}>
-              <span>{busy ? 'Creando…' : 'Crear sucursal'}</span>
+              <span>{busy ? 'Creando…' : `Crear sucursal en ${business.name}`}</span>
             </button>
           </form>
         ) : null}
-
         {formError ? <p className="form-error" role="alert">{formError}</p> : null}
-        {error ? <p className="form-error" role="alert">{error}</p> : null}
 
-        {loading ? (
-          <p className="panel-hint">Cargando sucursales…</p>
-        ) : branches.length === 0 ? (
-          <p className="panel-hint">Todavía no hay sucursales dadas de alta.</p>
+        {branches.length === 0 ? (
+          <p className="panel-hint">Este negocio todavía no tiene sucursales.</p>
         ) : (
           <div className="management-list" role="list">
             {branches.map((branch) => (
@@ -140,7 +128,10 @@ export function BranchesScreen({
                   <span className="management-row-meta"><code>{branch.code}</code><span>{branch.timezone}</span></span>
                   <span className="management-row-sync"><Clock3 size={13} aria-hidden="true" />{branch.lastSyncAt ? `Sincronizó ${new Date(branch.lastSyncAt).toLocaleString('es-MX')}` : 'Aún no sincroniza'}</span>
                 </span>
-                <span className="management-row-side"><span className={branch.active ? 'status-pill status-ok' : 'status-pill status-off'}>{branch.active ? 'Activa' : 'Inactiva'}</span><ChevronRight size={18} aria-hidden="true" /></span>
+                <span className="management-row-side">
+                  <span className={branch.active ? 'status-pill status-ok' : 'status-pill status-off'}>{branch.active ? 'Activa' : 'Inactiva'}</span>
+                  <ChevronRight size={17} aria-hidden="true" />
+                </span>
               </button>
             ))}
           </div>

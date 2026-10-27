@@ -1,10 +1,16 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Npgsql;
 
 namespace RestaurantAgent.CentralApi;
 
 internal sealed record BusinessCreateRequest(string Name);
-internal sealed record BusinessView(Guid Id, string Name, string Slug, bool Active, DateTime CreatedAt);
+internal sealed record BusinessMemberSummary(Guid UserId, string Email, string DisplayName, string Role);
+
+/// <summary>Negocio tal como lo ve el operador: con el tamaño de su red de sucursales y quién lo administra.</summary>
+internal sealed record BusinessView(
+    Guid Id, string Name, string Slug, bool Active, DateTime CreatedAt,
+    int BranchCount, int ActiveBranchCount, IReadOnlyList<BusinessMemberSummary> Members);
 internal sealed record BusinessMembershipView(Guid Id, string Name, string Slug, bool Active, DateTime CreatedAt, string Role);
 
 /// <summary>
@@ -109,21 +115,41 @@ internal sealed partial class BusinessRegistry(NpgsqlDataSource dataSource)
         return new BusinessMembershipView(businessId, name, slug, true, createdAt, "OWNER");
     }
 
-    /// <summary>Todos los negocios (panel de operador, SUPERADMIN). No filtra por membresía.</summary>
+    /// <summary>
+    /// Todos los negocios (panel de operador, SUPERADMIN). No filtra por membresía. Incluye el
+    /// conteo de sucursales y los miembros (propietarios primero) para que el panel arranque por
+    /// el negocio y desde él baje a sus sucursales.
+    /// </summary>
     public async Task<IReadOnlyList<BusinessView>> GetAllBusinessesAsync(CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""
-            SELECT id, name, slug, active, created_at FROM businesses ORDER BY name;
+            SELECT b.id, b.name, b.slug, b.active, b.created_at,
+                   (SELECT COUNT(*) FROM branches br WHERE br.business_id = b.id),
+                   (SELECT COUNT(*) FROM branches br WHERE br.business_id = b.id AND br.active),
+                   COALESCE((
+                       SELECT json_agg(json_build_object(
+                                  'userId', u.id, 'email', u.email, 'displayName', u.display_name, 'role', bm.role)
+                              ORDER BY CASE bm.role WHEN 'OWNER' THEN 0 WHEN 'MANAGER' THEN 1 ELSE 2 END, u.display_name)
+                       FROM business_members bm JOIN app_users u ON u.id = bm.user_id
+                       WHERE bm.business_id = b.id), '[]'::json)::text
+            FROM businesses b
+            ORDER BY b.name;
             """);
         await using var reader = await command.ExecuteReaderAsync(ct);
         var result = new List<BusinessView>();
         while (await reader.ReadAsync(ct))
         {
             result.Add(new BusinessView(
-                reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetBoolean(3), reader.GetDateTime(4)));
+                reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetBoolean(3), reader.GetDateTime(4),
+                (int)reader.GetInt64(5), (int)reader.GetInt64(6), ParseMembers(reader.GetString(7))));
         }
         return result;
     }
+
+    private static readonly JsonSerializerOptions MemberJson = new() { PropertyNameCaseInsensitive = true };
+
+    internal static IReadOnlyList<BusinessMemberSummary> ParseMembers(string json) =>
+        JsonSerializer.Deserialize<List<BusinessMemberSummary>>(json, MemberJson) ?? [];
 
     /// <summary>Otorga o actualiza la membresía de un usuario en varios negocios (panel de operador). Idempotente.</summary>
     public async Task AssignMembershipsAsync(Guid userId, IReadOnlyList<Guid> businessIds, string role, CancellationToken ct)

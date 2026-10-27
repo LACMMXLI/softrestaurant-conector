@@ -119,6 +119,9 @@ crean desde la aplicación y no se leen credenciales de usuario desde el entorno
 ## Operación (SUPERADMIN / admin-web)
 
 - Ver todas las sucursales/negocios sin restricción vía `/api/admin/*`.
+- El panel admin organiza todo por **negocio → sucursales**: `GET /api/admin/businesses` devuelve cada
+  negocio con `branchCount`, `activeBranchCount` y sus `members` (propietarios primero); desde el
+  negocio se listan y crean sus sucursales (`POST /api/admin/branches` con su `businessId`).
 - Ver el historial completo de instalaciones de una sucursal:
   `GET /api/admin/branches/{branchCode}/connector-installations`.
 - Revocar en nombre de un tenant: `POST /api/admin/connector-installations/{id}/revoke`.

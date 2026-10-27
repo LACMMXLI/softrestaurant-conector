@@ -4,7 +4,8 @@ import { api, ApiError } from './api'
 import { LoginScreen } from './components/LoginScreen'
 import { ActivityScreen } from './screens/ActivityScreen'
 import { BranchDetailScreen } from './screens/BranchDetailScreen'
-import { BranchesScreen } from './screens/BranchesScreen'
+import { BusinessDetailScreen } from './screens/BusinessDetailScreen'
+import { BusinessesScreen } from './screens/BusinessesScreen'
 import { UserDetailScreen } from './screens/UserDetailScreen'
 import { UsersScreen } from './screens/UsersScreen'
 import { SubscriptionNoticeScreen } from './screens/SubscriptionNoticeScreen'
@@ -12,7 +13,8 @@ import type { AdminUser, Branch, Business, UserDetail, UserSummary } from './typ
 
 type SessionState = 'loading' | 'anonymous' | 'authenticated'
 type View =
-  | { name: 'branches' }
+  | { name: 'businesses' }
+  | { name: 'business-detail'; id: string }
   | { name: 'branch-detail'; code: string }
   | { name: 'users' }
   | { name: 'subscription-notice' }
@@ -29,7 +31,7 @@ export function App() {
   const [users, setUsers] = useState<UserSummary[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [usersError, setUsersError] = useState<string | null>(null)
-  const [view, setView] = useState<View>({ name: 'branches' })
+  const [view, setView] = useState<View>({ name: 'businesses' })
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loginBusy, setLoginBusy] = useState(false)
 
@@ -39,7 +41,7 @@ export function App() {
     setBranches([])
     setBusinesses([])
     setUsers([])
-    setView({ name: 'branches' })
+    setView({ name: 'businesses' })
     if (message) setLoginError(message)
   }, [])
 
@@ -129,6 +131,16 @@ export function App() {
     })
   }
 
+  /** Alta o cambio de una sucursal: refresca la lista y los conteos del negocio dueño. */
+  function handleBranchChanged(next: Branch) {
+    upsertBranchInList(next)
+    api.businesses()
+      .then(setBusinesses)
+      .catch((reason: unknown) => {
+        if (reason instanceof ApiError && reason.status === 401) becomeAnonymous()
+      })
+  }
+
   function upsertUserInList(next: UserDetail) {
     setUsers((current) => {
       const summary: UserSummary = {
@@ -161,13 +173,15 @@ export function App() {
     return <LoginScreen error={loginError} busy={loginBusy} onLogin={handleLogin} />
   }
 
+  const detailBusiness = view.name === 'business-detail' ? businesses.find((b) => b.id === view.id) ?? null : null
   const detailBranch = view.name === 'branch-detail' ? branches.find((b) => b.code === view.code) ?? null : null
+  const detailBranchBusiness = detailBranch ? businesses.find((b) => b.id === detailBranch.businessId) ?? null : null
   const detailUserSummary = view.name === 'user-detail' ? users.find((u) => u.id === view.id) ?? null : null
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <button className="sidebar-brand" type="button" onClick={() => setView({ name: 'branches' })}>
+        <button className="sidebar-brand" type="button" onClick={() => setView({ name: 'businesses' })}>
           <span className="sidebar-brand-mark"><ShieldCheck size={19} /></span>
           <span><small>SoftRestaurant</small>Control de plataforma</span>
         </button>
@@ -175,11 +189,11 @@ export function App() {
         <nav className="sidebar-nav">
           <button
             type="button"
-            className={view.name === 'branches' || view.name === 'branch-detail' ? 'nav-item active' : 'nav-item'}
-            onClick={() => setView({ name: 'branches' })}
+            className={view.name === 'businesses' || view.name === 'business-detail' || view.name === 'branch-detail' ? 'nav-item active' : 'nav-item'}
+            onClick={() => setView({ name: 'businesses' })}
           >
             <Building2 size={18} aria-hidden="true" />
-            <span>Sucursales</span>
+            <span>Negocios</span>
           </button>
           <button
             type="button"
@@ -220,21 +234,32 @@ export function App() {
         {view.name === 'branch-detail' && detailBranch ? (
           <BranchDetailScreen
             branch={detailBranch}
-            onBack={() => setView({ name: 'branches' })}
-            onBranchUpdated={upsertBranchInList}
+            businessName={detailBranchBusiness?.name ?? 'el negocio'}
+            onBack={() => setView(detailBranchBusiness ? { name: 'business-detail', id: detailBranchBusiness.id } : { name: 'businesses' })}
+            onBranchUpdated={handleBranchChanged}
             onUnauthorized={becomeAnonymous}
           />
         ) : null}
 
-        {view.name === 'branches' || (view.name === 'branch-detail' && !detailBranch) ? (
-          <BranchesScreen
-            branches={branches}
+        {view.name === 'business-detail' && detailBusiness ? (
+          <BusinessDetailScreen
+            business={detailBusiness}
+            branches={branches.filter((branch) => branch.businessId === detailBusiness.id)}
+            onBack={() => setView({ name: 'businesses' })}
+            onOpenBranch={(code) => setView({ name: 'branch-detail', code })}
+            onBranchCreated={handleBranchChanged}
+            onUnauthorized={becomeAnonymous}
+          />
+        ) : null}
+
+        {view.name === 'businesses'
+          || (view.name === 'business-detail' && !detailBusiness)
+          || (view.name === 'branch-detail' && !detailBranch) ? (
+          <BusinessesScreen
             businesses={businesses}
             loading={branchesLoading}
             error={branchesError}
-            onOpenBranch={(code) => setView({ name: 'branch-detail', code })}
-            onBranchCreated={upsertBranchInList}
-            onUnauthorized={becomeAnonymous}
+            onOpenBusiness={(id) => setView({ name: 'business-detail', id })}
           />
         ) : null}
 
@@ -284,11 +309,11 @@ export function App() {
       <nav className="mobile-nav" aria-label="Navegación principal">
         <button
           type="button"
-          className={view.name === 'branches' || view.name === 'branch-detail' ? 'mobile-nav-item active' : 'mobile-nav-item'}
-          onClick={() => setView({ name: 'branches' })}
+          className={view.name === 'businesses' || view.name === 'business-detail' || view.name === 'branch-detail' ? 'mobile-nav-item active' : 'mobile-nav-item'}
+          onClick={() => setView({ name: 'businesses' })}
         >
           <Building2 size={20} aria-hidden="true" />
-          <span>Sucursales</span>
+          <span>Negocios</span>
         </button>
         <button
           type="button"

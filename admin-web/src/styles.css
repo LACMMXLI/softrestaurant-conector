@@ -510,3 +510,13 @@ input, select { min-height: 44px; border-radius: 11px; background: #0c1722; }
   .mobile-nav-item { min-width: 0; padding-inline: .15rem; font-size: .68rem; }
   .mobile-nav-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+/* Negocios: búsqueda, equipo y subtítulos de sección */
+.business-search { display: flex; align-items: center; gap: .6rem; margin-top: 1rem; padding: 0 .85rem; background: var(--bg-panel-alt); border: 1px solid var(--border); border-radius: 11px; color: var(--text-muted); }
+.business-search input { flex: 1; min-height: 42px; background: transparent; border: 0; color: var(--text); font: inherit; outline: none; }
+.business-subtitle { margin: 1.4rem 0 .6rem; font-size: .95rem; color: var(--text-muted); }
+.business-members { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.business-members li { display: flex; align-items: center; gap: .75rem; padding: .6rem .8rem; background: var(--bg-panel-alt); border: 1px solid var(--border); border-radius: 10px; }
+.business-member-main { display: grid; min-width: 0; flex: 1; }
+.business-member-main b { font-size: .88rem; }
+.business-member-main small { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
