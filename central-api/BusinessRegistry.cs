@@ -5,6 +5,7 @@ using Npgsql;
 namespace RestaurantAgent.CentralApi;
 
 internal sealed record BusinessCreateRequest(string Name);
+internal sealed record AdminCreateBusinessRequest(string? Name, Guid? OwnerUserId);
 internal sealed record BusinessMemberSummary(Guid UserId, string Email, string DisplayName, string Role);
 
 /// <summary>Negocio tal como lo ve el operador: con el tamaño de su red de sucursales y quién lo administra.</summary>
@@ -84,7 +85,27 @@ internal sealed partial class BusinessRegistry(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var transaction = await connection.BeginTransactionAsync(ct);
+        var (businessId, slug, createdAt) = await InsertBusinessAsync(connection, transaction, name, creatorUserId, ct);
+        await transaction.CommitAsync(ct);
+        return new BusinessMembershipView(businessId, name, slug, true, createdAt, "OWNER");
+    }
 
+    /// <summary>
+    /// Alta de un negocio por el operador (SUPERADMIN). El propietario es opcional: el negocio puede
+    /// existir sin equipo asignado y sin conector, y se le asignan personas después desde Usuarios.
+    /// </summary>
+    public async Task<BusinessView> CreateBusinessForOperatorAsync(string name, Guid? ownerUserId, CancellationToken ct)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+        var (businessId, _, _) = await InsertBusinessAsync(connection, transaction, name, ownerUserId, ct);
+        await transaction.CommitAsync(ct);
+        return (await QueryBusinessesAsync(businessId, ct)).Single();
+    }
+
+    private static async Task<(Guid Id, string Slug, DateTime CreatedAt)> InsertBusinessAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, string name, Guid? ownerUserId, CancellationToken ct)
+    {
         var slug = await ReserveUniqueSlugAsync(name, connection, transaction, ct);
 
         Guid businessId;
@@ -102,17 +123,24 @@ internal sealed partial class BusinessRegistry(NpgsqlDataSource dataSource)
             createdAt = reader.GetDateTime(1);
         }
 
-        await using (var member = new NpgsqlCommand("""
-            INSERT INTO business_members (business_id, user_id, role) VALUES ($1, $2, 'OWNER');
-            """, connection, transaction))
+        if (ownerUserId is { } owner)
         {
+            await using var member = new NpgsqlCommand("""
+                INSERT INTO business_members (business_id, user_id, role) VALUES ($1, $2, 'OWNER');
+                """, connection, transaction);
             member.Parameters.AddWithValue(businessId);
-            member.Parameters.AddWithValue(creatorUserId);
+            member.Parameters.AddWithValue(owner);
             await member.ExecuteNonQueryAsync(ct);
         }
 
-        await transaction.CommitAsync(ct);
-        return new BusinessMembershipView(businessId, name, slug, true, createdAt, "OWNER");
+        return (businessId, slug, createdAt);
+    }
+
+    public async Task<bool> BusinessExistsAsync(Guid businessId, CancellationToken ct)
+    {
+        await using var command = dataSource.CreateCommand("SELECT 1 FROM businesses WHERE id = $1;");
+        command.Parameters.AddWithValue(businessId);
+        return await command.ExecuteScalarAsync(ct) is not null;
     }
 
     /// <summary>
@@ -120,7 +148,9 @@ internal sealed partial class BusinessRegistry(NpgsqlDataSource dataSource)
     /// conteo de sucursales y los miembros (propietarios primero) para que el panel arranque por
     /// el negocio y desde él baje a sus sucursales.
     /// </summary>
-    public async Task<IReadOnlyList<BusinessView>> GetAllBusinessesAsync(CancellationToken ct)
+    public Task<IReadOnlyList<BusinessView>> GetAllBusinessesAsync(CancellationToken ct) => QueryBusinessesAsync(null, ct);
+
+    private async Task<IReadOnlyList<BusinessView>> QueryBusinessesAsync(Guid? onlyId, CancellationToken ct)
     {
         await using var command = dataSource.CreateCommand("""
             SELECT b.id, b.name, b.slug, b.active, b.created_at,
@@ -133,8 +163,10 @@ internal sealed partial class BusinessRegistry(NpgsqlDataSource dataSource)
                        FROM business_members bm JOIN app_users u ON u.id = bm.user_id
                        WHERE bm.business_id = b.id), '[]'::json)::text
             FROM businesses b
+            WHERE $1::uuid IS NULL OR b.id = $1::uuid
             ORDER BY b.name;
             """);
+        command.Parameters.AddWithValue((object?)onlyId ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct);
         var result = new List<BusinessView>();
         while (await reader.ReadAsync(ct))
