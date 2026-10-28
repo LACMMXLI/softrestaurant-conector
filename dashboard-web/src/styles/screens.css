@@ -108,3 +108,8 @@
 .expiry-dialog p:not(.expiry-when) { margin-top: 14px; color: var(--ink-soft); font-size: .92rem; line-height: 1.55; }
 .expiry-accept { display: flex; justify-content: center; width: 100%; margin-top: 22px; border: 0; background: var(--gold); color: #1a1205; font-weight: 800; text-align: center; }
 .expiry-dialog--urgent .expiry-accept { background: var(--red); color: #fff; }
+
+/* Cabecera que se esconde al bajar (ver hooks/useHideOnScroll.ts). */
+.app-header { transition: transform .24s ease; will-change: transform; }
+.app-header.is-hidden { transform: translateY(-100%); }
+@media (prefers-reduced-motion: reduce) { .app-header { transition: none; } }

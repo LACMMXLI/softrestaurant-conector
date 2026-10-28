@@ -10,6 +10,7 @@ import { ProductTotals } from './components/ProductTotals'
 import { ExpiryNoticeDialog, SubscriptionAccessNotice, SubscriptionSummary } from './components/SubscriptionNotices'
 import { TicketSheet } from './components/TicketSheet'
 import { dateInTimezone } from './format'
+import { useHideOnScroll } from './hooks/useHideOnScroll'
 import { getExpiryWarning } from './lib/subscription'
 import { businessIdFromCode, isConsolidatedCode, isTabAvailable } from './lib/navigation'
 import type { Tab } from './lib/navigation'
@@ -53,6 +54,7 @@ export function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   // Aviso de cuenta por vencer: se reabre en cada inicio de sesión y recarga; cerrarlo solo lo oculta en esta carga.
   const [expiryNoticeOpen, setExpiryNoticeOpen] = useState(true)
+  const [headerHidden, revealHeader] = useHideOnScroll()
   const shiftRequest = useRef(0)
 
   const currentBranch = useMemo(
@@ -339,7 +341,8 @@ export function App() {
       </aside>
 
       <div className="app-column">
-        <header className="app-header">
+        {/* Se oculta al bajar para dar espacio a la información y vuelve al subir o al enfocar un control. */}
+        <header className={headerHidden ? 'app-header is-hidden' : 'app-header'} onFocusCapture={revealHeader}>
           <Brand compact className="mobile-brand" />
           <ContextControls
             branchCode={branchCode}
