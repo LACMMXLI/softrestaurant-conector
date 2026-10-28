@@ -122,6 +122,10 @@ crean desde la aplicación y no se leen credenciales de usuario desde el entorno
 - El panel admin organiza todo por **negocio → sucursales**: `GET /api/admin/businesses` devuelve cada
   negocio con `branchCount`, `activeBranchCount` y sus `members` (propietarios primero); desde el
   negocio se listan y crean sus sucursales (`POST /api/admin/branches` con su `businessId`).
+- El operador también crea negocios: `POST /api/admin/businesses` con `{ name, ownerUserId? }`. El
+  propietario es opcional: un negocio (y sus sucursales) puede existir sin equipo asignado y sin
+  conector; las personas se asignan después con `POST /api/admin/users/{id}/businesses` y el
+  conector se vincula desde la propia sucursal. Responde 404 si el propietario o el negocio no existen.
 - Ver el historial completo de instalaciones de una sucursal:
   `GET /api/admin/branches/{branchCode}/connector-installations`.
 - Revocar en nombre de un tenant: `POST /api/admin/connector-installations/{id}/revoke`.

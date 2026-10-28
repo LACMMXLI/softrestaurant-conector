@@ -131,6 +131,12 @@ export function App() {
     })
   }
 
+  /** Negocio recién creado por el operador: entra a la lista y se abre para crear sus sucursales. */
+  function handleBusinessCreated(created: Business) {
+    setBusinesses((current) => [...current.filter((b) => b.id !== created.id), created].sort((a, b) => a.name.localeCompare(b.name, 'es')))
+    setView({ name: 'business-detail', id: created.id })
+  }
+
   /** Alta o cambio de una sucursal: refresca la lista y los conteos del negocio dueño. */
   function handleBranchChanged(next: Branch) {
     upsertBranchInList(next)
@@ -257,9 +263,12 @@ export function App() {
           || (view.name === 'branch-detail' && !detailBranch) ? (
           <BusinessesScreen
             businesses={businesses}
+            users={users}
             loading={branchesLoading}
             error={branchesError}
             onOpenBusiness={(id) => setView({ name: 'business-detail', id })}
+            onBusinessCreated={handleBusinessCreated}
+            onUnauthorized={becomeAnonymous}
           />
         ) : null}
 

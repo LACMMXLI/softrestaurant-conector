@@ -162,6 +162,32 @@ app.MapGet("/api/admin/businesses", async (
     return Results.Ok(await businesses.GetAllBusinessesAsync(ct));
 });
 
+app.MapPost("/api/admin/businesses", async (
+    HttpContext context,
+    AdminCreateBusinessRequest request,
+    BusinessRegistry businesses,
+    UserRegistry users,
+    WebAuthService webAuth,
+    CancellationToken ct) =>
+{
+    if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
+    var name = request.Name?.Trim() ?? string.Empty;
+    if (name.Length == 0 || name.Length > BranchValidation.MaxNameLength)
+        return Results.BadRequest(new { error = "name es obligatorio y admite máximo 200 caracteres" });
+
+    // El propietario es opcional: un negocio puede crearse vacío y recibir su equipo después.
+    Guid? ownerId = null;
+    if (request.OwnerUserId is { } requestedOwner && requestedOwner != Guid.Empty)
+    {
+        if (await users.GetUserAsync(requestedOwner, ct) is null)
+            return Results.NotFound(new { error = "El usuario propietario no existe." });
+        ownerId = requestedOwner;
+    }
+
+    var created = await businesses.CreateBusinessForOperatorAsync(name, ownerId, ct);
+    return Results.Created($"/api/admin/businesses/{created.Id}", created);
+});
+
 // ── /api/admin/branches — operador ───────────────────────────────────────────────────────────
 
 app.MapGet("/api/admin/branches", async (
@@ -193,12 +219,16 @@ app.MapPost("/api/admin/branches", async (
     HttpContext context,
     BranchCreateRequest request,
     BranchRegistry registry,
+    BusinessRegistry businesses,
     WebAuthService webAuth,
     CancellationToken ct) =>
 {
     if (!await AdminAuthenticator.IsAuthorizedAsync(context, apiOptions, webAuth, ct)) return Results.Unauthorized();
     if (request.BusinessId == Guid.Empty)
         return Results.BadRequest(new { error = "businessId es obligatorio" });
+    // Una sucursal puede crearse sin equipo ni conector, pero sí necesita un negocio que exista.
+    if (!await businesses.BusinessExistsAsync(request.BusinessId, ct))
+        return Results.NotFound(new { error = "El negocio no existe." });
     var code = request.Code?.Trim() ?? string.Empty;
     if (!BranchValidation.IsValidCode(code))
         return Results.BadRequest(new { error = "code es obligatorio: minúsculas, dígitos y guiones, 2 a 63 caracteres" });

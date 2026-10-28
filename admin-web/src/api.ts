@@ -60,6 +60,11 @@ export const api = {
   me: () => request<{ user: AdminUser }>('/api/web/auth/me'),
 
   businesses: () => request<Business[]>('/api/admin/businesses'),
+  createBusiness: (name: string, ownerUserId: string | null) =>
+    request<Business>('/api/admin/businesses', {
+      method: 'POST',
+      body: JSON.stringify({ name, ownerUserId }),
+    }),
 
   branches: () => request<Branch[]>('/api/admin/branches'),
   branch: (code: string) => request<Branch>(`/api/admin/branches/${encodeURIComponent(code)}`),

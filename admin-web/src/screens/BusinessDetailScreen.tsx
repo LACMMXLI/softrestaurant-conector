@@ -60,7 +60,7 @@ export function BusinessDetailScreen({ business, branches, onBack, onOpenBranch,
 
         <h2 className="business-subtitle">Equipo</h2>
         {business.members.length === 0 ? (
-          <p className="panel-hint">Este negocio no tiene personas asignadas. Asígnalas desde Usuarios.</p>
+          <p className="panel-hint">Este negocio todavía no tiene equipo. Puedes crear sus sucursales ahora y asignar personas después, desde Usuarios.</p>
         ) : (
           <ul className="business-members">
             {business.members.map((member) => (
@@ -117,7 +117,7 @@ export function BusinessDetailScreen({ business, branches, onBack, onOpenBranch,
         {formError ? <p className="form-error" role="alert">{formError}</p> : null}
 
         {branches.length === 0 ? (
-          <p className="panel-hint">Este negocio todavía no tiene sucursales.</p>
+          <p className="panel-hint">Este negocio todavía no tiene sucursales. Cada sucursal puede crearse sin equipo ni conector; el conector se vincula después.</p>
         ) : (
           <div className="management-list" role="list">
             {branches.map((branch) => (
